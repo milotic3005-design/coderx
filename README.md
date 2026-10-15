@@ -18,9 +18,9 @@ CodeRx lets pharmacists, infusion centers, coders, billers, revenue-cycle, and p
 
 | Source | Publisher | Cadence | In CodeRx |
 | --- | --- | --- | --- |
-| HCPCS Level II quarterly file + NOC code list | CMS | Quarterly | 8 quarters (2025-Q1 → 2026-Q4) |
-| Medicare Part B drug payment limit (ASP) files + “Not payable” list | CMS | Quarterly + revisions | 8 quarters |
-| NDC–HCPCS crosswalks (ASP, OPPS, AWP, PrEP, 2025 NOC) | CMS | Quarterly + revisions | 8 quarters |
+| HCPCS Level II quarterly file + NOC code list | CMS | Quarterly | 2023-Q1 → 2026-Q4 in production (all quarterly files CMS still posts) |
+| Medicare Part B drug payment limit (ASP) files + “Not payable” list | CMS | Quarterly + revisions | 2021-Q1 → 2026-Q4 in production |
+| NDC–HCPCS crosswalks (ASP, OPPS, AWP, PrEP, NOC) | CMS | Quarterly + revisions | 2021-Q1 → 2026-Q4 in production |
 | NDC Directory (finished drugs) + excluded listings | FDA | Daily | Clinician-administered Rx + every CMS-crosswalked NDC |
 | Purple Book (licensed biologics) | FDA | Monthly | Latest month |
 
@@ -125,6 +125,12 @@ npm run test:e2e
 
 Fixtures in `tests/fixtures` are unmodified excerpts of the real files; see `tests/fixtures/PROVENANCE.md`. More in [`docs/06-testing.md`](docs/06-testing.md).
 
+## Live deployment
+
+- Production: https://coderx-milotic3005-8754s-projects.vercel.app (Vercel project `coderx`, region iad1, Neon Postgres)
+- Repository: https://github.com/milotic3005-design/coderx
+- Smoke test a deployment: `BASE_URL=https://… npm run test:e2e:prod`
+
 ## Deployment (Vercel)
 
 1. Push this repository to GitHub.
@@ -156,7 +162,8 @@ Operations, refresh schedule, rollback, and manual review: [`docs/05-operations.
 - No OPPS (hospital outpatient) payment rates; the OPPS **NDC crosswalk** is included.
 - CMS crosswalks are not comprehensive; a missing NDC is not evidence that no code applies.
 - FDA products whose product-level route is blank (common for kits, e.g. Humira) are indexed only when CMS crosswalks them.
-- History begins at 2025-Q1. Payer-specific policies, MUEs, LCDs, and 340B are out of scope.
+- History: HCPCS from 2023-Q1, payment limits and crosswalks from 2021-Q1 (`CODERX_MIN_PERIOD`); older CMS postings use unsupported formats.
+- FDA's server returns 404 to Vercel's cloud egress for the Purple Book CSV, so the monthly Purple Book refresh is done by uploading the official file to the admin endpoint (see docs/05-operations.md). Payer-specific policies, MUEs, LCDs, and 340B are out of scope.
 - Rate limiting is per instance; add a Vercel Firewall rate-limit rule for global enforcement.
 
 ## License and attribution

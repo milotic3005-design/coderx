@@ -62,3 +62,16 @@ curl -sS -X POST "https://<domain>/api/admin/import" \
 ## Secrets
 
 Generate tokens with `openssl rand -base64 48`. Store `DATABASE_URL`, `CODERX_ADMIN_TOKEN`, and `CRON_SECRET` as **sensitive** Vercel environment variables. No secret is read by client code; only `NEXT_PUBLIC_SITE_URL` is public.
+
+## Publisher files blocked from cloud egress (Purple Book)
+
+FDA's accessdata server answers 404 to requests from Vercel's network for the Purple Book CSV (it works from ordinary networks). The cron records the failure; refresh it monthly by uploading the official file — provenance keeps the official URL and the SHA-256 of the uploaded bytes:
+
+```bash
+U=https://www.accessdata.fda.gov/drugsatfda_docs/PurpleBook/2026/purplebook-search-September-data-download.csv
+curl -sSo pb.csv "$U"
+curl -sS -X POST "https://<domain>/api/admin/import?source=fda_purple_book&period=2026-09&url=$U" \
+  -H "Authorization: Bearer $CODERX_ADMIN_TOKEN" -H "Content-Type: text/csv" --data-binary @pb.csv
+```
+
+Upload mode accepts only known source keys, official `www.cms.gov` / `www.accessdata.fda.gov` URLs, and files up to 4 MB.

@@ -19,7 +19,8 @@
     "ingest:discover": "tsx scripts/ingest.ts --discover",
     "fixtures": "tsx scripts/make-fixtures.ts",
     "e2e:db": "tsx scripts/seed-e2e.ts",
-    "audit": "npm audit --omit=dev"
+    "audit": "npm audit --omit=dev",
+    "test:e2e:prod": "playwright test -c playwright.prod.config.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.10",

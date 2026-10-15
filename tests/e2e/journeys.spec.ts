@@ -112,7 +112,7 @@ test.describe("required user journeys", () => {
 
 test.describe("14. keyboard-only workflow", () => {
   test("search, choose a suggestion, and navigate the page without a mouse", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "networkidle" });
     await page.keyboard.press("Tab"); // skip link
     await expect(page.getByRole("link", { name: "Skip to main content" })).toBeFocused();
     await page.keyboard.press("/");
