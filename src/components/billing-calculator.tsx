@@ -1,7 +1,7 @@
 "use client";
 
-import { Calculator, CircleAlert, Info } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { Calculator, CircleAlert, Info, RotateCcw } from "lucide-react";
+import { useId, useMemo, useRef, useState } from "react";
 import { calculateBillingUnits, UNITS, type CalculatorInput, type ContainerType, type UnitKey } from "@/lib/billing";
 
 export interface CalculatorPrefill {
@@ -42,7 +42,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <label htmlFor={id} className="block text-sm font-semibold text-ink">
         {label}
       </label>
@@ -54,27 +54,101 @@ function Field({
       <div className="mt-1.5">{children}</div>
       {error ? (
         <p id={`${id}-error`} className="mt-1 flex items-center gap-1 text-sm font-semibold text-danger">
-          <CircleAlert aria-hidden="true" className="h-4 w-4" /> {error}
+          <CircleAlert aria-hidden="true" className="h-4 w-4 shrink-0" /> {error}
         </p>
       ) : null}
     </div>
   );
 }
 
-const inputCls = "block min-h-11 w-full rounded-lg border border-rule-strong bg-surface-raised px-3 text-base text-ink aria-[invalid=true]:border-danger";
+// One bordered control: the number takes the free width, a unit picker or a fixed label sits at the edge.
+const frameCls =
+  "flex min-h-12 w-full items-stretch overflow-hidden rounded-lg border border-rule-strong bg-surface-raised focus-within:border-brand focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--focus)] has-[[aria-invalid=true]]:border-danger";
+const amountCls =
+  "num min-w-0 flex-1 bg-transparent px-3 text-lg font-medium text-ink placeholder:text-base placeholder:font-normal placeholder:text-ink-faint focus-visible:outline-none";
+const adornCls = "flex shrink-0 items-center bg-paper-sunken px-3 text-sm font-semibold text-ink-muted";
+const selectCls =
+  "min-w-[5.5rem] shrink-0 cursor-pointer border-l border-rule bg-paper-sunken px-3 text-base font-semibold text-ink hover:bg-brand-tint focus-visible:bg-brand-tint focus-visible:outline-none";
+
+function AmountInput({
+  id,
+  value,
+  onChange,
+  invalid,
+  describedBy,
+  placeholder,
+  numeric = false,
+  prefix,
+  suffix,
+  unit,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  invalid?: boolean;
+  describedBy?: string;
+  placeholder?: string;
+  numeric?: boolean;
+  prefix?: string;
+  suffix?: string;
+  unit?: { value: UnitKey; onChange: (u: UnitKey) => void; label: string };
+}) {
+  return (
+    <div className={frameCls}>
+      {prefix ? (
+        <span aria-hidden="true" className={`${adornCls} border-r border-rule`}>
+          {prefix}
+        </span>
+      ) : null}
+      <input
+        id={id}
+        type="text"
+        inputMode={numeric ? "numeric" : "decimal"}
+        autoComplete="off"
+        spellCheck={false}
+        enterKeyHint="next"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        className={amountCls}
+      />
+      {unit ? (
+        <select aria-label={unit.label} value={unit.value} onChange={(e) => unit.onChange(e.target.value as UnitKey)} className={selectCls}>
+          {UNIT_OPTIONS.map((u) => (
+            <option key={u.key} value={u.key}>
+              {u.label}
+            </option>
+          ))}
+        </select>
+      ) : suffix ? (
+        <span aria-hidden="true" className={`${adornCls} border-l border-rule`}>
+          {suffix}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+const describe = (...ids: (string | false | undefined)[]) => ids.filter(Boolean).join(" ") || undefined;
 
 export function BillingCalculator({ prefill }: { prefill: CalculatorPrefill }) {
   const id = useId();
+  const resultHeading = useRef<HTMLHeadingElement>(null);
+  const initialUnit = prefill.billingUnitAmount ? String(prefill.billingUnitAmount) : "";
+  const initialContainer = prefill.containerAmount ? String(prefill.containerAmount) : "";
+  const initialPayment = prefill.paymentLimit != null ? String(prefill.paymentLimit) : "";
   const [dose, setDose] = useState("");
   const [doseUnit, setDoseUnit] = useState<UnitKey>(prefill.billingUnitUnit ?? "mg");
-  const [unitAmount, setUnitAmount] = useState(prefill.billingUnitAmount ? String(prefill.billingUnitAmount) : "");
+  const [unitAmount, setUnitAmount] = useState(initialUnit);
   const [unitUnit, setUnitUnit] = useState<UnitKey>(prefill.billingUnitUnit ?? "mg");
-  const [containerAmount, setContainerAmount] = useState(prefill.containerAmount ? String(prefill.containerAmount) : "");
+  const [containerAmount, setContainerAmount] = useState(initialContainer);
   const [containerUnit, setContainerUnit] = useState<UnitKey>(prefill.containerUnit ?? prefill.billingUnitUnit ?? "mg");
   const [containersOpened, setContainersOpened] = useState("");
   const [discarded, setDiscarded] = useState("");
   const [containerType, setContainerType] = useState<ContainerType>("unknown");
-  const [payment, setPayment] = useState(prefill.paymentLimit != null ? String(prefill.paymentLimit) : "");
+  const [payment, setPayment] = useState(initialPayment);
   const [touched, setTouched] = useState(false);
 
   const input: CalculatorInput = useMemo(
@@ -98,24 +172,41 @@ export function BillingCalculator({ prefill }: { prefill: CalculatorPrefill }) {
   const result = ready ? calculateBillingUnits(input) : null;
   const errors = result && !result.ok ? Object.fromEntries(result.errors.map((e) => [e.field, e.message])) : {};
   const showErrors = touched || ready;
+  const err = (...fields: string[]) => (showErrors ? fields.map((f) => errors[f]).find(Boolean) : undefined);
 
-  const unitSelect = (value: UnitKey, onChange: (u: UnitKey) => void, labelId: string, label: string) => (
-    <select aria-labelledby={labelId} aria-label={label} value={value} onChange={(e) => onChange(e.target.value as UnitKey)} className={`${inputCls} w-28 shrink-0`}>
-      {UNIT_OPTIONS.map((u) => (
-        <option key={u.key} value={u.key}>
-          {u.label}
-        </option>
-      ))}
-    </select>
-  );
+  const reset = () => {
+    setDose("");
+    setDoseUnit(prefill.billingUnitUnit ?? "mg");
+    setUnitAmount(initialUnit);
+    setUnitUnit(prefill.billingUnitUnit ?? "mg");
+    setContainerAmount(initialContainer);
+    setContainerUnit(prefill.containerUnit ?? prefill.billingUnitUnit ?? "mg");
+    setContainersOpened("");
+    setDiscarded("");
+    setContainerType("unknown");
+    setPayment(initialPayment);
+    setTouched(false);
+  };
+
+  const unitErr = err("billingUnitAmount");
+  const doseErr = err("dose", "doseUnit");
+  const containerErr = err("containerAmount", "containerUnit");
+  const openedErr = err("containersOpened");
+  const discardedErr = err("discardedAmount");
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <form
-        className="space-y-6 rounded-xl border hairline bg-surface p-5 sm:p-6"
+        className="min-w-0 space-y-7 rounded-xl border hairline bg-surface p-5 sm:p-6"
         onSubmit={(e) => {
           e.preventDefault();
           setTouched(true);
+          // On one-column layouts the result sits below the form; bring it into view.
+          if (window.matchMedia("(max-width: 1023.98px)").matches) {
+            const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            resultHeading.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+            resultHeading.current?.focus({ preventScroll: true });
+          }
         }}
         aria-label="Billing unit calculator inputs"
         noValidate
@@ -128,84 +219,77 @@ export function BillingCalculator({ prefill }: { prefill: CalculatorPrefill }) {
               {prefill.billingUnitSource ? <span className="mt-1 block text-xs">{prefill.billingUnitSource}</span> : null}
             </p>
           ) : null}
-          <Field id={`${id}-unit`} label="One billing unit equals" hint="From the HCPCS descriptor, e.g. “10 mg” for “Injection, rituximab, 10 mg”." error={showErrors ? errors.billingUnitAmount : undefined}>
-            <div className="flex gap-2">
-              <input
-                id={`${id}-unit`}
-                inputMode="decimal"
-                value={unitAmount}
-                onChange={(e) => setUnitAmount(e.target.value)}
-                aria-invalid={showErrors && !!errors.billingUnitAmount}
-                aria-describedby={`${id}-unit-hint${errors.billingUnitAmount ? ` ${id}-unit-error` : ""}`}
-                className={inputCls}
-              />
-              {unitSelect(unitUnit, setUnitUnit, `${id}-unit`, "Billing unit measure")}
-            </div>
+          <Field id={`${id}-unit`} label="One billing unit equals" hint="From the HCPCS descriptor, e.g. “10 mg” for “Injection, rituximab, 10 mg”." error={unitErr}>
+            <AmountInput
+              id={`${id}-unit`}
+              value={unitAmount}
+              onChange={setUnitAmount}
+              placeholder="e.g. 10"
+              invalid={!!unitErr}
+              describedBy={describe(`${id}-unit-hint`, !!unitErr && `${id}-unit-error`)}
+              unit={{ value: unitUnit, onChange: setUnitUnit, label: "Billing unit measure" }}
+            />
           </Field>
         </fieldset>
 
         <fieldset className="space-y-4">
           <legend className="font-display text-xl font-semibold text-ink">2 · Dose administered</legend>
-          <Field id={`${id}-dose`} label="Dose" hint="The amount given to the patient for this line." error={showErrors ? (errors.dose ?? errors.doseUnit) : undefined}>
-            <div className="flex gap-2">
-              <input
-                id={`${id}-dose`}
-                inputMode="decimal"
-                value={dose}
-                onChange={(e) => setDose(e.target.value)}
-                aria-invalid={showErrors && !!(errors.dose || errors.doseUnit)}
-                aria-describedby={`${id}-dose-hint${errors.dose || errors.doseUnit ? ` ${id}-dose-error` : ""}`}
-                className={inputCls}
-              />
-              {unitSelect(doseUnit, setDoseUnit, `${id}-dose`, "Dose unit")}
-            </div>
+          <Field id={`${id}-dose`} label="Dose" hint="The amount given to the patient for this line." error={doseErr}>
+            <AmountInput
+              id={`${id}-dose`}
+              value={dose}
+              onChange={setDose}
+              placeholder="e.g. 375"
+              invalid={!!doseErr}
+              describedBy={describe(`${id}-dose-hint`, !!doseErr && `${id}-dose-error`)}
+              unit={{ value: doseUnit, onChange: setDoseUnit, label: "Dose unit" }}
+            />
           </Field>
         </fieldset>
 
         <fieldset className="space-y-4">
           <legend className="font-display text-xl font-semibold text-ink">3 · Container (optional)</legend>
           {prefill.containerSource ? <p className="text-xs text-ink-muted">{prefill.containerSource}</p> : null}
-          <Field id={`${id}-container`} label="Drug amount per vial or package item" error={showErrors ? (errors.containerAmount ?? errors.containerUnit) : undefined}>
-            <div className="flex gap-2">
-              <input
-                id={`${id}-container`}
-                inputMode="decimal"
-                value={containerAmount}
-                onChange={(e) => setContainerAmount(e.target.value)}
-                aria-invalid={showErrors && !!(errors.containerAmount || errors.containerUnit)}
-                aria-describedby={errors.containerAmount || errors.containerUnit ? `${id}-container-error` : undefined}
-                className={inputCls}
+          <Field id={`${id}-container`} label="Drug amount per vial or package item" error={containerErr}>
+            <AmountInput
+              id={`${id}-container`}
+              value={containerAmount}
+              onChange={setContainerAmount}
+              placeholder="e.g. 500"
+              invalid={!!containerErr}
+              describedBy={describe(!!containerErr && `${id}-container-error`)}
+              unit={{ value: containerUnit, onChange: setContainerUnit, label: "Container measure" }}
+            />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <Field id={`${id}-opened`} label="Containers opened" hint="Blank uses the minimum needed for the dose." error={openedErr}>
+              <AmountInput
+                id={`${id}-opened`}
+                value={containersOpened}
+                onChange={setContainersOpened}
+                numeric
+                placeholder="Minimum"
+                invalid={!!openedErr}
+                describedBy={describe(`${id}-opened-hint`, !!openedErr && `${id}-opened-error`)}
               />
-              {unitSelect(containerUnit, setContainerUnit, `${id}-container`, "Container measure")}
-            </div>
-          </Field>
-          <Field id={`${id}-opened`} label="Containers opened" hint="Leave blank to use the minimum needed for the dose." error={showErrors ? errors.containersOpened : undefined}>
-            <input
-              id={`${id}-opened`}
-              inputMode="numeric"
-              value={containersOpened}
-              onChange={(e) => setContainersOpened(e.target.value)}
-              aria-invalid={showErrors && !!errors.containersOpened}
-              aria-describedby={`${id}-opened-hint${errors.containersOpened ? ` ${id}-opened-error` : ""}`}
-              className={inputCls}
-            />
-          </Field>
-          <Field id={`${id}-discarded`} label={`Known discarded amount (${UNITS[unitUnit].label}, optional)`} hint="Overrides the container-based estimate when you recorded the actual wastage." error={showErrors ? errors.discardedAmount : undefined}>
-            <input
-              id={`${id}-discarded`}
-              inputMode="decimal"
-              value={discarded}
-              onChange={(e) => setDiscarded(e.target.value)}
-              aria-invalid={showErrors && !!errors.discardedAmount}
-              aria-describedby={`${id}-discarded-hint${errors.discardedAmount ? ` ${id}-discarded-error` : ""}`}
-              className={inputCls}
-            />
-          </Field>
+            </Field>
+            <Field id={`${id}-discarded`} label="Known discarded amount" hint="Optional. Overrides the container-based estimate." error={discardedErr}>
+              <AmountInput
+                id={`${id}-discarded`}
+                value={discarded}
+                onChange={setDiscarded}
+                placeholder="Optional"
+                suffix={UNITS[unitUnit].label}
+                invalid={!!discardedErr}
+                describedBy={describe(`${id}-discarded-hint`, !!discardedErr && `${id}-discarded-error`)}
+              />
+            </Field>
+          </div>
           <div role="radiogroup" aria-labelledby={`${id}-ctype`}>
             <p id={`${id}-ctype`} className="text-sm font-semibold text-ink">
               Container type
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
               {(
                 [
                   ["single-dose", "Single-dose"],
@@ -213,8 +297,11 @@ export function BillingCalculator({ prefill }: { prefill: CalculatorPrefill }) {
                   ["unknown", "Not sure"],
                 ] as const
               ).map(([v, l]) => (
-                <label key={v} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm ${containerType === v ? "border-brand bg-brand-tint" : "border-rule-strong"}`}>
-                  <input type="radio" name={`${id}-ctype`} value={v} checked={containerType === v} onChange={() => setContainerType(v)} className="h-4 w-4 accent-[var(--brand)]" />
+                <label
+                  key={v}
+                  className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-medium text-ink ${containerType === v ? "border-brand bg-brand-tint" : "border-rule-strong hover:border-brand"}`}
+                >
+                  <input type="radio" name={`${id}-ctype`} value={v} checked={containerType === v} onChange={() => setContainerType(v)} className="h-4 w-4 shrink-0 accent-[var(--brand)]" />
                   {l}
                 </label>
               ))}
@@ -224,18 +311,24 @@ export function BillingCalculator({ prefill }: { prefill: CalculatorPrefill }) {
 
         <fieldset className="space-y-4">
           <legend className="font-display text-xl font-semibold text-ink">4 · Payment limit (optional)</legend>
-          <Field id={`${id}-pay`} label="Medicare payment limit per billing unit ($)" hint={prefill.paymentSource ?? "Leave blank to skip the derived dollar estimate."}>
-            <input id={`${id}-pay`} inputMode="decimal" value={payment} onChange={(e) => setPayment(e.target.value)} aria-describedby={`${id}-pay-hint`} className={inputCls} />
+          <Field id={`${id}-pay`} label="Medicare payment limit per billing unit" hint={prefill.paymentSource ?? "Leave blank to skip the derived dollar estimate."}>
+            <AmountInput id={`${id}-pay`} value={payment} onChange={setPayment} prefix="$" suffix="per unit" placeholder="0.00" describedBy={`${id}-pay-hint`} />
           </Field>
         </fieldset>
 
-        <button type="submit" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand px-5 font-semibold text-paper hover:bg-brand-strong dark:text-paper-sunken">
-          <Calculator aria-hidden="true" className="h-4 w-4" /> Calculate
-        </button>
+        <div className="flex flex-wrap items-center gap-3 border-t hairline pt-5">
+          <button type="submit" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand px-5 font-semibold text-paper hover:bg-brand-strong dark:text-paper-sunken">
+            <Calculator aria-hidden="true" className="h-4 w-4" /> Calculate
+          </button>
+          <button type="button" onClick={reset} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-rule-strong px-4 font-semibold text-ink hover:border-brand">
+            <RotateCcw aria-hidden="true" className="h-4 w-4" /> Reset
+          </button>
+          <p className="text-xs text-ink-muted">Results update as you type.</p>
+        </div>
       </form>
 
-      <section aria-labelledby={`${id}-result-title`} aria-live="polite" className="space-y-5">
-        <h2 id={`${id}-result-title`} className="font-display text-2xl font-semibold text-ink">
+      <section aria-labelledby={`${id}-result-title`} aria-live="polite" className="min-w-0 space-y-5">
+        <h2 id={`${id}-result-title`} ref={resultHeading} tabIndex={-1} className="scroll-mt-24 font-display text-2xl font-semibold text-ink">
           Result
         </h2>
         {!result ? (

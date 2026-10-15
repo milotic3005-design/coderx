@@ -66,7 +66,13 @@ test.describe("required user journeys", () => {
   test("10. use the billing-unit calculator", async ({ page }) => {
     await page.goto("/calculator?code=J9312&ndc=50242-0051-21");
     await expect(page.getByText("“10 MG” from the CMS payment limit file")).toBeVisible();
+    // Amount boxes must leave room to read the number (they once collapsed to ~26px beside the unit picker).
+    for (const label of ["One billing unit equals", "Dose", "Drug amount per vial or package item"]) {
+      const box = await page.getByLabel(label, { exact: true }).boundingBox();
+      expect(box?.width ?? 0).toBeGreaterThan(120);
+    }
     await page.getByLabel("Dose", { exact: true }).fill("375");
+    await expect(page.getByLabel("Dose", { exact: true })).toHaveValue("375");
     await page.getByRole("radio", { name: "Single-dose" }).check();
     const result = page.locator("section[aria-live]");
     await expect(result).toContainText("Administered HCPCS units");
