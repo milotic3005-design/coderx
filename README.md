@@ -164,7 +164,8 @@ Operations, refresh schedule, rollback, and manual review: [`docs/05-operations.
 - CMS crosswalks are not comprehensive; a missing NDC is not evidence that no code applies.
 - FDA products whose product-level route is blank (common for kits, e.g. Humira) are indexed only when CMS crosswalks them.
 - History: HCPCS from 2023-Q1, payment limits and crosswalks from 2021-Q1 (`CODERX_MIN_PERIOD`); older CMS postings use unsupported formats.
-- FDA's server returns 404 to Vercel's cloud egress for the Purple Book CSV, so the monthly Purple Book refresh is done by uploading the official file to the admin endpoint (see docs/05-operations.md). Payer-specific policies, MUEs, LCDs, and 340B are out of scope.
+- FDA's server returns 404 to Vercel's cloud egress for the Purple Book CSV, so the monthly Purple Book refresh is done by uploading the official file to the admin endpoint (see docs/05-operations.md).
+- Payer-specific policies, MUEs, LCDs, and 340B are out of scope.
 - Rate limiting is per instance; add a Vercel Firewall rate-limit rule for global enforcement.
 
 ## License and attribution
