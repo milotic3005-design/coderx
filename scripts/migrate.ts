@@ -7,7 +7,7 @@ import { createDbHandle } from "@/lib/db/client";
 import { runMigrations } from "@/lib/db/migrate";
 
 async function main() {
-  if (process.argv.includes("--if-database-url") && !process.env.DATABASE_URL) {
+  if (process.argv.includes("--if-database-url") && !process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
     console.log("migrate: DATABASE_URL not set — skipping.");
     return;
   }

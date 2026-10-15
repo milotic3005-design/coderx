@@ -27,7 +27,8 @@ export interface CreateDbOptions {
 }
 
 export async function createDbHandle(options: CreateDbOptions = {}): Promise<DbHandle> {
-  const url = options.url ?? process.env.DATABASE_URL;
+  // DATABASE_URL (Neon via Vercel) or POSTGRES_URL (other Postgres integrations).
+  const url = options.url ?? process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
 
   if (url) {
     const [{ Pool }, { drizzle }] = await Promise.all([import("pg"), import("drizzle-orm/node-postgres")]);
