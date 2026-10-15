@@ -44,3 +44,15 @@ Also covered: NDC normalization edge cases, parsers for every source format, ZIP
 | Vitest integration (PGlite PostgreSQL) | 44 passed |
 | Playwright E2E + axe + responsive | 48 passed |
 | `next build` | succeeded |
+
+## Production smoke test (2026-10-15 UTC)
+
+The same Playwright suite runs against a live deployment with `npm run test:e2e:prod` (`BASE_URL` defaults to the production URL; no local server or seed).
+
+| Target | Result |
+| --- | --- |
+| https://coderx-milotic3005-8754s-projects.vercel.app (commit `c2c080b`, Neon Postgres) | 48 passed |
+| `/api/health` | `ok`; 8,770 HCPCS codes, 2,422 drugs, 67 releases; all six sources current |
+| Spot check `/api/hcpcs/J9312` | 24 quarters of payment limits (2021-Q1 → 2026-Q4) |
+
+An earlier run against commit `2363b7f` had one transient failure in the keyboard-only journey (focus asserted before hydration finished); the test now waits for `networkidle` before tabbing.
