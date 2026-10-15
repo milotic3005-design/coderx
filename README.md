@@ -9,7 +9,7 @@ CodeRx lets pharmacists, infusion centers, coders, billers, revenue-cycle, and p
 ## What it does
 
 - **Universal search** with debounced, keyboard-accessible type-ahead grouped into Drugs, HCPCS codes, NDC packages, and Manufacturers; exact-code and NDC matching (4-4-2, 5-3-2, 5-4-1, 5-4-2, 10/11 digits, claim-style `N4…`), prefix, ingredient, manufacturer, abbreviation expansion (IVIG, MTX…), and typo tolerance — every hit explains why it matched.
-- **Drug, HCPCS, NDC, and manufacturer pages** with overview, coding, NDC packages and billable units, Medicare payment limits (8 quarters, with CMS revisions), biosimilar ↔ reference relationships, code history, data sources, and limitations.
+- **Drug, HCPCS, NDC, and manufacturer pages** with overview, coding, NDC packages and billable units, Medicare payment limits (every quarter since 2021-Q1, with CMS revisions), biosimilar ↔ reference relationships, code history, data sources, and limitations.
 - **Billing-unit calculator** that shows its formula: rounding, vial utilization, leftover quantity, and units attributable to discarded drug from single-dose containers — with educational (not prescriptive) modifier notes.
 - **Provenance by design**: badges for Official CMS, Official FDA, Derived calculation, Manually reviewed, Historical, and Verification needed; “No authoritative public data was located for this field.” wherever data is missing.
 - **JSON API** with a consistent envelope (`data`, `meta.pagination`, `meta.match`, `meta.provenance`, `error`).
@@ -81,6 +81,7 @@ Source keys: `cms_hcpcs`, `cms_payment_limits`, `cms_ndc_hcpcs`, `fda_ndc`, `fda
 | `CODERX_ADMIN_TOKEN` | Optional | ≥ 32-char secret enabling `POST /api/admin/import`. Unset → endpoint returns 404. |
 | `CRON_SECRET` | Production | Secret Vercel Cron sends to `/api/cron/refresh`. |
 | `CODERX_FDA_REFRESH_DAYS` | Optional | Minimum days between FDA NDC imports (default 7). |
+| `CODERX_MIN_PERIOD` | Optional | Earliest CMS quarter to import, `YYYY-Qn` (default `2021-Q1`). Failed releases older than it are purged on refresh. |
 | `NEXT_PUBLIC_SITE_URL` | Optional | Canonical base URL (defaults to the Vercel production domain). |
 | `CODERX_PGLITE_DIR` | Local only | PGlite data directory (default `.data/pglite`; `memory://` for tests). |
 | `CODERX_DB_POOL_MAX` | Optional | Pool size per instance (default 5). |

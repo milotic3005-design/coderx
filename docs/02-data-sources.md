@@ -13,9 +13,9 @@ files that were current on that date.
 
 | # | Key | Publisher | Dataset | Cadence | Status |
 |---|-----|-----------|---------|---------|--------|
-| 1 | `cms_hcpcs` | CMS | HCPCS Level II quarterly update (alpha-numeric file + NOC code list) | Quarterly | **Ingested** (8 quarters) |
-| 2 | `cms_payment_limits` | CMS | Medicare Part B Drug Payment Limit File (formerly "ASP Pricing File") + "Drugs Not Payable Under Part B" | Quarterly, with revisions | **Ingested** (8 quarters) |
-| 3 | `cms_ndc_hcpcs` | CMS | NDC–HCPCS crosswalks: ASP, OPPS, AWP, PrEP (and NOC in 2025) | Quarterly, with revisions | **Ingested** (8 quarters) |
+| 1 | `cms_hcpcs` | CMS | HCPCS Level II quarterly update (alpha-numeric file + NOC code list) | Quarterly | **Ingested** (2023-Q1 → current) |
+| 2 | `cms_payment_limits` | CMS | Medicare Part B Drug Payment Limit File (formerly "ASP Pricing File") + "Drugs Not Payable Under Part B" | Quarterly, with revisions | **Ingested** (2021-Q1 → current) |
+| 3 | `cms_ndc_hcpcs` | CMS | NDC–HCPCS crosswalks: ASP, OPPS, AWP, PrEP (and NOC in 2025) | Quarterly, with revisions | **Ingested** (2021-Q1 → current) |
 | 4 | `fda_ndc` | FDA | National Drug Code Directory — finished drugs (product + package) | Daily | **Ingested** (scoped) |
 | 5 | `fda_ndc_excluded` | FDA | NDC Directory — excluded products/packages | Daily | **Ingested** (NDCs that CMS crosswalks only) |
 | 6 | `fda_purple_book` | FDA | Purple Book monthly data download | Monthly | **Ingested** |

@@ -11,7 +11,7 @@
 ## Initial load
 
 1. Apply migrations: they run automatically in the Vercel build (`npm run vercel-build`), or locally with `npm run db:migrate`.
-2. Import all sources (8 quarters of CMS history):
+2. Import all sources (every CMS quarter from `CODERX_MIN_PERIOD`, default 2021-Q1, that the publisher still posts):
    - CLI (any machine with `DATABASE_URL`): `npm run ingest -- --source all`
    - Or the admin endpoint, one source per request (see README).
 3. Check `/sources` (every release, checksum, record count) and `/api/health`.

@@ -45,8 +45,8 @@ export default function MethodologyPage() {
 
           <Section id="sources" number="02" title="Sources and refresh schedule">
             <ul>
-              <li>CMS HCPCS Level II quarterly files — eight quarters (Q1 2025 onward); checked daily, imported when CMS posts a new quarter or re-posts one.</li>
-              <li>CMS Medicare Part B drug payment limit files and NDC–HCPCS crosswalks (ASP, OPPS, AWP, PrEP; NOC in 2025) — eight quarters, including CMS revisions of earlier quarters.</li>
+              <li>CMS HCPCS Level II quarterly files — every quarter CMS still posts (Q1 2023 onward); checked daily, imported when CMS posts a new quarter or re-posts one.</li>
+              <li>CMS Medicare Part B drug payment limit files and NDC–HCPCS crosswalks (ASP, OPPS, AWP, PrEP; NOC in 2025) — every quarter from Q1 2021 onward, including CMS revisions of earlier quarters.</li>
               <li>FDA NDC Directory and its excluded-listings file — published daily; imported weekly by default, and whenever a new CMS crosswalk arrives.</li>
               <li>FDA Purple Book monthly data — imported when a new month is posted.</li>
             </ul>

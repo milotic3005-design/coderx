@@ -28,7 +28,7 @@ const STEPS = [
 
 const FEATURES = [
   { icon: Link2, title: "Official NDC ↔ HCPCS links only", body: "Package-to-code relationships come from CMS crosswalk rows — never inferred from similar names or ingredients." },
-  { icon: History, title: "Eight quarters of history", body: "Quarterly Part B payment limits, CMS revisions to posted quarters, and HCPCS code changes and terminations." },
+  { icon: History, title: "Quarterly history since 2021", body: "Quarterly Part B payment limits, CMS revisions to posted quarters, and HCPCS code changes and terminations." },
   { icon: GitCompareArrows, title: "Biosimilars and references", body: "Biosimilar and interchangeable products linked to their reference biologic through FDA Purple Book license numbers." },
   { icon: Calculator, title: "A calculator that shows its work", body: "Dose to HCPCS units with the formula, rounding, vial utilization, and discarded quantity for single-dose containers." },
   { icon: Layers, title: "Every code family", body: "J, Q, C, A, P, and S codes with billing context — including non-Medicare S-codes and the CMS NOC code list." },

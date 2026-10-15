@@ -41,7 +41,7 @@ performance / ≥ 95 accessibility / ≥ 95 SEO, WCAG 2.2 AA, zero fabricated va
    NDC `00006-3026-02`, its CMS billing units per package, and its HCPCS code.
 3. _As a coder_, I enter `j9312` (lowercase) and see the rituximab code, its
    biosimilar Q-codes, and which NDCs CMS crosswalks to each.
-4. _As a revenue-cycle analyst_, I see eight quarters of payment limits for a code
+4. _As a revenue-cycle analyst_, I see every retained quarter of payment limits for a code (2021-Q1 onward)
    and whether CMS revised any quarter.
 5. _As a prior-auth specialist_, I search "dexamethasone" and the app tells me the
    name is ambiguous, groups the matches, and lets me filter by route and form.
