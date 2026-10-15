@@ -17,6 +17,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "ingest": "tsx scripts/ingest.ts",
     "ingest:discover": "tsx scripts/ingest.ts --discover",
+    "refresh:purple-book": "tsx scripts/refresh-purple-book.ts",
     "fixtures": "tsx scripts/make-fixtures.ts",
     "e2e:db": "tsx scripts/seed-e2e.ts",
     "audit": "npm audit --omit=dev",
