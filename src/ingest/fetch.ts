@@ -27,6 +27,8 @@ export interface DownloadOptions {
   maxBytes?: number;
   timeoutMs?: number;
   retries?: number;
+  /** follow (default) or refuse: refuse fails on any 3xx, e.g. a bot-detection redirect instead of the file. */
+  redirects?: "follow" | "refuse";
 }
 
 export function sha256(bytes: Uint8Array): string {
@@ -41,7 +43,7 @@ async function fetchWithRetry(url: string, init: RequestInit, retries: number, t
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs), redirect: "follow" });
+      const res = await fetch(url, { redirect: "follow", ...init, signal: AbortSignal.timeout(timeoutMs) });
       if (res.status >= 500 && attempt < retries) {
         lastError = new Error(`HTTP ${res.status}`);
       } else {
@@ -56,7 +58,7 @@ async function fetchWithRetry(url: string, init: RequestInit, retries: number, t
 }
 
 export async function download(url: string, options: DownloadOptions = {}): Promise<Downloaded> {
-  const { cacheDir, cacheMode = cacheDir ? "use" : "off", maxBytes = 400 * 1024 * 1024, timeoutMs = 180_000, retries = 2 } = options;
+  const { cacheDir, cacheMode = cacheDir ? "use" : "off", maxBytes = 400 * 1024 * 1024, timeoutMs = 180_000, retries = 2, redirects = "follow" } = options;
   const key = cacheKey(url);
 
   if (cacheDir && cacheMode === "use") {
@@ -70,7 +72,8 @@ export async function download(url: string, options: DownloadOptions = {}): Prom
     }
   }
 
-  const res = await fetchWithRetry(url, { headers: { "User-Agent": USER_AGENT, Accept: "*/*" } }, retries, timeoutMs);
+  const res = await fetchWithRetry(url, { headers: { "User-Agent": USER_AGENT, Accept: "*/*" }, redirect: redirects === "refuse" ? "manual" : "follow" }, retries, timeoutMs);
+  if (res.status >= 300 && res.status < 400) throw new Error(`Refusing ${url}: redirected (HTTP ${res.status}) to ${res.headers.get("location") ?? "an unknown location"}.`);
   if (!res.ok) throw new Error(`Download failed for ${url}: HTTP ${res.status}`);
   // With Content-Encoding (gzip/br) fetch decodes the body, so Content-Length describes the encoded size only.
   const encoded = !!res.headers.get("content-encoding") && res.headers.get("content-encoding") !== "identity";

@@ -24,7 +24,7 @@
 | --- | --- |
 | CMS HCPCS, payment limits, crosswalks | a quarter appears on the CMS page that is not imported, or a quarter’s posting label changed (CMS re-post) |
 | FDA NDC directory + excluded | `Last-Modified` is newer than the current snapshot **and** `CODERX_FDA_REFRESH_DAYS` (default 7) have passed — or a new crosswalk was imported the same run |
-| FDA Purple Book | a newer monthly file is posted |
+| FDA Purple Book | a newer monthly file is posted — but FDA blocks Vercel's egress for this file, so the weekly launchd job below does the actual import |
 
 Imports run sequentially with a 240-second budget; anything left is deferred to the next run. Derived tables are rebuilt once at the end and the Next.js data cache tag `coderx-data` is revalidated. Each run is logged in `import_runs`.
 
@@ -61,11 +61,34 @@ curl -sS -X POST "https://<domain>/api/admin/import" \
 
 ## Secrets
 
-Generate tokens with `openssl rand -base64 48`. Store `DATABASE_URL`, `CODERX_ADMIN_TOKEN`, and `CRON_SECRET` as **sensitive** Vercel environment variables. No secret is read by client code; only `NEXT_PUBLIC_SITE_URL` is public.
+Generate tokens with `openssl rand -base64 48`. Store `DATABASE_URL`, `CODERX_ADMIN_TOKEN`, and `CRON_SECRET` as **sensitive** Vercel environment variables. The Purple Book job reads `CODERX_ADMIN_TOKEN` from `.env.production.local` on the operator's Mac (below). No secret is read by client code; only `NEXT_PUBLIC_SITE_URL` is public.
 
 ## Publisher files blocked from cloud egress (Purple Book)
 
-FDA's accessdata server answers 404 to requests from Vercel's network for the Purple Book CSV (it works from ordinary networks). The cron records the failure; refresh it monthly by uploading the official file — provenance keeps the official URL and the SHA-256 of the uploaded bytes:
+FDA's bot defense blocks the Purple Book CSV for cloud networks: Vercel gets a 404, and GitHub-hosted Actions runners get a 302 to `/apology_objects/abuse-detection-apology.html` for both the downloads page and the file (checked 2026-10-15 from two Azure regions). Ordinary networks are not blocked. The Vercel cron records its failure; the import is done from an operator's Mac by `scripts/refresh-purple-book.ts` (`npm run refresh:purple-book`):
+
+1. Reads FDA's downloads page with the cron's own parser (`parsePurpleBookDownloads` in `src/ingest/discover.ts`) and takes the newest monthly CSV on `www.accessdata.fda.gov`.
+2. Skips (exit 0, no upload) when `/api/sources` already lists that period as `succeeded`.
+3. Downloads the official file, refusing redirects, HTML responses, and anything over 4 MB (the upload-mode cap), and POSTs it to the admin endpoint's upload mode. Provenance keeps the official URL and the SHA-256 of the uploaded bytes.
+
+### Weekly schedule (launchd)
+
+```bash
+scripts/purple-book-launchd.sh install     # writes ~/Library/LaunchAgents/com.coderx.purple-book-refresh.plist and loads it
+scripts/purple-book-launchd.sh status      # launchd state and the last log lines
+scripts/purple-book-launchd.sh run         # run now, exactly as launchd does (add --dry-run or --force)
+scripts/purple-book-launchd.sh uninstall
+```
+
+- Runs Mondays at 09:00 local time; if the Mac is asleep then, launchd runs it at the next wake (a week missed while the Mac is off is caught the next Monday). FDA posts the monthly file on no fixed day, and runs after the import are no-ops.
+- Targets `CODERX_BASE_URL` as set at install time (default `https://coderxnsl.vercel.app`) and waits up to 10 minutes for the network after wake.
+- Reads `CODERX_ADMIN_TOKEN` at run time from `.env.production.local` in the checkout; the token is never copied into the plist or written to the log. Rotate it there and in Vercel together.
+- Runs the code checked out in that folder, so keep a branch with `scripts/refresh-purple-book.ts` checked out there (main once merged) and `npm ci` done. Node comes from `CODERX_NODE` at install time (default `/usr/local/bin/node`).
+- Log: `~/Library/Logs/coderx-purple-book-refresh.log`. A failed run (FDA block page, layout change, rejected upload, missing token) exits 1 and posts a macOS notification.
+
+### Manual upload
+
+`CODERX_ADMIN_TOKEN=… npm run refresh:purple-book -- --base-url https://coderxnsl.vercel.app` from any machine FDA does not block, or the same request by hand:
 
 ```bash
 U=https://www.accessdata.fda.gov/drugsatfda_docs/PurpleBook/2026/purplebook-search-September-data-download.csv
