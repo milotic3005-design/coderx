@@ -128,7 +128,7 @@ Fixtures in `tests/fixtures` are unmodified excerpts of the real files; see `tes
 
 ## Live deployment
 
-- Production: https://coderx-milotic3005-8754s-projects.vercel.app (Vercel project `coderx`, region iad1, Neon Postgres)
+- Production: https://coderxnsl.vercel.app (Vercel project `coderxnsl`, region iad1, Neon Postgres). The earlier addresses `coderx-omega.vercel.app` and `coderx-milotic3005-8754s-projects.vercel.app` redirect here (308, set in `vercel.json`).
 - Repository: https://github.com/milotic3005-design/coderx
 - Smoke test a deployment: `BASE_URL=https://… npm run test:e2e:prod`
 

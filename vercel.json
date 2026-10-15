@@ -2,6 +2,37 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "npm run vercel-build",
-  "regions": ["iad1"],
-  "crons": [{ "path": "/api/cron/refresh", "schedule": "15 10 * * *" }]
+  "regions": [
+    "iad1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/refresh",
+      "schedule": "15 10 * * *"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path((?!api/cron).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "coderx-omega.vercel.app"
+        }
+      ],
+      "destination": "https://coderxnsl.vercel.app/:path",
+      "permanent": true
+    },
+    {
+      "source": "/:path((?!api/cron).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "coderx-milotic3005-8754s-projects.vercel.app"
+        }
+      ],
+      "destination": "https://coderxnsl.vercel.app/:path",
+      "permanent": true
+    }
+  ]
 }

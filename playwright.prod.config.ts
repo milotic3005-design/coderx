@@ -5,6 +5,6 @@ export default defineConfig({
   workers: 2,
   timeout: 60_000,
   reporter: [["list"]],
-  use: { baseURL: process.env.BASE_URL ?? "https://coderx-milotic3005-8754s-projects.vercel.app" },
+  use: { baseURL: process.env.BASE_URL ?? "https://coderxnsl.vercel.app" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });
