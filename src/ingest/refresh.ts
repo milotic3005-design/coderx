@@ -2,7 +2,7 @@
  * Scheduled / administrator-triggered refresh. Checks each source against its real
  * publication cadence and imports only what changed, within a time budget.
  */
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, lt, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { discoverReleases } from "./discover";
@@ -46,6 +46,11 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
   const log = options.log ?? (() => {});
   const budget = options.budgetMs ?? 240_000;
   const wanted = new Set<SourceKey>(options.sources ?? ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "fda_ndc", "fda_ndc_excluded", "fda_purple_book"]);
+  // Older CMS postings use formats this importer does not support; never queue them, and clear past failed attempts.
+  const minPeriod = process.env.CODERX_MIN_PERIOD ?? "2021-Q1";
+  await db
+    .delete(t.sourceReleases)
+    .where(and(eq(t.sourceReleases.status, "failed"), sql`${t.sourceReleases.periodLabel} ~ '^[0-9]{4}-Q[1-4]$'`, lt(t.sourceReleases.periodLabel, minPeriod)));
   const [run] = await db.insert(t.importRuns).values({ trigger: options.trigger, status: "running" }).returning({ id: t.importRuns.id });
 
   const outcomes: ImportOutcome[] = [];
@@ -63,6 +68,7 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
     const newest = [...pool].sort((a, b) => (b.period ?? "").localeCompare(a.period ?? ""))[0];
     const oldestKept = current.at(-1)?.periodLabel ?? "";
     for (const c of pool) {
+      if (c.period && c.period < minPeriod) continue; // before the supported window
       if (c.period && current.length && c.period < oldestKept && !options.fullHistory) continue; // outside the retained history window
       const existing = c.period ? byPeriod.get(c.period) : undefined;
       const relabeled = !!existing && !!c.publicationLabel && existing.publicationLabel !== c.publicationLabel;

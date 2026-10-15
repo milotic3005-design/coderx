@@ -5,6 +5,9 @@ import { importBodySchema, issues } from "@/lib/api/validation";
 import { DATA_TAG } from "@/lib/data/cached";
 import { getDb } from "@/lib/db/client";
 import { refreshSources } from "@/ingest/refresh";
+import { sha256 } from "@/ingest/fetch";
+import { importRelease, runDerive } from "@/ingest/pipeline";
+import { SOURCE_KEYS, SOURCES } from "@/ingest/sources";
 import type { SourceKey } from "@/ingest/sources";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +23,37 @@ export async function POST(request: Request) {
     if (!bearerMatches(request, process.env.CODERX_ADMIN_TOKEN)) {
       return fail("UNAUTHORIZED", "A valid administrator token is required.", { request, headers: { "WWW-Authenticate": "Bearer" } });
     }
+    // Upload mode: POST /api/admin/import?source=<key>&url=<official URL>&period=<label>, body = the official file's bytes.
+    // Used when a publisher blocks cloud egress; provenance keeps the official URL and the uploaded file's SHA-256.
+    const qs = new URL(request.url).searchParams;
+    if (qs.get("source") && qs.get("url")) {
+      const source = qs.get("source") as SourceKey;
+      const officialUrl = qs.get("url")!;
+      let host = "";
+      try {
+        host = new URL(officialUrl).hostname;
+      } catch {}
+      if (!SOURCE_KEYS.includes(source) || !["www.cms.gov", "www.accessdata.fda.gov"].includes(host)) {
+        return fail("INVALID_PARAMETER", "source must be a known key and url an official CMS/FDA file URL.", { request });
+      }
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      if (bytes.length === 0 || bytes.length > 4_000_000) return fail("INVALID_PARAMETER", "Upload must be 1 byte to 4 MB.", { request });
+      const db = await getDb();
+      const outcome = await importRelease(
+        db,
+        { sourceKey: source, period: qs.get("period"), url: officialUrl, publicationLabel: `${SOURCES[source].shortName} — administrator upload of the official file` },
+        {
+          fetcher: async (url) => ({ url, bytes, sha256: sha256(bytes), byteSize: bytes.length, lastModified: null, etag: null, contentType: null, fromCache: false }),
+          skipDerive: true,
+        },
+      );
+      if (outcome.status === "imported") {
+        await runDerive(db);
+        revalidateTag(DATA_TAG, "max");
+      }
+      return ok({ outcome: { ...outcome, report: undefined } }, {}, { request, cache: false });
+    }
+
     let body: unknown = {};
     try {
       const text = await request.text();
