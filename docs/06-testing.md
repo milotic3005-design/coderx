@@ -1,0 +1,46 @@
+# Testing
+
+## Commands
+
+```bash
+npm run lint && npm run typecheck && npm test && npm run test:e2e && npm run build
+```
+
+`npm run test:e2e` seeds `.data/e2e-pglite` from the fixtures, builds the app, starts `next start` on port 3301, and runs Playwright (Chromium). Install the browser once with `npx playwright install chromium`.
+
+## Fixtures
+
+`tests/fixtures/` contains byte-faithful excerpts of the real files downloaded from CMS and FDA on 2026-10-14 (header blocks preserved, multi-line CSV records kept whole). `tests/fixtures/PROVENANCE.md` lists the source file and SHA-256 for each. Regenerate with `npm run fixtures -- <raw-dir>`. No healthcare values are invented; the one “re-posted quarter” test removes a real row rather than altering a value.
+
+## Coverage of the required scenarios
+
+| # | Scenario | Where |
+| --- | --- | --- |
+| 1 | Exact HCPCS code | `tests/integration/search.test.ts`, `tests/e2e/journeys.spec.ts` |
+| 2 | Lowercase HCPCS code | same |
+| 3 | Brand name | same |
+| 4 | Generic name | same |
+| 5 | Formatted 10-digit NDC | same + `tests/unit/ndc.test.ts` |
+| 6 | Normalized 11-digit NDC | same |
+| 7 | Minor misspelling | same |
+| 8 | Active record | `journeys.spec.ts` (J9312) |
+| 9 | Inactive historical record | `journeys.spec.ts` (S0189), `search.test.ts` |
+| 10 | Billing-unit calculator | `tests/unit/billing.test.ts`, `journeys.spec.ts` |
+| 11 | Ambiguous drug name | `search.test.ts`, `journeys.spec.ts` (dexamethasone) |
+| 12 | No-result query | same |
+| 13 | Missing source data | `detail-and-api.test.ts`, `journeys.spec.ts` (J3490) |
+| 14 | Keyboard-only workflow | `journeys.spec.ts` |
+| 15 | Mobile / tablet / desktop | `a11y-and-layout.spec.ts` |
+
+Also covered: NDC normalization edge cases, parsers for every source format, ZIP corruption and truncation, idempotent re-imports, transactional rollback, CPT exclusion, quarter history, biosimilar linking by BLA, “no name-based inference”, API validation and error envelopes, admin auth, rate limiting, CSP and security headers, axe-core WCAG 2.x A/AA in light and dark themes, heading order, touch targets, table scrolling on small screens.
+
+## Results (2026-10-14)
+
+| Suite | Result |
+| --- | --- |
+| ESLint | 0 problems |
+| `tsc --noEmit` | 0 errors |
+| Vitest unit | 95 passed |
+| Vitest integration (PGlite PostgreSQL) | 44 passed |
+| Playwright E2E + axe + responsive | 48 passed |
+| `next build` | succeeded |

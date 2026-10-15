@@ -1,0 +1,136 @@
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { DbHandle } from "@/lib/db/client";
+import { getDrugDetail, getHcpcsDetail, getNdcDetail } from "@/lib/data/queries";
+import { GET as searchGET } from "@/app/api/search/route";
+import { GET as suggestGET } from "@/app/api/suggest/route";
+import { GET as hcpcsGET } from "@/app/api/hcpcs/[code]/route";
+import { GET as ndcGET } from "@/app/api/ndc/[ndc]/route";
+import { GET as drugGET } from "@/app/api/drugs/[slug]/route";
+import { GET as mfrGET } from "@/app/api/manufacturers/[id]/route";
+import { GET as sourcesGET } from "@/app/api/sources/route";
+import { GET as healthGET } from "@/app/api/health/route";
+import { POST as importPOST } from "@/app/api/admin/import/route";
+import { seededDb, useAsGlobalDb } from "../helpers/db";
+
+let h: DbHandle;
+beforeAll(async () => {
+  h = await seededDb();
+  useAsGlobalDb(h);
+});
+afterAll(async () => {
+  await h?.close();
+});
+
+const req = (path: string, init?: RequestInit) => new Request(`http://localhost${path}`, init);
+const params = <T,>(p: T) => ({ params: Promise.resolve(p) });
+
+describe("read models expose provenance and honest gaps", () => {
+  it("HCPCS detail: descriptor, official billing unit, payment history, crosswalk, provenance", async () => {
+    const d = (await getHcpcsDetail("J9312", h.db))!;
+    expect(d.code.longDescription).toBe("Injection, rituximab, 10 mg");
+    expect(d.billingUnit).toMatchObject({ text: "10 MG", source: "cms_payment_limits" });
+    expect(d.payments.map((p) => p.period)).toEqual(["2026-Q4", "2026-Q3"]);
+    expect(d.payments[0].paymentLimit).toBe("72.094");
+    expect(d.crosswalk.map((x) => x.ndcFormatted)).toEqual(expect.arrayContaining(["50242-0051-21", "50242-0053-06"]));
+    expect(d.relatedBiologics.map((b) => b.slug)).toEqual(expect.arrayContaining(["truxima-rituximab-abbs"]));
+    expect(d.provenance.map((p) => p.sourceKey)).toEqual(expect.arrayContaining(["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs"]));
+    for (const p of d.provenance) expect(p).toMatchObject({ organization: "CMS", status: "official-cms" });
+  });
+
+  it("13. missing source data is represented as absent, never substituted", async () => {
+    const d = (await getHcpcsDetail("J3490", h.db))!;
+    expect(d.code.isNoc).toBe(true);
+    expect(d.payments).toEqual([]);
+    expect(d.crosswalk).toEqual([]);
+    expect(d.billingUnit.text).toBeNull();
+    expect(d.billingUnit.source).toBeNull();
+  });
+
+  it("drug detail: packages with crosswalk units, codes, biosimilars", async () => {
+    const d = (await getDrugDetail("rituxan-rituximab", h.db))!;
+    expect(d.drug.hcpcsCodes).toEqual(["J9312"]);
+    expect(d.packages.find((k) => k.ndc11 === "50242005121")?.crosswalk[0]).toMatchObject({ hcpcsCode: "J9312", billUnitsPerPackage: "10" });
+    expect(d.biosimilars.map((b) => b.slug)).toEqual(expect.arrayContaining(["riabni-rituximab-arrx", "ruxience-rituximab-pvvr", "truxima-rituximab-abbs"]));
+    expect(d.provenance.some((p) => p.sourceKey === "fda_purple_book" && p.status === "official-fda")).toBe(true);
+  });
+
+  it("NDC detail: FDA listing plus CMS crosswalk", async () => {
+    const d = (await getNdcDetail("00006302602", h.db))!;
+    expect(d.formatted).toBe("00006-3026-02");
+    expect(d.fda[0].product.proprietaryName).toBe("KEYTRUDA");
+    expect(d.codes.map((c) => c.code)).toEqual(["J9271"]);
+  });
+});
+
+describe("API routes return the documented envelope", () => {
+  it("GET /api/search", async () => {
+    const res = await searchGET(req("/api/search?q=J9271"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.error).toBeNull();
+    expect(body.data.hits[0].key).toBe("J9271");
+    expect(body.meta).toMatchObject({ pagination: { page: 1 }, match: { queryType: "hcpcs_code", normalized: "J9271" } });
+    expect(body.meta.requestId).toBeTruthy();
+    expect(res.headers.get("cache-control")).toMatch(/s-maxage/);
+  });
+
+  it("GET /api/search rejects invalid parameters with details", async () => {
+    const res = await searchGET(req("/api/search?q=&pageSize=1000"));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.data).toBeNull();
+    expect(body.error.code).toBe("INVALID_PARAMETER");
+    expect(body.error.details.length).toBeGreaterThan(0);
+  });
+
+  it("GET /api/suggest", async () => {
+    const body = await (await suggestGET(req("/api/suggest?q=keyt"))).json();
+    expect(body.data.groups[0].items[0].title).toBe("Keytruda");
+  });
+
+  it("GET /api/hcpcs/[code] with provenance, 400 and 404", async () => {
+    const ok = await hcpcsGET(req("/api/hcpcs/j9271"), params({ code: "j9271" }));
+    expect(ok.status).toBe(200);
+    const body = await ok.json();
+    expect(body.data.code.code).toBe("J9271");
+    expect(body.meta.provenance.length).toBeGreaterThan(0);
+    expect((await hcpcsGET(req("/api/hcpcs/96413"), params({ code: "96413" }))).status).toBe(400);
+    expect((await hcpcsGET(req("/api/hcpcs/J0001"), params({ code: "J0001" }))).status).toBe(404);
+  });
+
+  it("GET /api/ndc/[ndc] normalizes formats and rejects ambiguous input", async () => {
+    const ok = await ndcGET(req("/api/ndc/0006-3026-02"), params({ ndc: "0006-3026-02" }));
+    expect(ok.status).toBe(200);
+    expect((await ok.json()).meta.match.formatted).toBe("00006-3026-02");
+    const amb = await ndcGET(req("/api/ndc/0006302602"), params({ ndc: "0006302602" }));
+    expect(amb.status).toBe(400);
+  });
+
+  it("GET /api/drugs/[slug] and /api/manufacturers/[id]", async () => {
+    expect((await drugGET(req("/x"), params({ slug: "keytruda-pembrolizumab" }))).status).toBe(200);
+    expect((await drugGET(req("/x"), params({ slug: "no-such-drug" }))).status).toBe(404);
+    expect((await drugGET(req("/x"), params({ slug: "../etc" }))).status).toBe(400);
+    expect((await mfrGET(req("/x"), params({ id: "genentech-inc" }))).status).toBe(200);
+  });
+
+  it("GET /api/sources and /api/health", async () => {
+    const s = await (await sourcesGET(req("/api/sources"))).json();
+    expect(s.data.releases.length).toBeGreaterThanOrEqual(8);
+    const health = await (await healthGET(req("/api/health"))).json();
+    expect(health.data.status).toBe("ok");
+    expect(health.data.counts.hcpcsCodes).toBeGreaterThan(0);
+  });
+
+  it("POST /api/admin/import is hidden without a token and rejects bad tokens", async () => {
+    const prev = process.env.CODERX_ADMIN_TOKEN;
+    delete process.env.CODERX_ADMIN_TOKEN;
+    expect((await importPOST(req("/api/admin/import", { method: "POST" }))).status).toBe(404);
+    process.env.CODERX_ADMIN_TOKEN = "a".repeat(48);
+    const res = await importPOST(req("/api/admin/import", { method: "POST", headers: { authorization: "Bearer wrong" } }));
+    expect(res.status).toBe(401);
+    const bad = await importPOST(req("/api/admin/import", { method: "POST", headers: { authorization: `Bearer ${"a".repeat(48)}` }, body: "{not json" }));
+    expect(bad.status).toBe(400);
+    if (prev) process.env.CODERX_ADMIN_TOKEN = prev;
+    else delete process.env.CODERX_ADMIN_TOKEN;
+  });
+});

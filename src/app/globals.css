@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+/* next-themes toggles `class="dark"` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * CodeRx design tokens — "The Formulary Ledger".
+ * Warm paper, apothecary-teal ink, hairline rules. Every text/background pair
+ * below was checked for WCAG 2.2 AA contrast (≥ 4.5:1 for text, ≥ 3:1 for UI).
+ */
+:root {
+  --paper: #f5f2ea;
+  --paper-sunken: #ede8dc;
+  --surface: #fffdf8;
+  --surface-raised: #ffffff;
+  --ink: #13201e;
+  --ink-muted: #4a5754;
+  --ink-faint: #5a6663;
+  --rule: #d9d3c4;
+  --rule-strong: #b9b1a0;
+  --brand: #0b5550;
+  --brand-strong: #083f3b;
+  --brand-tint: #ddefec;
+  --brand-glow: rgb(11 85 80 / 0.12);
+  --accent: #9a5b00;
+  --accent-tint: #fbebd0;
+  --danger: #a1271b;
+  --danger-tint: #f8e1dd;
+  --ok: #1f6b3a;
+  --ok-tint: #dff0e4;
+  --focus: #0b5550;
+  --shadow: 0 1px 0 rgb(19 32 30 / 0.04), 0 8px 24px -12px rgb(19 32 30 / 0.18);
+
+  /* code-family badge pairs (text / background) */
+  --fam-j: #0b5550;
+  --fam-j-bg: #ddefec;
+  --fam-q: #4b3a8c;
+  --fam-q-bg: #e9e5f7;
+  --fam-c: #1d4e89;
+  --fam-c-bg: #e1eaf6;
+  --fam-s: #7a4a00;
+  --fam-s-bg: #fbebd0;
+  --fam-a: #3f4b57;
+  --fam-a-bg: #e6e9ec;
+  --fam-p: #8a2a47;
+  --fam-p-bg: #f6e1e7;
+  --fam-x: #5b4f3d;
+  --fam-x-bg: #eee8dd;
+}
+
+.dark {
+  --paper: #0c1413;
+  --paper-sunken: #09100f;
+  --surface: #121c1a;
+  --surface-raised: #172321;
+  --ink: #e8eeec;
+  --ink-muted: #aab7b3;
+  --ink-faint: #8c9a96;
+  --rule: #26332f;
+  --rule-strong: #3a4945;
+  --brand: #5bc7ba;
+  --brand-strong: #8eddd3;
+  --brand-tint: #12302d;
+  --brand-glow: rgb(91 199 186 / 0.1);
+  --accent: #f0b54a;
+  --accent-tint: #3a2a0e;
+  --danger: #f08a7e;
+  --danger-tint: #3b1714;
+  --ok: #7bd39a;
+  --ok-tint: #12301d;
+  --focus: #8eddd3;
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+
+  --fam-j: #8eddd3;
+  --fam-j-bg: #12302d;
+  --fam-q: #c9bcf5;
+  --fam-q-bg: #251f3d;
+  --fam-c: #a9c8f2;
+  --fam-c-bg: #16263b;
+  --fam-s: #f5c97a;
+  --fam-s-bg: #3a2a0e;
+  --fam-a: #c3ccd4;
+  --fam-a-bg: #232a31;
+  --fam-p: #f2afc2;
+  --fam-p-bg: #3a1823;
+  --fam-x: #d9cdb8;
+  --fam-x-bg: #2e2a22;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-sunken: var(--paper-sunken);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-tint: var(--brand-tint);
+  --color-accent: var(--accent);
+  --color-accent-tint: var(--accent-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-ok: var(--ok);
+  --color-ok-tint: var(--ok-tint);
+
+  --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-atkinson-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-display: var(--font-newsreader), "Iowan Old Style", Georgia, serif;
+
+  --shadow-card: var(--shadow);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "kern", "liga";
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--brand-tint);
+    color: var(--ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Faint ledger rules behind the hero and section headers. */
+  .ledger {
+    background-image:
+      radial-gradient(1200px 420px at 15% -10%, var(--brand-glow), transparent 60%),
+      radial-gradient(900px 380px at 110% 10%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 55%),
+      repeating-linear-gradient(to bottom, transparent 0, transparent 31px, color-mix(in oklab, var(--rule) 55%, transparent) 31px, color-mix(in oklab, var(--rule) 55%, transparent) 32px);
+  }
+  .hairline {
+    border-color: var(--rule);
+  }
+  .code-chip {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums slashed-zero;
+    letter-spacing: 0.02em;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .prose-ledger p + p {
+    margin-top: 0.75rem;
+  }
+  .table-scroll {
+    background:
+      linear-gradient(to right, var(--surface) 30%, transparent) left / 24px 100% no-repeat local,
+      linear-gradient(to left, var(--surface) 30%, transparent) right / 24px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.12), transparent) left / 10px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.12), transparent) right / 10px 100% no-repeat scroll;
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--paper-sunken) 25%, var(--surface) 37%, var(--paper-sunken) 63%);
+    background-size: 400% 100%;
+    animation: skeleton 1.4s ease infinite;
+  }
+  .rise {
+    animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes skeleton {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  header[data-site-header],
+  footer[data-site-footer],
+  nav[aria-label="On this page"] {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}

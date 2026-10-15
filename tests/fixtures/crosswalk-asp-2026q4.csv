@@ -1,0 +1,153 @@
+October 2026 ASP NDC - HCPCS Crosswalk for Medicare Part B Drugs,,,,,,,,,
+"     Effective October 1, 2026 through December 31, 2026",,,,,,,,,
+,,,,,,,,,
+The ASP crosswalks are maintained by the Division of Data Analysis and Market Based Pricing to support ASP-based Medicare Part B payments only. The crosswalks are intended to help the public (including entities that submit manufacturer ASP data and providers who bill for drugs) understand which drug products (identified by NDCs) are assigned to which HCPCS billing codes. The crosswalks are not intended to be a comprehensive list of all drugs/NDCs available in the United States. The NDC to HCPCS Crosswalk also includes information on the NDC package size and the number of billable units (as defined by the HCPCS code descriptor). Comments on the file may be sent to sec303aspdata@cms.hhs.gov.,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+_2026_CODE,Short Description,LABELER NAME,NDC,Drug Name,HCPCS dosage,PKG SIZE,PKG QTY,BILLUNITS,BILLUNITSPKG
+90371,Hep b ig im,"Grifols USA, LLC",13533-0636-01,HyperHepB ,1 ML,1,1,1,1
+90371,Hep b ig im,"Grifols USA, LLC",13533-0636-03,HyperHepB ,1 ML,0.5,1,0.5,1
+90371,Hep b ig im,"Grifols USA, LLC",13533-0636-05,HyperHepB,1 ML,5,1,5,5
+90371,Hep b ig im,"ADMA Biologics, Inc",69800-4202-01,Nabi-Hb,1 ML,1,1,1,1
+90371,Hep b ig im,"ADMA Biologics, Inc",69800-4203-01,Nabi-Hb,1 ML,5,1,5,5
+J0585,"Injection,onabotulinumtoxina","Allergan, Inc.",00023-1145-01,Botox,1 UNIT,1,1,100,100
+J0585,"Injection,onabotulinumtoxina","Allergan, Inc.",00023-3919-50,Botox Cosmetic,1 UNIT,1,1,50,50
+J0585,"Injection,onabotulinumtoxina","Allergan, Inc.",00023-3921-02,Botox,1 UNIT,1,1,200,200
+J0585,"Injection,onabotulinumtoxina","Allergan, Inc.",00023-9232-01,Botox Cosmetic,1 UNIT,1,1,100,100
+J0897,Denosumab injection,Amgen Inc,55513-0710-01,Prolia,1 MG,1,1,60,60
+J0897,Denosumab injection,Amgen Inc,55513-0710-21,Prolia,1 MG,1,1,60,60
+J0897,Denosumab injection,Amgen Inc,55513-0730-01,Xgeva,1 MG,1,1,120,120
+J0897,Denosumab injection,Amgen Inc,55513-0730-21,Xgeva,1 MG,1.7,1,120,120
+J1096,Dexametha opth insert 0.1 mg,Ocular Therapeutix,70382-0204-01,Dextenza,0.1 MG,1,1,4,4
+J1096,Dexametha opth insert 0.1 mg,Ocular Therapeutix,70382-0204-10,Dextenza,0.1 MG,1,10,4,40
+J1100,Dexamethasone sodium phos,Henry Schein Inc.,00404-9795-30,Dexamethasone Sodium Phosphate,1 MG,30,1,120,120
+J1100,Dexamethasone sodium phos,Henry Schein Inc.,00404-9805-05,Dexamethasone Sodium Phosphate,1 MG,5,1,20,20
+J1100,Dexamethasone sodium phos,Henry Schein Inc.,00404-9841-05,Dexamethasone Sodium Phosphate,1 MG,5,1,20,20
+J1100,Dexamethasone sodium phos,Henry Schein Inc.,00404-9842-10,Dexamethasone Sodium Phosphate,1 MG,10,1,100,100
+J1100,Dexamethasone sodium phos,Henry Schein Inc.,00404-9843-30,Dexamethasone Sodium Phosphate,1 MG,30,1,120,120
+J1100,Dexamethasone sodium phos,Hikma Pharmaceuticals USA Inc.,00641-0367-25,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,Hikma Pharmaceuticals USA Inc.,00641-6145-25,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1100,Dexamethasone sodium phos,Hikma Pharmaceuticals USA Inc.,00641-6146-10,Dexamethasone Sodium Phosphate,1 MG,5,10,20,200
+J1100,Dexamethasone sodium phos,Hikma Pharmaceuticals USA Inc.,00641-6146-25,Dexamethasone Sodium Phosphate,1 MG,5,25,20,500
+J1100,Dexamethasone sodium phos,Sagent Pharmaceuticals,25021-0052-01,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1100,Dexamethasone sodium phos,Sagent Pharmaceuticals,25021-0052-05,Dexamethasone Sodium Phosphate,1 MG,5,25,20,500
+J1100,Dexamethasone sodium phos,Sagent Pharmaceuticals,25021-0053-01,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,A-S Medication Solutions,50090-0414-00,Dexamethasone Sodium Phosphate,1 MG,30,1,120,120
+J1100,Dexamethasone sodium phos,A-S Medication Solutions,50090-0627-02,Dexamethasone Sodium Phosphate,1 MG,5,2,20,40
+J1100,Dexamethasone sodium phos,A-S Medication Solutions,50090-1922-00,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1100,Dexamethasone sodium phos,A-S Medication Solutions,50090-1922-01,Dexamethasone Sodium Phosphate,1 MG,1,1,4,4
+J1100,Dexamethasone sodium phos,A-S Medication Solutions,50090-2313-02,Dexamethasone Sodium Phosphate,1 MG,5,25,20,500
+J1100,Dexamethasone sodium phos,A-S Medication Solutions,50090-3300-00,Dexamethasone Sodium Phosphate,1 MG,30,25,120,3000
+J1100,Dexamethasone sodium phos,A-S Medication Solutions,50090-3541-00,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,"HF Acquisition Co. LLC, DBA HealthFirst",51662-1297-01,Dexamethasone Sodium Phosphate,1 MG,5,1,20,20
+J1100,Dexamethasone sodium phos,"HF Acquisition Co. LLC, DBA HealthFirst",51662-1297-03,Dexamethasone Sodium Phosphate,1 MG,5,25,20,500
+J1100,Dexamethasone sodium phos,"HF Acquisition Co. LLC, DBA HealthFirst",51662-1343-01,Dexamethasone Sodium Phosphate,1 MG,1,1,10,10
+J1100,Dexamethasone sodium phos,"HF Acquisition Co. LLC, DBA HealthFirst",51662-1343-03,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,"HF Acquisition Co. LLC, DBA HealthFirst",51662-1541-01,Dexamethasone Sodium Phosphate,1 MG,10,1,100,100
+J1100,Dexamethasone sodium phos,"HF Acquisition Co. LLC, DBA HealthFirst",51662-1660-01,Dexamethasone Sodium Phosphate,1 MG,5,1,20,20
+J1100,Dexamethasone sodium phos,"HF Acquisition Co. LLC, DBA HealthFirst",51662-1660-03,Dexamethasone Sodium Phosphate,1 MG,5,10,20,200
+J1100,Dexamethasone sodium phos,Eugia US LLC,55150-0239-30,Dexamethasone Sodium Phosphate,1 MG,30,25,120,3000
+J1100,Dexamethasone sodium phos,Eugia US LLC,55150-0304-25,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,Eugia US LLC,55150-0305-10,Dexamethasone Sodium Phosphate,1 MG,10,10,100,1000
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",63323-0165-01,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",63323-0165-05,Dexamethasone Sodium Phosphate,1 MG,5,25,20,500
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",63323-0165-16,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",63323-0165-26,Dexamethasone Sodium Phosphate,1 MG,5,25,20,500
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",63323-0165-30,Dexamethasone Sodium Phosphate,1 MG,30,1,120,120
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",63323-0506-01,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",63323-0506-16,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",63323-0516-10,Dexamethasone Sodium Phosphate,1 MG,10,10,100,1000
+J1100,Dexamethasone sodium phos,Mylan Institutional LLC,67457-0418-05,Dexamethasone Sodium Phosphate,1 MG,5,25,20,500
+J1100,Dexamethasone sodium phos,Mylan Institutional LLC,67457-0419-01,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1100,Dexamethasone sodium phos,Mylan Institutional LLC,67457-0420-10,Dexamethasone Sodium Phosphate,1 MG,10,10,100,1000
+J1100,Dexamethasone sodium phos,Mylan Institutional LLC,67457-0421-30,Dexamethasone Sodium Phosphate,1 MG,30,25,120,3000
+J1100,Dexamethasone sodium phos,Mylan Institutional LLC,67457-0422-54,Dexamethasone Sodium Phosphate,1 MG,5,25,20,500
+J1100,Dexamethasone sodium phos,Mylan Institutional LLC,67457-0423-12,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1100,Dexamethasone sodium phos,Mylan Institutional LLC,67457-0483-10,Dexamethasone Sodium Phosphate,1 MG,10,10,100,1000
+J1100,Dexamethasone sodium phos,Mylan Institutional LLC,67457-0484-30,Dexamethasone Sodium Phosphate,1 MG,30,25,120,3000
+J1100,Dexamethasone sodium phos,"Somerset Pharma, LLC",70069-0021-25,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,"Somerset Pharma, LLC",70069-0025-10,Dexamethasone Sodium Phosphate,1 MG,10,10,100,1000
+J1100,Dexamethasone sodium phos,Armas Pharmaceuticals Inc.,72485-0118-25,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,"Civica, Inc.",72572-0120-25,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1100,Dexamethasone sodium phos,"Civica, Inc.",72572-0122-25,Dexamethasone Sodium Phosphate,1 MG,1,25,10,250
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",76045-0109-10,Dexamethasone Sodium Phosphate,1 MG,1,24,10,240
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",76045-0210-10,Dexamethasone Sodium Phosphate,1 MG,1,24,4,96
+J1100,Dexamethasone sodium phos,"FreseniUS Kabi USA, LLC",76045-0212-10,Dexamethasone Sodium Phosphate,1 MG,1,24,10,240
+J1100,Dexamethasone sodium phos,Phlow Corporation,81565-0202-02,Dexamethasone Sodium Phosphate,1 MG,1,25,4,100
+J1745,Infliximab not biosimil 10mg,"Janssen Biotech, Inc.",57894-0030-01,Remicade,10 MG,1,1,10,10
+J1745,Infliximab not biosimil 10mg,"Janssen Biotech, Inc.",57894-0160-01,Infliximab,10 MG,1,1,10,10
+J7312,Dexamethasone intra implant,"Allergan, Inc.",00023-3348-07,Ozurdex,0.1 MG,0.7,1,7,7
+J8540,Oral dexamethasone,Hikma Pharmaceuticals USA Inc.,00054-3176-44,Dexamethasone Intensol,0.25 MG,30,1,120,120
+J8540,Oral dexamethasone,Hikma Pharmaceuticals USA Inc.,00054-3177-63,Dexamethasone,0.25 MG,500,1,200,200
+J8540,Oral dexamethasone,Hikma Pharmaceuticals USA Inc.,00054-4184-25,Dexamethasone,0.25 MG,100,1,1600,1600
+J8540,Oral dexamethasone,Hikma Pharmaceuticals USA Inc.,00054-8175-25,Dexamethasone,0.25 MG,100,1,1600,1600
+J8540,Oral dexamethasone,Hikma Pharmaceuticals USA Inc.,00054-8180-25,Dexamethasone,0.25 MG,100,1,300,300
+J8540,Oral dexamethasone,Hikma Pharmaceuticals USA Inc.,00054-8181-25,Dexamethasone,0.25 MG,100,1,600,600
+J8540,Oral dexamethasone,Major Pharmaceuticals,00904-7266-61,Dexamethasone,0.25 MG,100,1,1600,1600
+J8540,Oral dexamethasone,Major Pharmaceuticals,00904-7267-61,Dexamethasone,0.25 MG,100,1,2400,2400
+J8540,Oral dexamethasone,Major Pharmaceuticals,00904-7444-61,Dexamethasone,0.25 MG,100,1,800,800
+J8540,Oral dexamethasone,"PD-Rx Pharmaceuticals, Inc.",43063-0266-07,Dexamethasone,0.25 MG,7,1,56,56
+J8540,Oral dexamethasone,A-S Medication Solutions,50090-0088-04,Dexamethasone,0.25 MG,6,1,96,96
+J8540,Oral dexamethasone,A-S Medication Solutions,50090-0089-00,Dexamethasone,0.25 MG,28,1,448,448
+J8540,Oral dexamethasone,A-S Medication Solutions,50090-6151-04,Dexamethasone,0.25 MG,6,1,96,96
+J8540,Oral dexamethasone,A-S Medication Solutions,50090-6152-00,Dexamethasone,0.25 MG,28,1,448,448
+J8540,Oral dexamethasone,"PD-Rx Pharmaceuticals, Inc.",55289-0582-04,Dexamethasone,0.25 MG,4,1,64,64
+J8540,Oral dexamethasone,"PD-Rx Pharmaceuticals, Inc.",55289-0582-06,Dexamethasone,0.25 MG,6,1,96,96
+J8540,Oral dexamethasone,"PD-Rx Pharmaceuticals, Inc.",55289-0582-28,Dexamethasone,0.25 MG,28,1,448,448
+J8540,Oral dexamethasone,"PD-Rx Pharmaceuticals, Inc.",55289-0903-12,Dexamethasone,0.25 MG,12,1,36,36
+J8540,Oral dexamethasone,Apotex Corp,60505-6249-01,Dexamethasone,0.25 MG,100,1,200,200
+J8540,Oral dexamethasone,Apotex Corp,60505-6250-01,Dexamethasone,0.25 MG,100,1,300,300
+J8540,Oral dexamethasone,Apotex Corp,60505-6251-01,Dexamethasone,0.25 MG,100,1,400,400
+J8540,Oral dexamethasone,Apotex Corp,60505-6252-01,Dexamethasone,0.25 MG,100,1,600,600
+J8540,Oral dexamethasone,Apotex Corp,60505-6253-01,Dexamethasone,0.25 MG,100,1,800,800
+J8540,Oral dexamethasone,Apotex Corp,60505-6254-01,Dexamethasone,0.25 MG,100,1,1600,1600
+J8540,Oral dexamethasone,Apotex Corp,60505-6255-01,Dexamethasone,0.25 MG,100,1,2400,2400
+J8540,Oral dexamethasone,American Health Packaging,60687-0718-01,Dexamethasone,0.25 MG,100,1,1600,1600
+J8540,Oral dexamethasone,American Health Packaging,60687-0729-01,Dexamethasone,0.25 MG,100,1,2400,2400
+J8540,Oral dexamethasone,American Health Packaging,60687-0773-01,Dexamethasone,0.25 MG,100,1,800,800
+J8540,Oral dexamethasone,Prasco Laboratories,66993-0730-02,Dexamethasone,0.25 MG,100,1,1600,1600
+J8540,Oral dexamethasone,Prasco Laboratories,66993-0730-80,Dexamethasone,0.25 MG,100,1,1600,1600
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-4113-01,Dexamethasone,0.25 MG,12,1,192,192
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-7267-02,Dexamethasone,0.25 MG,21,1,63,63
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-7267-03,Dexamethasone,0.25 MG,30,1,90,90
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-8223-01,Dexamethasone,0.25 MG,12,1,192,192
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-8223-03,Dexamethasone,0.25 MG,30,1,480,480
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-8223-06,Dexamethasone,0.25 MG,6,1,96,96
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-8467-01,Dexamethasone,0.25 MG,12,1,192,192
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-8467-03,Dexamethasone,0.25 MG,30,1,480,480
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-8763-03,Dexamethasone,0.25 MG,30,1,90,90
+J8540,Oral dexamethasone,Preferred Pharmaceuticals Inc,68788-8824-03,Dexamethasone,0.25 MG,30,1,480,480
+J8540,Oral dexamethasone,"ANI Pharmaceuticals, Inc.",70954-0398-10,Dexamethasone,0.25 MG,100,1,200,200
+J8540,Oral dexamethasone,"ANI Pharmaceuticals, Inc.",70954-0399-10,Dexamethasone,0.25 MG,100,1,300,300
+J8540,Oral dexamethasone,Northstar RxLLC,72603-0187-01,Dexamethasone,0.25 MG,100,1,600,600
+J8540,Oral dexamethasone,Northstar RxLLC,72603-0188-01,Dexamethasone,0.25 MG,100,1,800,800
+J8540,Oral dexamethasone,Northstar RxLLC,72603-0189-01,Dexamethasone,0.25 MG,100,1,1600,1600
+J8540,Oral dexamethasone,Northstar RxLLC,72603-0190-01,Dexamethasone,0.25 MG,100,1,2400,2400
+J8540,Oral dexamethasone,Northstar RxLLC,72603-0212-01,Dexamethasone,0.25 MG,100,1,200,200
+J8540,Oral dexamethasone,Northstar RxLLC,72603-0213-01,Dexamethasone,0.25 MG,100,1,300,300
+J8540,Oral dexamethasone,"PD-Rx Pharmaceuticals, Inc.",72789-0501-20,Dexamethasone,0.25 MG,20,1,60,60
+J8541,"Oral, hemady, 0.25 mg",Edenbridge Pharmaceuticals LLC.,82111-0955-01,Hemady,0.25 MG,24,1,1920,1920
+J8541,"Oral, hemady, 0.25 mg",Edenbridge Pharmaceuticals LLC.,82111-0955-02,Hemady,0.25 MG,100,1,8000,8000
+J9271,Inj pembrolizumab,Merck Sharp & Dohme LLC,00006-3026-02,Keytruda,1 MG,4,1,100,100
+J9271,Inj pembrolizumab,Merck Sharp & Dohme LLC,00006-3026-04,Keytruda,1 MG,4,2,100,200
+J9277,Pembrolizumab 1mg berahyalur,Merck Sharp & Dohme LLC,00006-3083-01,Keytruda Qlex,1 MG,2.4,1,395,395
+J9277,Pembrolizumab 1mg berahyalur,Merck Sharp & Dohme LLC,00006-5083-01,Keytruda Qlex,1 MG,4.8,1,790,790
+J9311,"Inj rituximab, hyaluronidase","Genentech, Inc.",50242-0108-01,Rituxan Hycela,10 MG (rituximab),11.7,1,140,140
+J9311,"Inj rituximab, hyaluronidase","Genentech, Inc.",50242-0109-01,Rituxan Hycela,10 MG (rituximab),13.4,1,160,160
+J9312,"Inj., rituximab, 10 mg","Genentech, Inc.",50242-0051-21,Rituxan,10 MG,10,1,10,10
+J9312,"Inj., rituximab, 10 mg","Genentech, Inc.",50242-0053-06,Rituxan,10 MG,50,1,50,50
+Q5103,"Injection, inflectra",Pfizer Inc,00069-0809-01,Inflectra,10 MG,1,1,10,10
+Q5104,"Injection, renflexis",Organon LLC,78206-0162-01,Renflexis,10 MG,1,1,10,10
+Q5115,Inj truxima 10 mg,"Cephalon, LLC",63459-0103-10,Truxima,10 MG,10,1,10,10
+Q5115,Inj truxima 10 mg,"Cephalon, LLC",63459-0104-50,Truxima,10 MG,50,1,50,50
+Q5119,"Inj ruxience, 10 mg",Pfizer Inc,00069-0238-01,Ruxience,10 MG,10,1,10,10
+Q5119,"Inj ruxience, 10 mg",Pfizer Inc,00069-0249-01,Ruxience,10 MG,50,1,50,50
+Q5121,"Inj. avsola, 10 mg",Amgen Inc,55513-0670-01,Avsola,10 MG,1,1,10,10
+Q5121,"Inj. avsola, 10 mg",Amgen Inc,55513-0670-21,Avsola,10 MG,1,1,10,10
+Q5123,"Inj. riabni, 10 mg",Amgen Inc,55513-0224-01,Riabni,10 MG,10,1,10,10
+Q5123,"Inj. riabni, 10 mg",Amgen Inc,55513-0326-01,Riabni,10 MG,50,1,50,50
+Q5158,"Inj, denosumab-bnht, 1 mg","FreseniUS Kabi USA, LLC",65219-0668-01,Conexxence,1 MG,1,1,60,60
+Q5158,"Inj, denosumab-bnht, 1 mg","FreseniUS Kabi USA, LLC",65219-0670-01,Bomyntra,1 MG,1.7,1,120,120
+Q5158,"Inj, denosumab-bnht, 1 mg","FreseniUS Kabi USA, LLC",65219-0672-01,Bomyntra,1 MG,1.7,1,120,120
