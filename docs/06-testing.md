@@ -54,5 +54,6 @@ The same Playwright suite runs against a live deployment with `npm run test:e2e:
 | https://coderx-milotic3005-8754s-projects.vercel.app (commit `c2c080b`, Neon Postgres) | 48 passed |
 | `/api/health` | `ok`; 8,770 HCPCS codes, 2,422 drugs, 67 releases; all six sources current |
 | Spot check `/api/hcpcs/J9312` | 24 quarters of payment limits (2021-Q1 → 2026-Q4) |
+| https://coderxnsl.vercel.app after the domain move (commit `23cb3f9`) | 48 passed; old `coderx-omega` / `coderx-milotic3005-8754s-projects` hosts return 308 to the same path |
 
 An earlier run against commit `2363b7f` had one transient failure in the keyboard-only journey (focus asserted before hydration finished); the test now waits for `networkidle` before tabbing.
