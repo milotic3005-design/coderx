@@ -5,7 +5,7 @@
  *
  * <raw-dir> holds the original downloads (layout used during discovery):
  *   hcpcs-2026q4/, hist/hc-2025q4/, asp-2026q4/, hist/asp-2026q3/, xwalk-2026q4/,
- *   fda-ndc/, fda-ndc-excluded/, purplebook/pb.csv
+ *   fda-ndc/, fda-ndc-excluded/, purplebook/pb.csv, mue-2026q4/ (the three MCR_MUE_*.csv tables)
  *
  * Header/preamble rows are kept verbatim; only data rows for a fixed list of
  * codes/NDCs are retained. No values are edited or invented.
@@ -137,6 +137,15 @@ tsvExcerpt(join(RAW, "fda-ndc/product.txt"), "fda-product.txt", (cols) => produc
 const exPkgs = tsvExcerpt(join(RAW, "fda-ndc-excluded/Packages_excluded.txt"), "fda-packages-excluded.txt", (cols, h) => xwNdcs.has(to11(cols[h.indexOf("NDCPACKAGECODE")])));
 const exIds = new Set(exPkgs.map((r) => r[0]));
 tsvExcerpt(join(RAW, "fda-ndc-excluded/Products_excluded.txt"), "fda-products-excluded.txt", (cols) => exIds.has(cols[0]));
+
+// --- NCCI MUE tables (2026-Q4): AMA notice + header kept verbatim; fixture codes plus two CPT rows (dropped on import) ---
+for (const [file, out] of [
+  [/MCR_MUE_PractitionerServices.*\.csv$/i, "mue-practitioner-2026q4.csv"],
+  [/MCR_MUE_OutpatientHospitalServices.*\.csv$/i, "mue-outpatient-2026q4.csv"],
+  [/MCR_MUE_DMESupplierServices.*\.csv$/i, "mue-dme-2026q4.csv"],
+] as const) {
+  csvExcerpt(find(join(RAW, "mue-2026q4"), file), out, (r) => /^"HCPCS\/\r?\nCPT Code",/.test(r), startsWithCode([...FIXTURE_CODES, "J1569", "J2783", "A4206", "0001U", "96365"]));
+}
 
 // --- Purple Book: both section headers + rows for the fixture biologics ---
 {

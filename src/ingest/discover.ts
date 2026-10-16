@@ -3,9 +3,9 @@
  * Only links on the official CMS/FDA domains are accepted.
  */
 import { fetchPage } from "./fetch";
-import type { ReleaseCandidate, SourceKey } from "./sources";
-import { SOURCES } from "./sources";
-import { parseUsDate, periodFromMonthYear } from "./values";
+import type { MueSourceKey, ReleaseCandidate, SourceKey } from "./sources";
+import { MUE_SOURCES, SOURCES } from "./sources";
+import { parseLongDate, parseUsDate, periodFromMonthYear } from "./values";
 
 interface Link {
   href: string;
@@ -111,6 +111,31 @@ export function parsePurpleBookDownloads(html: string): ReleaseCandidate[] {
   return out.sort((a, b) => (a.period ?? "").localeCompare(b.period ?? ""));
 }
 
+const MUE_FILE_RE = /\/files\/zip\/medicare-ncci-(\d{4})-q([1-4])-(practitioner|facility-outpatient-hospital|dme-supplier)-services-mue-table\.zip/gi;
+
+/**
+ * Parse the CMS MUE page. The full-table links are matched on their file names
+ * (the page's link markup nests anchors, so link text is unreliable); the quarterly
+ * "additions, deletions, and revisions" files are not needed and are ignored.
+ */
+export function parseMueLandingPage(html: string): ReleaseCandidate[] {
+  const out = new Map<string, ReleaseCandidate>();
+  for (const m of html.matchAll(MUE_FILE_RE)) {
+    const sourceKey = (Object.keys(MUE_SOURCES) as MueSourceKey[]).find((k) => MUE_SOURCES[k].fileSlug === m[3].toLowerCase());
+    if (!sourceKey) continue;
+    const url = new URL(m[0], "https://www.cms.gov").toString();
+    const posted = html.slice(m.index ?? 0, (m.index ?? 0) + 600).match(/Effective\s+([A-Z][a-z]+ \d{1,2}, \d{4});\s*Posted\s+([A-Z][a-z]+ \d{1,2}, \d{4})/);
+    out.set(url, {
+      sourceKey,
+      period: `${m[1]}-Q${m[2]}`,
+      url,
+      publicationLabel: posted ? `Effective ${posted[1]}; Posted ${posted[2]}` : null,
+      publicationDate: posted ? parseLongDate(posted[2]) : null,
+    });
+  }
+  return [...out.values()];
+}
+
 export async function discoverReleases(): Promise<{ candidates: ReleaseCandidate[]; errors: string[] }> {
   const errors: string[] = [];
   const candidates: ReleaseCandidate[] = [];
@@ -118,6 +143,7 @@ export async function discoverReleases(): Promise<{ candidates: ReleaseCandidate
     [SOURCES.cms_hcpcs.landingPageUrl, parseHcpcsLandingPage],
     [SOURCES.cms_payment_limits.landingPageUrl, parseAspLandingPage],
     [SOURCES.fda_purple_book.landingPageUrl, parsePurpleBookDownloads],
+    [SOURCES.cms_mue_practitioner.landingPageUrl, parseMueLandingPage],
   ];
   await Promise.all(
     tasks.map(async ([url, parse]) => {

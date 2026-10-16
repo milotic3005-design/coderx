@@ -7,6 +7,7 @@ import { CopyButton, RecordView } from "@/components/client-bits";
 import { BillingUnitCard, CodeHistoryTable, CrosswalkTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, Sparkline } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
+import { CoverageLinks, MueTable } from "@/components/tool-blocks";
 import { cachedHcpcsDetail } from "@/lib/data/cached";
 import { formatDate, formatMoney, formatPeriod } from "@/lib/format";
 import { COVERAGE_CODES, NOC_CONTEXT, normalizeHcpcs, PRICING_INDICATORS } from "@/lib/hcpcs";
@@ -52,6 +53,7 @@ export default async function HcpcsPage({ params }: { params: Params }) {
     { id: "reimbursement", label: "Reimbursement" },
     { id: "ndc-packages", label: "NDC packages" },
     { id: "related", label: "Related products & codes" },
+    { id: "coverage", label: "Coverage & policy" },
     { id: "history", label: "Code history" },
     { id: "sources", label: "Data sources" },
     { id: "limitations", label: "Limitations" },
@@ -71,6 +73,7 @@ export default async function HcpcsPage({ params }: { params: Params }) {
     "CMS publishes NDC–HCPCS crosswalks to support ASP-based Part B payment; they are not a comprehensive list of NDCs that may be billed with this code.",
     "Payment limits are national Medicare Part B limits per billing unit, before deductible, coinsurance, and sequestration. They are not commercial payer rates.",
     "Hospital outpatient (OPPS) payment rates and status indicators are not included in this release.",
+    "MUE values are the published CMS NCCI limits for Medicare fee-for-service claims; other payers may apply their own unit limits, and CMS keeps some MUE values confidential.",
   ];
   if (nonMedicare) limitations.unshift("This is a non-Medicare code. Whether a payer recognizes it, and how it is paid, varies by payer and contract.");
   if (d.code.isNoc) limitations.unshift(NOC_CONTEXT);
@@ -183,6 +186,11 @@ export default async function HcpcsPage({ params }: { params: Params }) {
               sources={[d.billingUnit.source === "cms_payment_limits" ? d.releases.payment : d.releases.hcpcs]}
               extra={d.billingUnit.source === "hcpcs_descriptor" ? [{ status: "derived", note: "Billing unit parsed from the descriptor text." }] : undefined}
             />
+            <h3 id="mue" className="mt-8 mb-3 text-sm font-semibold text-ink">
+              Maximum units per day (CMS Medically Unlikely Edits)
+            </h3>
+            <MueTable code={code} entries={d.mue} caption={`CMS MUE values for ${code} by service setting`} />
+            <ProvenanceFooter sources={d.mueReleases.filter((r) => d.mue.some((m) => m.releaseId === r.releaseId))} />
           </Section>
 
           <Section
@@ -335,19 +343,28 @@ export default async function HcpcsPage({ params }: { params: Params }) {
             <ProvenanceFooter sources={[d.releases.crosswalk, d.relatedBiologics.length ? d.purpleBookRelease : null, d.crossReferences.length ? d.releases.hcpcs : null]} />
           </Section>
 
-          <Section id="history" number="06" title="Code history" description="Changes detected between the CMS quarterly HCPCS files CodeRx has imported.">
+          <Section
+            id="coverage"
+            number="06"
+            title="Coverage and policy"
+            description="Medicare coverage is set nationally (NCDs) and by each Medicare Administrative Contractor (LCDs and Billing & Coding articles). These links open the official documents."
+          >
+            <CoverageLinks keywords={[{ label: code, value: code }]} />
+          </Section>
+
+          <Section id="history" number="07" title="Code history" description="Changes detected between the CMS quarterly HCPCS files CodeRx has imported.">
             <CodeHistoryTable history={d.history} caption={`Quarterly change history for ${code}`} />
             <ProvenanceFooter sources={[d.releases.hcpcs]} />
           </Section>
 
-          <Section id="sources" number="07" title="Data sources">
+          <Section id="sources" number="08" title="Data sources">
             <ProvenanceFooter sources={d.provenance} />
             <p className="mt-3 text-sm text-ink-muted">
               All imported releases, checksums, and import reports are listed on the <Link href="/sources" className="font-semibold text-brand hover:underline">data sources</Link> page.
             </p>
           </Section>
 
-          <Section id="limitations" number="08" title="Limitations and disclaimers">
+          <Section id="limitations" number="09" title="Limitations and disclaimers">
             <LimitationsList items={limitations} />
             <div className="mt-6">
               <Disclaimer />

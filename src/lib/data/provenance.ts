@@ -3,16 +3,9 @@ import type { Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { SOURCES, type SourceKey } from "@/ingest/sources";
 
-export type DataStatus = "official-cms" | "official-fda" | "derived" | "manual" | "historical" | "verification-needed";
+import type { DataStatus } from "./status";
 
-export const STATUS_LABELS: Record<DataStatus, string> = {
-  "official-cms": "Official CMS",
-  "official-fda": "Official FDA",
-  derived: "Derived calculation",
-  manual: "Manually reviewed",
-  historical: "Historical",
-  "verification-needed": "Verification needed",
-};
+export { STATUS_LABELS, type DataStatus } from "./status";
 
 export interface Provenance {
   releaseId: number;

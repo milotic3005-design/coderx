@@ -7,7 +7,9 @@ import { parseCmsDosage, parseDescriptorDosage, type ParsedDosage } from "@/lib/
 import { getDb, rowsOf, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { CODE_FAMILIES, familyOf, isCodeActive } from "@/lib/hcpcs";
+import { type MueEntry, type MueServiceType } from "@/lib/mue";
 import { formatNdc11 } from "@/lib/ndc";
+import { MUE_SOURCES, type MueSourceKey } from "@/ingest/sources";
 import { loadReleases, toProvenance, type Provenance, type ReleaseRow } from "./provenance";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -81,6 +83,35 @@ async function paymentHistory(db: Database, codes: string[], releases: Map<numbe
     out.set(code, [...(out.get(code) ?? []), entry].sort((a, b) => b.period.localeCompare(a.period)));
   }
   return out;
+}
+
+/** Published MUE values for the newest current quarter of each MUE table. */
+export async function mueFor(db: Database, codes: string[], latest: Map<string, ReleaseRow>): Promise<Map<string, MueEntry[]>> {
+  const out = new Map<string, MueEntry[]>();
+  const releaseIds = (Object.keys(MUE_SOURCES) as MueSourceKey[]).map((k) => latest.get(k)?.id).filter((id): id is number => typeof id === "number");
+  if (!codes.length || !releaseIds.length) return out;
+  const rows = await db
+    .select()
+    .from(t.mueValues)
+    .where(and(inArray(t.mueValues.hcpcsCode, codes), inArray(t.mueValues.sourceReleaseId, releaseIds)));
+  const order: MueServiceType[] = ["practitioner", "outpatient_hospital", "dme_supplier"];
+  for (const r of rows) {
+    const entry: MueEntry = {
+      serviceType: r.serviceType as MueServiceType,
+      value: r.mueValue,
+      adjudicationIndicator: r.adjudicationIndicator,
+      adjudicationText: r.adjudicationText,
+      rationale: r.rationale,
+      period: r.period,
+      releaseId: r.sourceReleaseId,
+    };
+    out.set(r.hcpcsCode, [...(out.get(r.hcpcsCode) ?? []), entry].sort((a, b) => order.indexOf(a.serviceType) - order.indexOf(b.serviceType)));
+  }
+  return out;
+}
+
+export function mueReleases(latest: Map<string, ReleaseRow>): Provenance[] {
+  return (Object.keys(MUE_SOURCES) as MueSourceKey[]).map((k) => latest.get(k)).filter((r): r is ReleaseRow => !!r).map((r) => toProvenance(r));
 }
 
 export interface CrosswalkEntry {
@@ -225,7 +256,8 @@ export async function getHcpcsDetail(code: string, dbArg?: Database) {
       .orderBy(desc(t.codeRelationships.isCurrent), asc(t.drugs.displayName)),
   ]);
   const latestCrosswalk = latest.get("cms_ndc_hcpcs")?.periodLabel ?? null;
-  const crosswalk = await crosswalkEntries(db, { codes: [code] }, latestCrosswalk);
+  const [crosswalk, mue] = await Promise.all([crosswalkEntries(db, { codes: [code] }, latestCrosswalk), mueFor(db, [code], latest)]);
+  const codeMue = mue.get(code) ?? [];
   const relatedCodes = [...new Set(crossRefs.flatMap((r) => [r.hcpcsCode!, r.relatedHcpcsCode!]).filter((c) => c !== code))];
   const relatedRows = relatedCodes.length
     ? await db
@@ -262,9 +294,13 @@ export async function getHcpcsDetail(code: string, dbArg?: Database) {
   if (codePayments[0]) provenance.push(toProvenance(byId.get(codePayments[0].releaseId)!));
   const xwRelease = latest.get("cms_ndc_hcpcs");
   if (crosswalk.length && xwRelease) provenance.push(toProvenance(xwRelease));
+  const mueProvenance = mueReleases(latest).filter((p) => codeMue.some((m) => m.releaseId === p.releaseId));
+  provenance.push(...mueProvenance);
 
   return {
     code: row,
+    mue: codeMue,
+    mueReleases: mueReleases(latest),
     family: familyOf(code) ?? null,
     isActive: isCodeActive(row.terminationDate, today()),
     history,

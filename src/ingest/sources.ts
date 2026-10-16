@@ -6,9 +6,38 @@
  * every imported file is recorded with its URL and SHA-256 in `source_releases`.
  */
 
-export type SourceKey = "cms_hcpcs" | "cms_payment_limits" | "cms_ndc_hcpcs" | "fda_ndc" | "fda_ndc_excluded" | "fda_purple_book";
+export type SourceKey =
+  | "cms_hcpcs"
+  | "cms_payment_limits"
+  | "cms_ndc_hcpcs"
+  | "cms_mue_practitioner"
+  | "cms_mue_outpatient"
+  | "cms_mue_dme"
+  | "fda_ndc"
+  | "fda_ndc_excluded"
+  | "fda_purple_book";
 
-export const SOURCE_KEYS: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "fda_ndc", "fda_ndc_excluded", "fda_purple_book"];
+export const SOURCE_KEYS: SourceKey[] = [
+  "cms_hcpcs",
+  "cms_payment_limits",
+  "cms_ndc_hcpcs",
+  "cms_mue_practitioner",
+  "cms_mue_outpatient",
+  "cms_mue_dme",
+  "fda_ndc",
+  "fda_ndc_excluded",
+  "fda_purple_book",
+];
+
+/** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
+export const MUE_SOURCES = {
+  cms_mue_practitioner: { serviceType: "practitioner", label: "Practitioner services", fileSlug: "practitioner" },
+  cms_mue_outpatient: { serviceType: "outpatient_hospital", label: "Facility outpatient hospital services", fileSlug: "facility-outpatient-hospital" },
+  cms_mue_dme: { serviceType: "dme_supplier", label: "DME supplier services", fileSlug: "dme-supplier" },
+} as const;
+export type MueSourceKey = keyof typeof MUE_SOURCES;
+export type MueServiceType = (typeof MUE_SOURCES)[MueSourceKey]["serviceType"];
+export const isMueSource = (key: string): key is MueSourceKey => key in MUE_SOURCES;
 
 export interface SourceDefinition {
   key: SourceKey;
@@ -21,6 +50,10 @@ export interface SourceDefinition {
   badge: "official-cms" | "official-fda";
   licenseNote: string;
 }
+
+const MUE_PAGE = "https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-medically-unlikely-edits";
+const MUE_LICENSE =
+  "U.S. Government work. Only HCPCS Level II rows are stored; CPT rows (AMA copyright) are dropped. CMS keeps some MUE values confidential, so a missing value does not mean there is no limit.";
 
 export const SOURCES: Record<SourceKey, SourceDefinition> = {
   cms_hcpcs: {
@@ -52,6 +85,36 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     cadence: "quarterly",
     badge: "official-cms",
     licenseNote: "U.S. Government work. Not a comprehensive list of all NDCs; supports ASP-based Part B payment only.",
+  },
+  cms_mue_practitioner: {
+    key: "cms_mue_practitioner",
+    organization: "CMS",
+    dataset: "Medicare NCCI Medically Unlikely Edits — Practitioner Services MUE Table",
+    shortName: "CMS MUE table (practitioner)",
+    landingPageUrl: MUE_PAGE,
+    cadence: "quarterly",
+    badge: "official-cms",
+    licenseNote: MUE_LICENSE,
+  },
+  cms_mue_outpatient: {
+    key: "cms_mue_outpatient",
+    organization: "CMS",
+    dataset: "Medicare NCCI Medically Unlikely Edits — Facility Outpatient Hospital Services MUE Table",
+    shortName: "CMS MUE table (outpatient hospital)",
+    landingPageUrl: MUE_PAGE,
+    cadence: "quarterly",
+    badge: "official-cms",
+    licenseNote: MUE_LICENSE,
+  },
+  cms_mue_dme: {
+    key: "cms_mue_dme",
+    organization: "CMS",
+    dataset: "Medicare NCCI Medically Unlikely Edits — DME Supplier Services MUE Table",
+    shortName: "CMS MUE table (DME supplier)",
+    landingPageUrl: MUE_PAGE,
+    cadence: "quarterly",
+    badge: "official-cms",
+    licenseNote: MUE_LICENSE,
   },
   fda_ndc: {
     key: "fda_ndc",
@@ -127,6 +190,11 @@ export const MANIFEST: ReleaseCandidate[] = [
   { sourceKey: "cms_ndc_hcpcs", period: "2026-Q2", url: `${CMS}/files/zip/april-2026-ndc-hcpcs-crosswalk-03-30-2026-final-file.zip`, publicationLabel: "Final file - revised 03/30/2026", publicationDate: "2026-03-30" },
   { sourceKey: "cms_ndc_hcpcs", period: "2026-Q3", url: `${CMS}/files/zip/july-2026-ndc-hcpcs-crosswalk.zip`, publicationLabel: "06/17/2026 - Final file", publicationDate: "2026-06-17" },
   { sourceKey: "cms_ndc_hcpcs", period: "2026-Q4", url: `${CMS}/files/zip/october-2026-ndc-hcpcs-crosswalk-final.zip`, publicationLabel: "09/17/2026 - Final file", publicationDate: "2026-09-17" },
+
+  // NCCI MUE tables (CMS posts only the current quarter on the MUE page; older quarters live in the archive)
+  { sourceKey: "cms_mue_practitioner", period: "2026-Q4", url: `${CMS}/files/zip/medicare-ncci-2026-q4-practitioner-services-mue-table.zip`, publicationLabel: "Effective October 1, 2026; Posted September 1, 2026", publicationDate: "2026-09-01" },
+  { sourceKey: "cms_mue_outpatient", period: "2026-Q4", url: `${CMS}/files/zip/medicare-ncci-2026-q4-facility-outpatient-hospital-services-mue-table.zip`, publicationLabel: "Effective October 1, 2026; Posted September 1, 2026", publicationDate: "2026-09-01" },
+  { sourceKey: "cms_mue_dme", period: "2026-Q4", url: `${CMS}/files/zip/medicare-ncci-2026-q4-dme-supplier-services-mue-table.zip`, publicationLabel: "Effective October 1, 2026; Posted September 1, 2026", publicationDate: "2026-09-01" },
 
   // FDA (period assigned from the file's Last-Modified date at download time)
   { sourceKey: "fda_ndc", period: null, url: "https://www.accessdata.fda.gov/cder/ndctext.zip" },

@@ -52,12 +52,15 @@ export const LIMITERS = {
   suggest: new FixedWindowLimiter(240, 60_000),
   search: new FixedWindowLimiter(120, 60_000),
   read: new FixedWindowLimiter(180, 60_000),
+  /** Batch lookups (up to 500 lines per request). */
+  audit: new FixedWindowLimiter(30, 60_000),
   admin: new FixedWindowLimiter(10, 60_000),
 };
 
 export function limiterFor(pathname: string): keyof typeof LIMITERS | null {
   if (!pathname.startsWith("/api/")) return null;
   if (pathname.startsWith("/api/suggest")) return "suggest";
+  if (pathname.startsWith("/api/audit")) return "audit";
   if (pathname.startsWith("/api/search")) return "search";
   if (pathname.startsWith("/api/admin") || pathname.startsWith("/api/cron")) return "admin";
   return "read";

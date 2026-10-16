@@ -1,6 +1,6 @@
 import { BadgeCheck, Calculator, CircleAlert, FileClock, Landmark, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
-import { STATUS_LABELS, type DataStatus } from "@/lib/data/provenance";
+import { STATUS_LABELS, type DataStatus } from "@/lib/data/status";
 import { PRODUCT_CLASS_LABELS } from "@/lib/format";
 import { CODE_FAMILIES } from "@/lib/hcpcs";
 

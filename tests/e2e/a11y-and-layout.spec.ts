@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const PAGES = ["/", "/search?q=rituximab", "/hcpcs/J9312", "/hcpcs/S0189", "/drugs/rituxan-rituximab", "/ndc/00006-3026-02", "/manufacturers/genentech-inc", "/calculator?code=J9312", "/codes/j", "/sources", "/methodology"];
+const PAGES = ["/", "/search?q=rituximab", "/hcpcs/J9312", "/hcpcs/S0189", "/drugs/rituxan-rituximab", "/ndc/00006-3026-02", "/manufacturers/genentech-inc", "/calculator?code=J9312", "/codes/j", "/sources", "/methodology", "/tools", "/tools/audit", "/tools/margin", "/tools/biosimilars", "/tools/changes"];
 
 test.describe("accessibility (axe-core, WCAG 2.x A/AA)", () => {
   for (const path of PAGES) {
@@ -18,7 +18,7 @@ test.describe("accessibility (axe-core, WCAG 2.x A/AA)", () => {
   }
 
   test("pages have one h1 and a logical heading order", async ({ page }) => {
-    for (const path of ["/", "/hcpcs/J9312", "/drugs/rituxan-rituximab", "/calculator"]) {
+    for (const path of ["/", "/hcpcs/J9312", "/drugs/rituxan-rituximab", "/calculator?code=J9312", "/tools", "/tools/biosimilars", "/tools/changes"]) {
       await page.goto(path);
       await expect(page.locator("h1")).toHaveCount(1);
       const levels = await page.locator("main h1, main h2, main h3").evaluateAll((els) => els.map((e) => Number(e.tagName[1])));

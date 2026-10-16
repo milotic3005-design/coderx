@@ -16,3 +16,6 @@ Each fixture keeps the original header/preamble and a subset of unmodified data 
 - fda-packages-excluded.txt: header + 10 rows from Packages_excluded.txt (sha256 85c29242382fffd3590a416775b8cb5e93943e51ac040bedb229b73c3760d50a)
 - fda-products-excluded.txt: header + 8 rows from Products_excluded.txt (sha256 f107c9f1c4ec49c394cca7ee01f94f00ec872e3b439af4014dc2f5a32a64d00c)
 - purplebook.csv: title/section rows + 118 product rows from pb.csv (sha256 b9d04a8b1ea9c6605fdeff01127f0de32cb092534a40441b036e39c9665974e6)
+- mue-practitioner-2026q4.csv: preamble + 22 records from MCR_MUE_PractitionerServices_Eff_10-01-2026.csv (sha256 ef038efaf902b7bd41b8d43318ead2944e712806f903358eb2f8ab5df98711b3)
+- mue-outpatient-2026q4.csv: preamble + 22 records from MCR_MUE_OutpatientHospitalServices_Eff_10-01-2026.csv (sha256 3af9f4e99cc587e23f0a2fc4884bdb85ab6467db229b0d7d2a07f22c75ceddaa)
+- mue-dme-2026q4.csv: preamble + 13 records from MCR_MUE_DMESupplierServices_Eff_10-01-2026.csv (sha256 6fa4fbba852f7b7496b5b7cfb59ae0840fe85be2235ee0ef121a8c5b54031f45)

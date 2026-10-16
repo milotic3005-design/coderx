@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BillingCalculator, type CalculatorPrefill } from "@/components/billing-calculator";
+import { BillingCalculator, type CalculatorPackage, type CalculatorPrefill } from "@/components/billing-calculator";
 import { Callout, Disclaimer, PageHeader } from "@/components/layout-bits";
 import { cachedHcpcsDetail } from "@/lib/data/cached";
 import { formatPeriod } from "@/lib/format";
 import { normalizeHcpcs } from "@/lib/hcpcs";
 import { parseNdc } from "@/lib/ndc";
+import { readPackageDescription } from "@/lib/package-label";
 
 export const metadata: Metadata = {
   title: "Billing-unit calculator",
@@ -41,6 +42,32 @@ export default async function CalculatorPage({ searchParams }: { searchParams: S
       } else {
         notices.push(`The billing unit for ${code} (“${unit.text ?? d.code.longDescription}”) is not a simple amount, so enter it manually.`);
       }
+      prefill.mue = d.mue;
+      prefill.mueSource = d.mueReleases.find((r) => d.mue.some((m) => m.releaseId === r.releaseId)) ?? null;
+      if (unit.parsed) {
+        const parsedUnit = unit.parsed;
+        prefill.packages = d.crosswalk
+          .filter((x) => x.isCurrent && x.ndc11 && x.billUnitsPerItem && Number(x.billUnitsPerItem) > 0)
+          .map((x): CalculatorPackage => {
+            const facts = readPackageDescription(x.fda?.packageDescription);
+            return {
+              ndc11: x.ndc11!,
+              ndcFormatted: x.ndcFormatted,
+              labeler: x.labelerName,
+              drugName: x.drugName,
+              amountPerItem: Math.round(Number(x.billUnitsPerItem) * parsedUnit.amount * 1e6) / 1e6,
+              unit: parsedUnit.unit,
+              billUnitsPerItem: Number(x.billUnitsPerItem),
+              packageDescription: x.fda?.packageDescription ?? null,
+              fdaListed: !!x.fda && x.fda.listingStatus === "listed" && (!x.fda.marketingEnd || x.fda.marketingEnd >= new Date().toISOString().slice(0, 10)),
+              mlPerItem: facts.mlPerItem,
+              containerType: facts.containerType,
+              isPowder: facts.isPowder,
+            };
+          })
+          .sort((a, b) => Number(b.fdaListed) - Number(a.fdaListed) || a.amountPerItem - b.amountPerItem || (a.labeler ?? "").localeCompare(b.labeler ?? ""));
+        prefill.packageSource = d.releases.crosswalk;
+      }
       const p = d.payments[0];
       if (p && p.paymentLimit !== null && p.period === d.latestPaymentPeriod) {
         prefill.paymentLimit = Number(p.paymentLimit);
@@ -54,6 +81,7 @@ export default async function CalculatorPage({ searchParams }: { searchParams: S
           prefill.containerAmount = Math.round(amount * 1e6) / 1e6;
           prefill.containerUnit = unit.parsed.unit;
           prefill.ndc = row.ndcFormatted;
+          prefill.ndc11 = row.ndc11;
           prefill.containerSource = `Derived from the CMS crosswalk for NDC ${row.ndcFormatted}: ${row.billUnitsPerItem} billable units per item × ${unit.text} = ${prefill.containerAmount} ${unit.parsed.unit} per item. Confirm against the package labeling.`;
         } else if (parsed.kind === "package") {
           notices.push(`No CMS crosswalk row links NDC ${ndcParam} to ${code}, so the container amount was not prefilled.`);

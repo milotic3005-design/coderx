@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
-import { parseAspLandingPage, parseHcpcsLandingPage, parsePurpleBookDownloads } from "@/ingest/discover";
+import { parseAspLandingPage, parseHcpcsLandingPage, parseMueLandingPage, parsePurpleBookDownloads } from "@/ingest/discover";
+import { mueEffectiveDate, parseMueCsv } from "@/ingest/parsers/cms-mue";
 import { crosswalkTypeFromFileName, parseCrosswalkCsv } from "@/ingest/parsers/cms-crosswalk";
 import { deriveMethodology, parseNotPayableCsv, parsePaymentLimitCsv } from "@/ingest/parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, splitPharmClasses } from "@/ingest/parsers/fda";
@@ -116,6 +117,30 @@ describe("CMS NDC–HCPCS crosswalk parser (real excerpt)", () => {
   });
 });
 
+describe("CMS MUE table parser (real excerpt)", () => {
+  const parsed = parseMueCsv(fixture("mue-practitioner-2026q4.csv"));
+  const by = new Map(parsed.rows.map((r) => [r.hcpcsCode, r]));
+
+  it("skips the AMA notice, finds the header, and drops CPT rows", () => {
+    expect(parsed.valueColumn).toBe("Practitioner Services MUE Values");
+    expect(parsed.excludedCpt).toBe(2);
+    expect(parsed.rejected).toEqual([]);
+    expect([...by.keys()].every((c) => /^[A-Z]\d{4}$/.test(c))).toBe(true);
+  });
+  it("keeps values, adjudication indicators, and rationale verbatim", () => {
+    expect(by.get("J9312")).toEqual({ hcpcsCode: "J9312", mueValue: 150, adjudicationIndicator: 3, adjudicationText: "3 Date of Service Edit: Clinical", rationale: "Prescribing Information" });
+    expect(by.get("J1569")?.mueValue).toBe(400);
+  });
+  it("reads zero-unit edits (not reportable in that setting)", () => {
+    const dme = new Map(parseMueCsv(fixture("mue-dme-2026q4.csv")).rows.map((r) => [r.hcpcsCode, r]));
+    expect(dme.get("J2783")?.mueValue).toBe(0);
+    expect(dme.get("J1569")?.mueValue).toBe(400);
+  });
+  it("reads the effective date from the CMS file name", () => {
+    expect(mueEffectiveDate("MCR_MUE_PractitionerServices_Eff_10-01-2026.csv")).toBe("2026-10-01");
+  });
+});
+
 describe("FDA parsers (real excerpts)", () => {
   it("parses products with multi-value fields", () => {
     const { products, rejected } = parseFdaProducts(fixture("fda-product.txt"));
@@ -185,5 +210,20 @@ describe("publisher landing-page discovery", () => {
     const html = `<a href="https://www.accessdata.fda.gov/drugsatfda_docs/PurpleBook/2026/purplebook-search-August-data-download.csv">CSV</a>
       <a href="https://www.accessdata.fda.gov/drugsatfda_docs/PurpleBook/2026/purplebook-search-September-data-download.csv">CSV</a>`;
     expect(parsePurpleBookDownloads(html).at(-1)?.period).toBe("2026-09");
+  });
+  it("finds the three MUE tables by file name and ignores the quarterly change files", () => {
+    // Shape of the CMS page: the DME link is nested inside a card anchor, so matching is on the href.
+    const html = `<a href="/how-look-up-medicare-ncci-medically-unlikely-edits-mues">How to Look Up … Related Downloads
+        <a href="/files/zip/medicare-ncci-2026-q4-dme-supplier-services-mue-table.zip">DME Supplier Services MUE Table (ZIP)</a></a> - Effective October 1, 2026; Posted September 1, 2026
+      <a href="/files/zip/medicare-ncci-2026-q4-facility-outpatient-hospital-services-mue-table.zip">Facility Outpatient Hospital Services MUE Table (ZIP)</a> - Effective October 1, 2026; Posted September 1, 2026
+      <a href="/files/zip/medicare-ncci-2026-q4-practitioner-services-mue-table.zip">Practitioner Services MUE Table (ZIP)</a> - Effective October 1, 2026; Posted September 1, 2026
+      <a href="/files/zip/practitioner-services-mue-quarterly-additions-deletions-revisions-10012026.zip">Practitioner Services MUE Quarterly Additions, Deletions, and Revisions (ZIP)</a>`;
+    const found = parseMueLandingPage(html);
+    expect(found.map((f) => `${f.sourceKey}:${f.period}`).sort()).toEqual(["cms_mue_dme:2026-Q4", "cms_mue_outpatient:2026-Q4", "cms_mue_practitioner:2026-Q4"]);
+    expect(found.find((f) => f.sourceKey === "cms_mue_practitioner")).toMatchObject({
+      url: "https://www.cms.gov/files/zip/medicare-ncci-2026-q4-practitioner-services-mue-table.zip",
+      publicationLabel: "Effective October 1, 2026; Posted September 1, 2026",
+      publicationDate: "2026-09-01",
+    });
   });
 });

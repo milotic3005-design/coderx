@@ -32,17 +32,27 @@ npm run lint && npm run typecheck && npm test && npm run test:e2e && npm run bui
 | 14 | Keyboard-only workflow | `journeys.spec.ts` |
 | 15 | Mobile / tablet / desktop | `a11y-and-layout.spec.ts` |
 
+### Tools (added 2026-10-15)
+
+| Tool | Where |
+| --- | --- |
+| CMS MUE ingestion (all three tables, CPT rows dropped) and discovery | `tests/unit/parsers.test.ts`, `tests/integration/pipeline.test.ts` |
+| MUE check, claim lines (JW/JZ, `N4` NDC segment), vial optimizer, print worksheet | `tests/unit/calculator-tools.test.ts`, `tests/e2e/tools.spec.ts` |
+| Chargemaster audit (pair mismatch, terminated code), margin analyzer (costs not sent), biosimilar comparator, quarterly changes + watchlist | `tests/e2e/tools.spec.ts`, `tests/unit/calculator-tools.test.ts` (margin arithmetic) |
+| Coverage links and MUE table on code pages | `tests/e2e/tools.spec.ts` |
+| Axe WCAG checks, heading order, and overflow for every `/tools` page | `tests/e2e/a11y-and-layout.spec.ts` |
+
 Also covered: NDC normalization edge cases, parsers for every source format, ZIP corruption and truncation, idempotent re-imports, transactional rollback, CPT exclusion, quarter history, biosimilar linking by BLA, “no name-based inference”, API validation and error envelopes, admin auth, rate limiting, CSP and security headers, axe-core WCAG 2.x A/AA in light and dark themes, heading order, touch targets, table scrolling on small screens.
 
-## Results (2026-10-14)
+## Results (2026-10-15)
 
 | Suite | Result |
 | --- | --- |
 | ESLint | 0 problems |
 | `tsc --noEmit` | 0 errors |
-| Vitest unit | 95 passed |
-| Vitest integration (PGlite PostgreSQL) | 44 passed |
-| Playwright E2E + axe + responsive | 48 passed |
+| Vitest unit | 118 passed |
+| Vitest integration (PGlite PostgreSQL) | 45 passed |
+| Playwright E2E + axe + responsive | 66 passed |
 | `next build` | succeeded |
 
 ## Production smoke test (2026-10-15 UTC)

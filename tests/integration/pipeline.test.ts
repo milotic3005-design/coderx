@@ -36,8 +36,18 @@ describe("ingestion pipeline (real CMS/FDA excerpts)", () => {
     expect(pay).toMatchObject({ effectiveStart: "2026-10-01", effectiveEnd: "2026-12-31", publicationLabel: "09/17/2026 - Final file" });
   });
 
+  it("loads all three MUE tables with their service type", async () => {
+    const rows = await h.db.select().from(t.mueValues).where(eq(t.mueValues.hcpcsCode, "J2783"));
+    const by = Object.fromEntries(rows.map((r) => [r.serviceType, r.mueValue]));
+    expect(by).toEqual({ practitioner: 60, outpatient_hospital: 60, dme_supplier: 0 });
+    const release = (await h.db.select().from(t.sourceReleases).where(eq(t.sourceReleases.sourceKey, "cms_mue_practitioner")))[0];
+    expect(release).toMatchObject({ effectiveStart: "2026-10-01", effectiveEnd: "2026-12-31", periodLabel: "2026-Q4" });
+    expect((release.report as { excluded: { cptRows: number } }).excluded.cptRows).toBe(2);
+  });
+
   it("stores no CPT content", async () => {
     expect(await count("payment_limits", sql`hcpcs_code ~ '^[0-9]'`)).toBe(0);
+    expect(await count("mue_values", sql`hcpcs_code ~ '^[0-9]'`)).toBe(0);
     expect(await count("ndc_hcpcs_crosswalk", sql`hcpcs_code ~ '^[0-9]'`)).toBe(0);
     expect(await count("hcpcs_codes", sql`code !~ '^[A-Z][0-9]{4}$'`)).toBe(0);
   });

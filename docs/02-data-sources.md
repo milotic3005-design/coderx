@@ -19,6 +19,7 @@ files that were current on that date.
 | 4 | `fda_ndc` | FDA | National Drug Code Directory — finished drugs (product + package) | Daily | **Ingested** (scoped) |
 | 5 | `fda_ndc_excluded` | FDA | NDC Directory — excluded products/packages | Daily | **Ingested** (NDCs that CMS crosswalks only) |
 | 6 | `fda_purple_book` | FDA | Purple Book monthly data download | Monthly | **Ingested** |
+| 7 | `cms_mue_practitioner`, `cms_mue_outpatient`, `cms_mue_dme` | CMS | NCCI Medically Unlikely Edit tables (practitioner, facility outpatient hospital, DME supplier) | Quarterly | **Ingested** (current quarter; HCPCS Level II rows only) |
 | — | — | CMS | OPPS Addendum B | Quarterly | Evaluated, **not ingested** (AMA license click-through) |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
 | — | — | NLM | DailyMed | Daily | Link-out only |
@@ -117,6 +118,20 @@ files that were current on that date.
 | Known limitations | Relationships are product-level; CodeRx links them to NDC products only through the BLA number in the FDA NDC Directory's application-number field, never by name similarity. |
 | Ingestion | Download → parse the last header section → store products → derive biosimilar → reference links. |
 
+## 7. CMS NCCI Medically Unlikely Edits (MUE) tables
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | CMS (National Correct Coding Initiative) |
+| Dataset | Medicare NCCI MUE tables: Practitioner Services, Facility Outpatient Hospital Services, DME Supplier Services |
+| Source URL | https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-medically-unlikely-edits → e.g. https://www.cms.gov/files/zip/medicare-ncci-2026-q4-practitioner-services-mue-table.zip |
+| Format | ZIP with `MCR_MUE_<Type>Services_Eff_MM-DD-YYYY.csv` (and an XLSX copy); the CSV starts with the AMA CPT copyright notice, then a header row |
+| Update frequency | Quarterly (2026-Q4 tables effective October 1, 2026, posted September 1, 2026). Plain download — no license click-through |
+| Licensing / restrictions | U.S. Government work. The tables mix CPT codes (AMA copyright); CodeRx keeps only HCPCS Level II rows and counts the dropped CPT rows in the import report |
+| Fields used | HCPCS code, MUE value (max units of service per patient per date of service), MUE adjudication indicator (1 line edit, 2 date-of-service policy, 3 date-of-service clinical), MUE rationale |
+| Known limitations | CMS keeps some MUE values confidential; a missing value is not evidence that no limit exists. A value of 0 means the code is not reportable in that setting. Medicare fee-for-service only. |
+| Ingestion | Discovered on the MUE page by file name (the page nests its links); each table is its own source key so the three settings keep separate release histories. 2026-Q4: 4,549 practitioner, 4,500 outpatient hospital, 3,109 DME supplier HCPCS rows. |
+
 ## Evaluated but not ingested
 
 | Source | Why not (yet) |
@@ -125,7 +140,7 @@ files that were current on that date.
 | **CMS NOC pricing file** | Published as a separate file through October 2025; the 2026 payment-limit packages contain no NOC pricing file. NOC drugs are priced by MACs. |
 | **openFDA NDC API** | Same content as the bulk directory; the app must not depend on slow real-time government APIs, so bulk files are used. |
 | **Drugs@FDA, DailyMed** | Useful for labeling; CodeRx links out to DailyMed by NDC instead of storing labels. |
-| **CMS MUE tables** | Valuable next-phase addition; out of MVP scope. |
+| **Medicare Coverage Database (LCDs, NCDs, Billing & Coding articles, SAD exclusion lists)** | The CMS Coverage API returns these only with a token obtained by accepting the AMA, ADA, and AHA license agreements, which limit use to personal, non-commercial display — so covered-diagnosis lists cannot be republished on a public site. CodeRx links each code and drug to the official MCD search, SAD exclusion report, and MAC directory instead. |
 | **AWP, WAC, commercial payer rates, compendia** | Licensed; excluded by policy. |
 
 ## Data-handling rules (enforced in code)

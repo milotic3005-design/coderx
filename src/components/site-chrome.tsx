@@ -68,6 +68,7 @@ export function SiteFooter() {
             <li><Link className="inline-flex min-h-9 items-center text-ink-muted hover:text-ink hover:underline" href="/sources">Data sources &amp; releases</Link></li>
             <li><Link className="inline-flex min-h-9 items-center text-ink-muted hover:text-ink hover:underline" href="/codes">Browse code families</Link></li>
             <li><Link className="inline-flex min-h-9 items-center text-ink-muted hover:text-ink hover:underline" href="/calculator">Billing-unit calculator</Link></li>
+            <li><Link className="inline-flex min-h-9 items-center text-ink-muted hover:text-ink hover:underline" href="/tools">All tools</Link></li>
             <li><a className="inline-flex min-h-9 items-center text-ink-muted hover:text-ink hover:underline" href="/api/health">API status</a></li>
           </ul>
         </nav>

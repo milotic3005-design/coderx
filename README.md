@@ -10,7 +10,9 @@ CodeRx lets pharmacists, infusion centers, coders, billers, revenue-cycle, and p
 
 - **Universal search** with debounced, keyboard-accessible type-ahead grouped into Drugs, HCPCS codes, NDC packages, and Manufacturers; exact-code and NDC matching (4-4-2, 5-3-2, 5-4-1, 5-4-2, 10/11 digits, claim-style `N4…`), prefix, ingredient, manufacturer, abbreviation expansion (IVIG, MTX…), and typo tolerance — every hit explains why it matched.
 - **Drug, HCPCS, NDC, and manufacturer pages** with overview, coding, NDC packages and billable units, Medicare payment limits (every quarter since 2021-Q1, with CMS revisions), biosimilar ↔ reference relationships, code history, data sources, and limitations.
-- **Billing-unit calculator** that shows its formula: rounding, vial utilization, leftover quantity, and units attributable to discarded drug from single-dose containers — with educational (not prescriptive) modifier notes.
+- **Billing-unit calculator** that shows its formula: rounding, vial utilization, leftover quantity, and units attributable to discarded drug from single-dose containers — plus a **CMS MUE check** (max units per day by setting), **claim lines** (HCPCS units, JW/JZ, and the `N4` NDC segment with unit qualifier and quantity), a **vial optimizer** (least-waste vial mix and whole-vial dose-rounding options within a threshold you set), and a **printable worksheet** with no patient fields.
+- **Tools for directors** (`/tools`): a **chargemaster & formulary audit** (terminated codes, NDCs missing from the CMS crosswalk, mismatched code–NDC pairs, FDA listing problems, payment limits, MUEs; CSV export), a **margin analyzer** (your acquisition cost vs. the Part B payment net of sequestration — costs never leave the browser), a **biosimilar comparator**, and **what changed this quarter** (payment-limit movers, new/terminated drug codes, crosswalk changes, a personal watchlist).
+- **Coverage & policy links** on every code and drug page to the CMS Medicare Coverage Database, SAD exclusion lists, MAC directory, and JW/JZ guidance (linked, not copied — see the licensing note below).
 - **Provenance by design**: badges for Official CMS, Official FDA, Derived calculation, Manually reviewed, Historical, and Verification needed; “No authoritative public data was located for this field.” wherever data is missing.
 - **JSON API** with a consistent envelope (`data`, `meta.pagination`, `meta.match`, `meta.provenance`, `error`).
 
@@ -23,8 +25,9 @@ CodeRx lets pharmacists, infusion centers, coders, billers, revenue-cycle, and p
 | NDC–HCPCS crosswalks (ASP, OPPS, AWP, PrEP, NOC) | CMS | Quarterly + revisions | 2021-Q1 → 2026-Q4 in production |
 | NDC Directory (finished drugs) + excluded listings | FDA | Daily | Clinician-administered Rx + every CMS-crosswalked NDC |
 | Purple Book (licensed biologics) | FDA | Monthly | Latest month |
+| NCCI Medically Unlikely Edits — practitioner, outpatient hospital, DME supplier | CMS | Quarterly | Current quarter; HCPCS Level II rows only (CPT rows dropped) |
 
-Not ingested: CMS OPPS Addendum B (distributed under the AMA CPT license), AWP/WAC, commercial payer rates, and all CPT/CDT content. Full catalog with URLs, formats, fields, licensing, and limitations: [`docs/02-data-sources.md`](docs/02-data-sources.md).
+Not ingested: CMS OPPS Addendum B (distributed under the AMA CPT license), Medicare Coverage Database content such as covered diagnosis lists (its API requires accepting AMA/ADA/AHA terms limited to personal use, so CodeRx links to it instead), AWP/WAC, commercial payer rates, and all CPT/CDT content. Full catalog with URLs, formats, fields, licensing, and limitations: [`docs/02-data-sources.md`](docs/02-data-sources.md).
 
 Local full load (2026-10-14): **8,770** HCPCS codes (1,322 terminated), **2,306** drugs, **14,795** NDC packages, **668** manufacturers, **9,144** official NDC→HCPCS links, **99** biosimilar→reference links.
 
@@ -102,6 +105,7 @@ All endpoints return `{ data, meta, error }`. Read endpoints are CDN-cacheable (
 | `GET /api/manufacturers/{id\|slug}` | Labeler with drugs and codes |
 | `GET /api/sources` | Every imported release with checksum and dates |
 | `GET /api/health` | Database connectivity and data freshness |
+| `POST /api/audit` | Batch check of up to 500 `{"hcpcs","ndc"}` items against CMS/FDA data (codes and NDCs only; rate limited to 30/min per IP) |
 | `POST /api/admin/import` | `Authorization: Bearer $CODERX_ADMIN_TOKEN`; body `{"source":"all","force":false,"latestOnly":true}` |
 
 Example:

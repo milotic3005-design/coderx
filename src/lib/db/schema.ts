@@ -241,6 +241,36 @@ export const ndcHcpcsCrosswalk = pgTable(
   ],
 );
 
+/**
+ * CMS NCCI Medically Unlikely Edits — HCPCS Level II rows only (CPT rows are dropped).
+ * One row per code, service type, and release; the current release for the newest
+ * period is served.
+ */
+export const mueValues = pgTable(
+  "mue_values",
+  {
+    id: serial("id").primaryKey(),
+    hcpcsCode: text("hcpcs_code").notNull(),
+    /** practitioner | outpatient_hospital | dme_supplier */
+    serviceType: text("service_type").notNull(),
+    period: text("period").notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+    mueValue: integer("mue_value").notNull(),
+    /** 1 = line edit, 2 = date-of-service edit (policy), 3 = date-of-service edit (clinical) */
+    adjudicationIndicator: integer("adjudication_indicator"),
+    /** Published indicator text, verbatim (e.g. "3 Date of Service Edit: Clinical"). */
+    adjudicationText: text("adjudication_text"),
+    rationale: text("rationale"),
+  },
+  (t) => [
+    uniqueIndex("mue_values_uq").on(t.hcpcsCode, t.serviceType, t.sourceReleaseId),
+    index("mue_values_code_idx").on(t.hcpcsCode),
+    index("mue_values_release_idx").on(t.sourceReleaseId),
+  ],
+);
+
 /* ------------------------------------------------------------------ */
 /* FDA NDC Directory and Purple Book                                    */
 /* ------------------------------------------------------------------ */
@@ -489,6 +519,7 @@ export type SourceRelease = typeof sourceReleases.$inferSelect;
 export type HcpcsCode = typeof hcpcsCodes.$inferSelect;
 export type PaymentLimit = typeof paymentLimits.$inferSelect;
 export type CrosswalkRow = typeof ndcHcpcsCrosswalk.$inferSelect;
+export type MueValue = typeof mueValues.$inferSelect;
 export type NdcProduct = typeof ndcProducts.$inferSelect;
 export type NdcPackage = typeof ndcPackages.$inferSelect;
 export type Drug = typeof drugs.$inferSelect;

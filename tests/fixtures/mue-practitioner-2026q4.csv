@@ -1,0 +1,31 @@
+"Current Procedural Terminology (CPT) codes, descriptions and other data only are copyright 2025 American Medical Association. All rights reserved. 
+
+CPT® is a registered trademark of the American Medical Association.
+
+Applicable FARS/DFARS Restrictions Apply to Government Use. 
+
+Fee schedules, relative value units, conversion factors and/or related components are not assigned by the AMA, are not part of CPT, and the AMA is not recommending their use.  The AMA does not directly or indirectly practice medicine or dispense medical services.  The AMA assumes no liability for the data contained or not contained herein.",,,
+"HCPCS/
+CPT Code",Practitioner Services MUE Values,MUE Adjudication Indicator,MUE Rationale
+0001U,1,2 Date of Service Edit: Policy,Code Descriptor / CPT Instruction
+96365,1,3 Date of Service Edit: Clinical,Clinical: Data
+A4206,0,3 Date of Service Edit: Clinical,CMS Policy
+A9606,224,3 Date of Service Edit: Clinical,Prescribing Information
+J0585,800,3 Date of Service Edit: Clinical,Clinical: Data
+J0897,120,3 Date of Service Edit: Clinical,Prescribing Information
+J1096,8,2 Date of Service Edit: Policy,Anatomic Consideration
+J1100,120,3 Date of Service Edit: Clinical,Clinical: Data
+J1569,400,3 Date of Service Edit: Clinical,Clinical: Data
+J1745,150,3 Date of Service Edit: Clinical,Prescribing Information
+J2783,60,3 Date of Service Edit: Clinical,Prescribing Information
+J7312,14,2 Date of Service Edit: Policy,Anatomic Consideration
+J8540,0,3 Date of Service Edit: Clinical,Oral Medication; Not Payable
+J9271,400,3 Date of Service Edit: Clinical,Prescribing Information
+J9311,160,3 Date of Service Edit: Clinical,Prescribing Information
+J9312,150,3 Date of Service Edit: Clinical,Prescribing Information
+Q5103,150,3 Date of Service Edit: Clinical,Prescribing Information
+Q5104,150,3 Date of Service Edit: Clinical,Prescribing Information
+Q5115,150,3 Date of Service Edit: Clinical,Prescribing Information
+Q5119,150,3 Date of Service Edit: Clinical,Prescribing Information
+Q5121,150,3 Date of Service Edit: Clinical,Prescribing Information
+Q5123,150,3 Date of Service Edit: Clinical,Prescribing Information

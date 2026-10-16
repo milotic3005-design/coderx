@@ -7,6 +7,7 @@ import { RecordView } from "@/components/client-bits";
 import { BillingUnitCard, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav, TableScroll, td, th } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
+import { CoverageLinks } from "@/components/tool-blocks";
 import { cachedDrugDetail } from "@/lib/data/cached";
 import { EXCLUDE_FLAG_LABELS, formatDate, formatMoney, formatNumber, formatPeriod, PRODUCT_CLASS_LABELS, titleCase } from "@/lib/format";
 import { slugSchema } from "@/lib/api/validation";
@@ -50,6 +51,7 @@ export default async function DrugPage({ params }: { params: Params }) {
     { id: "billing-units", label: "Billing units" },
     { id: "reimbursement", label: "Reimbursement" },
     { id: "related", label: "Related products & codes" },
+    { id: "coverage", label: "Coverage & policy" },
     { id: "history", label: "Code history" },
     { id: "sources", label: "Data sources" },
     { id: "limitations", label: "Limitations" },
@@ -364,7 +366,21 @@ export default async function DrugPage({ params }: { params: Params }) {
             <ProvenanceFooter sources={[d.reference || d.biosimilars.length ? d.releases.purpleBook : null, d.sameCodeDrugs.length ? d.releases.crosswalk : null]} />
           </Section>
 
-          <Section id="history" number="07" title="Code history" description="Quarterly changes to the HCPCS codes linked to this drug.">
+          <Section
+            id="coverage"
+            number="07"
+            title="Coverage and policy"
+            description="Medicare coverage is set nationally (NCDs) and by each Medicare Administrative Contractor (LCDs and Billing & Coding articles). These links open the official documents."
+          >
+            <CoverageLinks
+              keywords={[
+                ...(d.drug.genericName ? [{ label: d.drug.genericName.toLowerCase(), value: d.drug.genericName.toLowerCase() }] : []),
+                ...d.codes.filter((c) => c.isActive).slice(0, 3).map((c) => ({ label: c.code, value: c.code })),
+              ]}
+            />
+          </Section>
+
+          <Section id="history" number="08" title="Code history" description="Quarterly changes to the HCPCS codes linked to this drug.">
             {d.codeHistory.length ? (
               <div className="space-y-6">
                 {d.codes.map((c) => (
@@ -382,14 +398,14 @@ export default async function DrugPage({ params }: { params: Params }) {
             <ProvenanceFooter sources={[d.releases.hcpcs]} />
           </Section>
 
-          <Section id="sources" number="08" title="Data sources">
+          <Section id="sources" number="09" title="Data sources">
             <ProvenanceFooter sources={d.provenance} />
             <p className="mt-3 text-sm text-ink-muted">
               Every import with its checksum is listed on the <Link href="/sources" className="font-semibold text-brand hover:underline">data sources</Link> page.
             </p>
           </Section>
 
-          <Section id="limitations" number="09" title="Limitations and disclaimers">
+          <Section id="limitations" number="10" title="Limitations and disclaimers">
             <LimitationsList
               items={[
                 "FDA NDC Directory data is submitted by labelers; FDA notes that inclusion does not mean the information was verified or that a product is approved, covered, or reimbursable.",

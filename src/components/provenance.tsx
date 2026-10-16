@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
-import type { DataStatus, Provenance } from "@/lib/data/provenance";
+import type { Provenance } from "@/lib/data/provenance";
+import type { DataStatus } from "@/lib/data/status";
 import { formatDate, formatDateTime, formatPeriod } from "@/lib/format";
 import { DataStatusBadge } from "./badges";
 

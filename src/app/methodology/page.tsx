@@ -49,6 +49,7 @@ export default function MethodologyPage() {
               <li>CMS Medicare Part B drug payment limit files and NDC–HCPCS crosswalks (ASP, OPPS, AWP, PrEP; NOC in 2025) — every quarter from Q1 2021 onward, including CMS revisions of earlier quarters.</li>
               <li>FDA NDC Directory and its excluded-listings file — published daily; imported weekly by default, and whenever a new CMS crosswalk arrives.</li>
               <li>FDA Purple Book monthly data — imported when a new month is posted.</li>
+              <li>CMS NCCI Medically Unlikely Edit tables (practitioner, outpatient hospital, DME supplier) — the current quarter, imported when CMS posts a new one. Only HCPCS Level II rows are kept; CPT rows are dropped.</li>
             </ul>
             <p className="mt-3">
               Every file is checked for HTTP success, ZIP structure and per-entry CRC-32, expected contents, and plausible record counts, then loaded inside a single database transaction. A failure rolls back completely and is recorded. Re-running an import of an unchanged file is a no-op (matched by SHA-256). See the full log on{" "}
@@ -88,6 +89,12 @@ export default function MethodologyPage() {
           <Section id="units" number="06" title="Billing units and the calculator">
             <p>
               The billing unit comes from the CMS “HCPCS Code Dosage” column when available (official); otherwise it is read from the HCPCS long descriptor (derived). Billable units per package come from the CMS crosswalk. The calculator reports units as dose ÷ unit rounded up to a whole unit; for single-dose containers, units attributable to the discarded amount are ceil(amount opened ÷ unit) − administered units. Dollar figures are labeled derived arithmetic. Modifiers are discussed only as education.
+            </p>
+            <p className="mt-3">
+              Container facts (single- or multi-dose, milliliters per vial, powder) are read from the words of the FDA package description; when the text does not say, the field stays unknown. Vial amounts are the CMS billable units per item × the billing unit. The vial optimizer searches whole-vial combinations for the least unused drug; dose-rounding options are whole-vial doses within the threshold you set and are decision support only. The claim-line view places the NDC as <span className="code-chip">N4</span> + 11 digits + unit qualifier + quantity; milliliter quantities are split in proportion to drug administered and discarded, and other payer conventions must be entered by hand.
+            </p>
+            <p className="mt-3">
+              The MUE check compares units with the published CMS MUE value for each setting and shows the adjudication indicator; it is not a payment determination, and other payers set their own limits. The margin analyzer multiplies the payment limit by the billable units, applies the coinsurance percentage in the CMS file to the patient share, and reduces Medicare’s share by the sequestration percentage you enter; the costs you enter stay in your browser.
             </p>
           </Section>
 

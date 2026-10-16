@@ -7,8 +7,8 @@ import type { Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { discoverReleases } from "./discover";
 import { headInfo } from "./fetch";
-import { importRelease, runDerive, type ImportOutcome } from "./pipeline";
-import { manifestFor, type ReleaseCandidate, type SourceKey } from "./sources";
+import { importRelease, IMPORT_ORDER, runDerive, type ImportOutcome } from "./pipeline";
+import { manifestFor, SOURCE_KEYS, type ReleaseCandidate, type SourceKey } from "./sources";
 import { parseHttpDate } from "./values";
 
 export interface RefreshOptions {
@@ -31,7 +31,7 @@ export interface RefreshResult {
   durationMs: number;
 }
 
-const QUARTERLY: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs"];
+const QUARTERLY: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme"];
 
 async function currentReleases(db: Database, sourceKey: SourceKey) {
   return db
@@ -45,7 +45,7 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
   const started = Date.now();
   const log = options.log ?? (() => {});
   const budget = options.budgetMs ?? 240_000;
-  const wanted = new Set<SourceKey>(options.sources ?? ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "fda_ndc", "fda_ndc_excluded", "fda_purple_book"]);
+  const wanted = new Set<SourceKey>(options.sources ?? SOURCE_KEYS);
   // Older CMS postings use formats this importer does not support; never queue them, and clear past failed attempts.
   const minPeriod = process.env.CODERX_MIN_PERIOD ?? "2021-Q1";
   await db
@@ -103,7 +103,7 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
     else skipped.push({ sourceKey: "fda_purple_book", reason: `${cur.periodLabel} is current` });
   }
 
-  const order: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "fda_ndc", "fda_ndc_excluded", "fda_purple_book"];
+  const order = IMPORT_ORDER;
   queue.sort((a, b) => order.indexOf(a.sourceKey) - order.indexOf(b.sourceKey) || (a.period ?? "").localeCompare(b.period ?? ""));
 
   for (const candidate of queue) {

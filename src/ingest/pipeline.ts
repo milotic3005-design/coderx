@@ -10,11 +10,12 @@ import { insertBatches } from "./batch";
 import { deriveAll, type DeriveReport } from "./derive";
 import { download, type DownloadOptions, type Downloaded } from "./fetch";
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
+import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
 import { parseNotPayableCsv, parsePaymentLimitCsv } from "./parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, type FdaPackage, type FdaProduct } from "./parsers/fda";
 import { parseHcpcsFixedWidth, parseNocCodeRows, type Rejected } from "./parsers/hcpcs";
 import { isClinicianAdministeredProduct } from "./scope";
-import { SOURCES, type ReleaseCandidate, type SourceKey } from "./sources";
+import { isMueSource, MUE_SOURCES, SOURCES, type MueSourceKey, type ReleaseCandidate, type SourceKey } from "./sources";
 import { decodeText } from "./text-decode";
 import { parseHttpDate, quarterBounds } from "./values";
 import { readFirstSheet } from "./xlsx";
@@ -273,6 +274,56 @@ function parseCrosswalkRelease(file: Downloaded, period: string): Parsed {
         revisionOfExistingQuarter: true,
         addedRows: [...newKeys].filter((k) => !prevKeys.has(k)).length,
         removedRows: [...prevKeys].filter((k) => !newKeys.has(k)).length,
+      };
+    },
+  };
+}
+
+function parseMueRelease(file: Downloaded, period: string, sourceKey: MueSourceKey): Parsed {
+  const { serviceType } = MUE_SOURCES[sourceKey];
+  const entries = unzipVerified(file.bytes, (n) => /^MCR_MUE_.*\.csv$/i.test(baseName(n)));
+  const csv = entries[0];
+  if (!csv) throw new ValidationError("MUE archive: MCR_MUE_*.csv not found.");
+  const decoded = decodeText(csv.data);
+  const parsed = parseMueCsv(decoded.text);
+  assertPlausible(parsed.rows.length >= 1000, `MUE table has only ${parsed.rows.length} HCPCS Level II rows; expected at least 1,000.`);
+  const bounds = quarterBounds(period);
+  const effective = mueEffectiveDate(baseName(csv.name));
+  const warnings: string[] = [];
+  if (effective && effective !== bounds.start) warnings.push(`File states effective ${effective}; period ${period} starts ${bounds.start}.`);
+  return {
+    fileName: baseName(csv.name),
+    encoding: decoded.encoding,
+    effectiveStart: effective ?? bounds.start,
+    effectiveEnd: bounds.end,
+    recordCount: parsed.rows.length,
+    rejected: parsed.rejected,
+    excluded: { cptRows: parsed.excludedCpt },
+    warnings,
+    details: { serviceType, valueColumn: parsed.valueColumn },
+    load: async (tx, releaseId) => {
+      // Compare with the values served before this import: the same quarter (a CMS re-post) or the latest earlier quarter.
+      const prior = await tx
+        .select({ code: t.mueValues.hcpcsCode, value: t.mueValues.mueValue, period: t.mueValues.period })
+        .from(t.mueValues)
+        .innerJoin(t.sourceReleases, eq(t.sourceReleases.id, t.mueValues.sourceReleaseId))
+        .where(and(eq(t.mueValues.serviceType, serviceType), eq(t.sourceReleases.isCurrent, true), sql`${t.mueValues.period} <= ${period}`));
+      const comparePeriod = prior.reduce<string | null>((max, r) => (max === null || r.period > max ? r.period : max), null);
+      const before = new Map(prior.filter((r) => r.period === comparePeriod).map((r) => [r.code, r.value]));
+      await tx.delete(t.mueValues).where(and(eq(t.mueValues.serviceType, serviceType), eq(t.mueValues.period, period)));
+      await insertBatches(
+        tx,
+        t.mueValues,
+        parsed.rows.map((r) => ({ ...r, serviceType, period, sourceReleaseId: releaseId })),
+        9,
+      );
+      if (!comparePeriod) return { comparedWith: null };
+      const now = new Map(parsed.rows.map((r) => [r.hcpcsCode, r.mueValue]));
+      return {
+        comparedWith: comparePeriod,
+        added: [...now.keys()].filter((k) => !before.has(k)).length,
+        removed: [...before.keys()].filter((k) => !now.has(k)).length,
+        changed: [...now].filter(([k, v]) => before.has(k) && before.get(k) !== v).length,
       };
     },
   };
@@ -552,7 +603,8 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
         parsed = parsePurpleBookRelease(file);
         break;
       default:
-        throw new Error(`Unknown source ${String(candidate.sourceKey)}`);
+        if (!isMueSource(candidate.sourceKey)) throw new Error(`Unknown source ${String(candidate.sourceKey)}`);
+        parsed = parseMueRelease(file, period, candidate.sourceKey);
     }
 
     const releasePeriod = period;
@@ -640,4 +692,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "fda_ndc", "fda_ndc_excluded", "fda_purple_book"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "fda_purple_book"];
