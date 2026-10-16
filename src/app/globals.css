@@ -118,7 +118,7 @@
   html {
     color-scheme: light;
     -webkit-text-size-adjust: 100%;
-    scroll-padding-top: 5rem;
+    scroll-padding-top: 8rem;
   }
   html.dark {
     color-scheme: dark;

@@ -18,7 +18,7 @@ export function Section({
   children: ReactNode;
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24 border-t hairline pt-8 pb-10 first:border-t-0 first:pt-2">
+    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-32 border-t hairline pt-8 pb-10 first:border-t-0 first:pt-2">
       <div className="mb-5 flex items-baseline gap-3">
         <span aria-hidden="true" className="code-chip text-sm text-ink-faint">
           {number}
@@ -38,7 +38,7 @@ export function Section({
 /** Sticky "On this page" navigation for long detail pages. */
 export function SectionNav({ items }: { items: { id: string; label: string }[] }) {
   return (
-    <nav aria-label="On this page" className="min-w-0 text-sm lg:sticky lg:top-24">
+    <nav aria-label="On this page" className="min-w-0 text-sm lg:sticky lg:top-32">
       <p className="mb-2 text-xs font-semibold tracking-wider text-ink-faint uppercase">On this page</p>
       <ol className="flex gap-1 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
         {items.map((item, i) => (

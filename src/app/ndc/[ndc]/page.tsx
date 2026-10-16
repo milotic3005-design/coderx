@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { Calculator, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ActiveBadge, DataStatusBadge, FamilyBadge } from "@/components/badges";
 import { CopyButton, RecordView } from "@/components/client-bits";
 import { LimitationsList } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, EmptyState, KeyValueGrid, NoData, PageHeader, Section, SectionNav, TableScroll, td, th } from "@/components/layout-bits";
+import { GlanceStrip, type GlanceAction, type GlanceItem } from "@/components/glance";
 import { ProvenanceFooter } from "@/components/provenance";
+import { StickyRecordBar } from "@/components/sticky-record-bar";
 import { cachedNdcDetail } from "@/lib/data/cached";
 import { EXCLUDE_FLAG_LABELS, formatDate, formatMoney, formatNumber, formatPeriod, titleCase } from "@/lib/format";
 import { formatNdc11, parseNdc } from "@/lib/ndc";
@@ -74,6 +77,23 @@ export default async function NdcPage({ params }: { params: Params }) {
   const currentRows = d.crosswalk.filter((x) => x.isCurrent);
   const title = primary ? `${[primary.product.proprietaryName, primary.product.proprietaryNameSuffix].filter(Boolean).join(" ")}` : (d.crosswalk[0]?.drugName ?? "NDC package");
 
+  const mainCode = d.codes.find((c) => c.crosswalk?.isCurrent) ?? d.codes[0] ?? null;
+  const units = mainCode?.crosswalk?.billUnitsPerPackage != null ? Number(mainCode.crosswalk.billUnitsPerPackage) : null;
+  const pay = mainCode?.payments[0];
+  const limit = pay && pay.paymentLimit !== null ? Number(pay.paymentLimit) : null;
+  const perPackage = units != null && limit != null ? units * limit : null;
+  const fdaStatus = !primary ? "Not found" : primary.isActive ? "Listed" : primary.package.listingStatus === "excluded" ? "Excluded" : "Ended";
+  const glance: GlanceItem[] = [
+    { label: d.codes.length > 1 ? "HCPCS codes" : "HCPCS code", value: d.codes.length ? <span className="code-chip">{d.codes.map((c) => c.code).join(", ")}</span> : "None", hint: d.codes.length ? "CMS NDC–HCPCS crosswalk" : "Not on a CMS crosswalk" },
+    { label: "Billable units / package", value: units != null ? <span className="code-chip">{formatNumber(units)}</span> : "—", hint: mainCode?.billingUnit.text ? `units of ${mainCode.billingUnit.text}` : "From the CMS crosswalk" },
+    { label: "Payment per package", value: perPackage != null ? <span className="code-chip">{formatMoney(perPackage, 2)}</span> : "—", hint: perPackage != null && pay ? `Derived: units × ${formatMoney(limit)} (${formatPeriod(pay.period)})` : "No current payment limit" },
+    { label: "FDA listing", value: fdaStatus, hint: primary?.manufacturerName ?? primary?.product.labelerName ?? "FDA NDC Directory", tone: fdaStatus === "Listed" ? "default" : "attention" },
+  ];
+  const glanceActions: GlanceAction[] = [
+    ...(mainCode ? [{ href: `/calculator?code=${mainCode.code}&ndc=${formatted}`, label: "Calculate with this NDC", icon: <Calculator aria-hidden="true" className="h-4 w-4" />, primary: true }] : []),
+    { href: "/tools/audit", label: "Audit a list of NDCs", icon: <ClipboardCheck aria-hidden="true" className="h-4 w-4" /> },
+  ];
+
   const nav = [
     { id: "overview", label: "Overview" },
     { id: "hcpcs", label: "HCPCS & billing units" },
@@ -110,6 +130,17 @@ export default async function NdcPage({ params }: { params: Params }) {
           </>
         }
         actions={<CopyButton text={formatted} label="Copy NDC" />}
+      />
+
+      <GlanceStrip items={glance} actions={glanceActions} />
+      <StickyRecordBar
+        title={formatted}
+        subtitle={title}
+        facts={[
+          ...(mainCode ? [{ label: "HCPCS", value: mainCode.code }] : []),
+          ...(units != null ? [{ label: "units / pkg", value: formatNumber(units) }] : []),
+        ]}
+        action={mainCode ? { href: `/calculator?code=${mainCode.code}&ndc=${formatted}`, label: "Calculate" } : undefined}
       />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[13rem_1fr]">

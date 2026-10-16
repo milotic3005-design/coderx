@@ -2,6 +2,7 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 import { NAV, SITE } from "@/lib/site";
 import { ThemeToggle } from "./client-bits";
+import { CommandPalette, CommandPaletteButton } from "./command-palette";
 import { HeaderSearch } from "./header-search";
 import { Wordmark } from "./logo";
 
@@ -25,6 +26,7 @@ export function SiteHeader() {
         </nav>
         <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
           <HeaderSearch />
+          <CommandPaletteButton />
           <ThemeToggle />
           <details className="relative lg:hidden">
             <summary className="inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-lg text-ink-muted hover:bg-surface hover:text-ink [&::-webkit-details-marker]:hidden">
@@ -45,6 +47,7 @@ export function SiteHeader() {
           </details>
         </div>
       </div>
+      <CommandPalette />
     </header>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { Calculator, GitCompareArrows, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActiveBadge, ClassBadge, DataStatusBadge, FamilyBadge, NocBadge } from "@/components/badges";
@@ -7,6 +8,8 @@ import { RecordView } from "@/components/client-bits";
 import { BillingUnitCard, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav, TableScroll, td, th } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
+import { GlanceStrip, type GlanceAction, type GlanceItem } from "@/components/glance";
+import { StickyRecordBar } from "@/components/sticky-record-bar";
 import { CoverageLinks } from "@/components/tool-blocks";
 import { cachedDrugDetail } from "@/lib/data/cached";
 import { EXCLUDE_FLAG_LABELS, formatDate, formatMoney, formatNumber, formatPeriod, PRODUCT_CLASS_LABELS, titleCase } from "@/lib/format";
@@ -43,6 +46,45 @@ export default async function DrugPage({ params }: { params: Params }) {
   const currentCodes = d.codes.filter((c) => c.relationship?.isCurrent);
   const formerCodes = d.codes.filter((c) => !c.relationship?.isCurrent);
   const excluded = d.packages.filter((k) => k.listingStatus === "excluded");
+  const primaryCode = currentCodes.find((c) => c.isActive) ?? currentCodes[0] ?? null;
+  const primaryPay = primaryCode?.payments[0] && primaryCode.payments[0].period === d.latestPaymentPeriod ? primaryCode.payments[0] : null;
+  const primaryLimit = primaryPay ? (primaryPay.paymentLimit !== null ? formatMoney(primaryPay.paymentLimit) : primaryPay.paymentLimitText) : null;
+  const activePackages = d.packages.filter((k) => k.isActive).length;
+  const glance: GlanceItem[] = [
+    {
+      label: currentCodes.length > 1 ? "HCPCS codes" : "HCPCS code",
+      value: currentCodes.length ? <span className="code-chip">{currentCodes.map((c) => c.code).join(", ")}</span> : "None",
+      hint: currentCodes.length ? "Via the CMS NDC crosswalk" : d.nocRelationship ? "Billed with a NOC code" : "No CMS crosswalk row",
+    },
+    {
+      label: "Billing unit",
+      value: primaryCode?.billingUnit.text ? <span className="code-chip">{primaryCode.billingUnit.text}</span> : "—",
+      hint: primaryCode ? `One unit of ${primaryCode.code}` : "No linked code",
+    },
+    {
+      label: "Part B payment limit",
+      value: primaryLimit ? <span className="code-chip">{primaryLimit}</span> : "None",
+      hint: primaryPay ? `${primaryCode!.code} · ${formatPeriod(primaryPay.period)}` : "No current limit",
+    },
+    {
+      label: "NDC packages",
+      value: <span className="code-chip">{activePackages}</span>,
+      hint: `active of ${d.packages.length} in the FDA directory`,
+    },
+  ];
+  if (d.reference || d.biosimilars.length) {
+    glance.push({
+      label: d.reference ? "Reference product" : "Biosimilars",
+      value: d.reference ? d.reference.displayName : <span className="code-chip">{d.biosimilars.length}</span>,
+      hint: "FDA Purple Book",
+    });
+  }
+  const refSlug = d.reference?.slug ?? (d.biosimilars.length ? drug.slug : null);
+  const glanceActions: GlanceAction[] = [
+    ...(primaryCode ? [{ href: `/calculator?code=${primaryCode.code}`, label: "Calculate units", icon: <Calculator aria-hidden="true" className="h-4 w-4" />, primary: true }] : []),
+    ...(refSlug ? [{ href: `/tools/biosimilars#ref-${refSlug}`, label: "Compare biosimilars", icon: <GitCompareArrows aria-hidden="true" className="h-4 w-4" /> }] : []),
+    { href: "#coverage", label: "Coverage & policy", icon: <ShieldCheck aria-hidden="true" className="h-4 w-4" /> },
+  ];
 
   const nav = [
     { id: "overview", label: "Overview" },
@@ -95,6 +137,14 @@ export default async function DrugPage({ params }: { params: Params }) {
             {d.nocRelationship ? <NocBadge /> : null}
           </>
         }
+      />
+
+      <GlanceStrip items={glance} actions={glanceActions} />
+      <StickyRecordBar
+        title={drug.displayName}
+        subtitle={[drug.genericName, currentCodes.map((c) => c.code).join(", ")].filter(Boolean).join(" · ")}
+        facts={primaryLimit && primaryPay ? [{ label: `per ${primaryPay.dosageDescriptor ?? "unit"}`, value: primaryLimit }] : []}
+        action={primaryCode ? { href: `/calculator?code=${primaryCode.code}`, label: "Calculate units" } : undefined}
       />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[13rem_1fr]">

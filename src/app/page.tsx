@@ -5,6 +5,7 @@ import { RecentlyViewed } from "@/components/client-bits";
 import { DataStatusBadge, FamilyBadge } from "@/components/badges";
 import { Disclaimer } from "@/components/layout-bits";
 import { SearchCombobox } from "@/components/search-combobox";
+import { ToolsBento } from "@/components/tools-bento";
 import { cachedHomeData } from "@/lib/data/cached";
 import { formatDate, formatDateTime, formatPeriod } from "@/lib/format";
 import { SITE } from "@/lib/site";
@@ -107,6 +108,23 @@ export default async function HomePage() {
         <RecentlyViewed />
       </div>
 
+      <section aria-labelledby="tools-title" className="mx-auto mt-14 max-w-7xl">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="tools-title" className="font-display text-3xl font-semibold tracking-tight text-ink">
+              Tools for the infusion workflow
+            </h2>
+            <p className="mt-2 max-w-2xl text-ink-muted">From the chair to the chargemaster: units and claim lines, then audits, margins, biosimilars, and what changed this quarter.</p>
+          </div>
+          <Link href="/tools" className="inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-brand hover:underline">
+            All tools <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="mt-6">
+          <ToolsBento headingLevel={3} />
+        </div>
+      </section>
+
       <section aria-labelledby="steps-title" className="mx-auto mt-14 max-w-7xl">
         <h2 id="steps-title" className="font-display text-3xl font-semibold tracking-tight text-ink">How CodeRx works</h2>
         <ol className="mt-6 grid gap-4 md:grid-cols-3">
@@ -162,9 +180,14 @@ export default async function HomePage() {
           ) : (
             <p className="mt-4 text-sm text-ink-muted">No drug codes were added in the latest quarter, or the HCPCS file has not been imported yet.</p>
           )}
-          <Link href="/codes/j" className="mt-4 inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-brand hover:underline">
-            Browse all J-codes <ArrowRight aria-hidden="true" className="h-4 w-4" />
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-x-5">
+            <Link href="/tools/changes" className="inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-brand hover:underline">
+              Everything that changed <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+            <Link href="/codes/j" className="inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-brand hover:underline">
+              Browse all J-codes <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </div>
         </section>
       </div>
 

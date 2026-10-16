@@ -41,6 +41,7 @@ npm run lint && npm run typecheck && npm test && npm run test:e2e && npm run bui
 | Chargemaster audit (pair mismatch, terminated code), margin analyzer (costs not sent), biosimilar comparator, quarterly changes + watchlist | `tests/e2e/tools.spec.ts`, `tests/unit/calculator-tools.test.ts` (margin arithmetic) |
 | Coverage links and MUE table on code pages | `tests/e2e/tools.spec.ts` |
 | Axe WCAG checks, heading order, and overflow for every `/tools` page | `tests/e2e/a11y-and-layout.spec.ts` |
+| At-a-glance strip, sticky record bar, command palette (Ctrl+K, ranking, Escape), tools bento, pinned calculator summary | `tests/e2e/ui.spec.ts` |
 
 Also covered: NDC normalization edge cases, parsers for every source format, ZIP corruption and truncation, idempotent re-imports, transactional rollback, CPT exclusion, quarter history, biosimilar linking by BLA, “no name-based inference”, API validation and error envelopes, admin auth, rate limiting, CSP and security headers, axe-core WCAG 2.x A/AA in light and dark themes, heading order, touch targets, table scrolling on small screens.
 
@@ -52,7 +53,7 @@ Also covered: NDC normalization edge cases, parsers for every source format, ZIP
 | `tsc --noEmit` | 0 errors |
 | Vitest unit | 118 passed |
 | Vitest integration (PGlite PostgreSQL) | 45 passed |
-| Playwright E2E + axe + responsive | 66 passed |
+| Playwright E2E + axe + responsive | 72 passed |
 | `next build` | succeeded |
 
 ## Production smoke test (2026-10-15 UTC)

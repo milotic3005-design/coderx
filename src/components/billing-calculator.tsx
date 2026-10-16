@@ -9,6 +9,7 @@ import type { MueEntry } from "@/lib/mue";
 import { ClaimLines, suggestedQualifier } from "./calculator/claim-lines";
 import { MueCheck } from "./calculator/mue-check";
 import { PrintWorksheet } from "./calculator/print-worksheet";
+import { ResultSummary } from "./calculator/result-summary";
 import { VialOptimizer } from "./calculator/vial-optimizer";
 
 /** A package CMS crosswalks to the loaded code, with facts read from its FDA package text. */
@@ -442,23 +443,17 @@ export function BillingCalculator({ prefill }: { prefill: CalculatorPrefill }) {
             </p>
           ) : (
             <>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border hairline bg-surface p-5">
-                  <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Administered HCPCS units</p>
-                  <p className="mt-1 font-display text-5xl font-semibold text-ink num">{result.administeredUnits}</p>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {result.rawUnits} before rounding{prefill.code ? ` · ${prefill.code}` : ""}
-                  </p>
-                </div>
-                <div className="rounded-xl border hairline bg-surface p-5">
-                  <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Units attributable to discarded drug</p>
-                  <p className="mt-1 font-display text-5xl font-semibold text-ink num">{result.discardedUnits ?? "—"}</p>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {result.discardedAmount != null ? `${result.discardedAmount} ${result.unitLabel} unused` : "Add container details to calculate"}
-                  </p>
-                </div>
-              </div>
-              {prefill.code && prefill.mue ? <MueCheck code={prefill.code} entries={prefill.mue} administeredUnits={result.administeredUnits} discardedUnits={result.discardedUnits} /> : null}
+              <ResultSummary
+              result={result}
+              code={prefill.code}
+              mue={prefill.mue}
+              onView={() => {
+                const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                resultHeading.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+                resultHeading.current?.focus({ preventScroll: true });
+              }}
+            />
+            {prefill.code && prefill.mue ? <MueCheck code={prefill.code} entries={prefill.mue} administeredUnits={result.administeredUnits} discardedUnits={result.discardedUnits} /> : null}
               {result.utilizationPct != null ? (
                 <div className="rounded-xl border hairline bg-surface p-5">
                   <div className="flex items-center justify-between text-sm">

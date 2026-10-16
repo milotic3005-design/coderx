@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { Calculator, LineChart, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ActiveBadge, DataStatusBadge, FamilyBadge, NocBadge, NonMedicareBadge } from "@/components/badges";
@@ -7,6 +8,8 @@ import { CopyButton, RecordView } from "@/components/client-bits";
 import { BillingUnitCard, CodeHistoryTable, CrosswalkTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, Sparkline } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
+import { GlanceStrip, type GlanceItem } from "@/components/glance";
+import { StickyRecordBar } from "@/components/sticky-record-bar";
 import { CoverageLinks, MueTable } from "@/components/tool-blocks";
 import { cachedHcpcsDetail } from "@/lib/data/cached";
 import { formatDate, formatMoney, formatPeriod } from "@/lib/format";
@@ -46,6 +49,38 @@ export default async function HcpcsPage({ params }: { params: Params }) {
   const pastCrosswalk = d.crosswalk.filter((x) => !x.isCurrent);
   const nonMedicare = d.family?.medicare === "non-medicare";
   const pricing = d.code.pricingIndicators.map((p) => `${p} — ${PRICING_INDICATORS[p] ?? "Unknown"}`).join("; ");
+  const mueOf = (k: string) => d.mue.find((m) => m.serviceType === k)?.value;
+  const mueText = d.mue.length ? [mueOf("practitioner"), mueOf("outpatient_hospital")].map((v) => v ?? "—").join(" / ") : null;
+  const limitText = isCurrentPayment ? (latest.paymentLimit !== null ? formatMoney(latest.paymentLimit) : (latest.paymentLimitText ?? null)) : null;
+  const coins = isCurrentPayment && latest.coinsurancePct != null ? Number(latest.coinsurancePct) : null;
+  const glance: GlanceItem[] = [
+    {
+      label: "Billing unit",
+      value: d.billingUnit.text ? <span className="code-chip">{d.billingUnit.text}</span> : "Not stated",
+      hint: d.billingUnit.source === "cms_payment_limits" ? "CMS dosage column" : d.billingUnit.source === "hcpcs_descriptor" ? "Read from the descriptor (derived)" : "Enter it in the calculator",
+    },
+    {
+      label: "Part B payment limit",
+      value: limitText ? <span className="code-chip">{limitText}</span> : "None",
+      hint: limitText ? `per ${latest!.dosageDescriptor ?? "unit"} · ${formatPeriod(latest!.period)}` : d.code.isNoc ? "NOC — priced by the MAC" : `Not in ${d.latestPaymentPeriod ? formatPeriod(d.latestPaymentPeriod) : "the latest file"}`,
+    },
+    {
+      label: "Max units / day",
+      value: mueText ? <span className="code-chip">{mueText}</span> : "Not published",
+      hint: mueText ? "CMS MUE · office / outpatient" : "No public CMS MUE",
+    },
+    {
+      label: "Patient coinsurance",
+      value: coins != null ? <span className="code-chip">{Number.isInteger(coins) ? coins : coins.toFixed(1)}%</span> : "—",
+      hint: coins != null ? (coins < 20 ? "Reduced: Part B inflation rebate" : "Standard Part B share") : "No current payment limit",
+      tone: coins != null && coins < 20 ? "attention" : "default",
+    },
+    {
+      label: "NDCs on CMS crosswalk",
+      value: <span className="code-chip">{currentCrosswalk.length}</span>,
+      hint: d.latestCrosswalkPeriod ? `${formatPeriod(d.latestCrosswalkPeriod)} crosswalk` : "No crosswalk imported",
+    },
+  ];
 
   const nav = [
     { id: "overview", label: "Overview" },
@@ -108,6 +143,24 @@ export default async function HcpcsPage({ params }: { params: Params }) {
           </>
         }
         actions={<CopyButton text={code} label="Copy code" />}
+      />
+
+      <GlanceStrip
+        items={glance}
+        actions={[
+          { href: `/calculator?code=${code}`, label: "Calculate units", icon: <Calculator aria-hidden="true" className="h-4 w-4" />, primary: true },
+          { href: "#reimbursement", label: "Payment history", icon: <LineChart aria-hidden="true" className="h-4 w-4" /> },
+          { href: "#coverage", label: "Coverage & policy", icon: <ShieldCheck aria-hidden="true" className="h-4 w-4" /> },
+        ]}
+      />
+      <StickyRecordBar
+        title={code}
+        subtitle={d.code.shortDescription ?? d.code.longDescription}
+        facts={[
+          ...(limitText ? [{ label: `per ${latest!.dosageDescriptor ?? "unit"}`, value: limitText }] : []),
+          ...(mueText ? [{ label: "MUE", value: mueText }] : []),
+        ]}
+        action={{ href: `/calculator?code=${code}`, label: "Calculate units" }}
       />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[13rem_1fr]">
