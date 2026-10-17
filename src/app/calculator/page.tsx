@@ -63,6 +63,8 @@ export default async function CalculatorPage({ searchParams }: { searchParams: S
               mlPerItem: facts.mlPerItem,
               containerType: facts.containerType,
               isPowder: facts.isPowder,
+              medicaidUnitType: x.medicaid?.unitType ?? null,
+              medicaidPeriod: x.medicaid?.period ?? null,
             };
           })
           .sort((a, b) => Number(b.fdaListed) - Number(a.fdaListed) || a.amountPerItem - b.amountPerItem || (a.labeler ?? "").localeCompare(b.labeler ?? ""));

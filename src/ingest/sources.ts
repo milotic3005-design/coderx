@@ -15,7 +15,8 @@ export type SourceKey =
   | "cms_mue_dme"
   | "fda_ndc"
   | "fda_ndc_excluded"
-  | "fda_purple_book";
+  | "fda_purple_book"
+  | "cms_mdrp_products";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -27,6 +28,7 @@ export const SOURCE_KEYS: SourceKey[] = [
   "fda_ndc",
   "fda_ndc_excluded",
   "fda_purple_book",
+  "cms_mdrp_products",
 ];
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
@@ -116,6 +118,16 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     badge: "official-cms",
     licenseNote: MUE_LICENSE,
   },
+  cms_mdrp_products: {
+    key: "cms_mdrp_products",
+    organization: "CMS",
+    dataset: "Drug Products in the Medicaid Drug Rebate Program",
+    shortName: "CMS Medicaid Drug Rebate Program product data",
+    landingPageUrl: "https://www.medicaid.gov/medicaid/prescription-drugs/medicaid-drug-rebate-program/medicaid-drug-rebate-program-data",
+    cadence: "quarterly",
+    badge: "official-cms",
+    licenseNote: "U.S. Government work (data.medicaid.gov). CodeRx keeps the newest quarter for the NDCs it indexes. Labeler-reported; a missing NDC is not proof that a drug lacks a rebate agreement.",
+  },
   fda_ndc: {
     key: "fda_ndc",
     organization: "FDA",
@@ -195,6 +207,9 @@ export const MANIFEST: ReleaseCandidate[] = [
   { sourceKey: "cms_mue_practitioner", period: "2026-Q4", url: `${CMS}/files/zip/medicare-ncci-2026-q4-practitioner-services-mue-table.zip`, publicationLabel: "Effective October 1, 2026; Posted September 1, 2026", publicationDate: "2026-09-01" },
   { sourceKey: "cms_mue_outpatient", period: "2026-Q4", url: `${CMS}/files/zip/medicare-ncci-2026-q4-facility-outpatient-hospital-services-mue-table.zip`, publicationLabel: "Effective October 1, 2026; Posted September 1, 2026", publicationDate: "2026-09-01" },
   { sourceKey: "cms_mue_dme", period: "2026-Q4", url: `${CMS}/files/zip/medicare-ncci-2026-q4-dme-supplier-services-mue-table.zip`, publicationLabel: "Effective October 1, 2026; Posted September 1, 2026", publicationDate: "2026-09-01" },
+
+  // Medicaid Drug Rebate Program product data (one file per quarter; each file repeats every quarter since 2022)
+  { sourceKey: "cms_mdrp_products", period: "2026-Q2", url: "https://download.medicaid.gov/data/drugproducts-q2-2026.csv", publicationLabel: "2Q 2026 product data" },
 
   // FDA (period assigned from the file's Last-Modified date at download time)
   { sourceKey: "fda_ndc", period: null, url: "https://www.accessdata.fda.gov/cder/ndctext.zip" },

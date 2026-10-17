@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
-import { parseAspLandingPage, parseHcpcsLandingPage, parseMueLandingPage, parsePurpleBookDownloads } from "@/ingest/discover";
+import { discoverMdrp, mdrpUrl, parseAspLandingPage, parseHcpcsLandingPage, parseMueLandingPage, parsePurpleBookDownloads, recentQuarters } from "@/ingest/discover";
+import { csvFields, parseMdrpStream } from "@/ingest/parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "@/ingest/parsers/cms-mue";
 import { crosswalkTypeFromFileName, parseCrosswalkCsv } from "@/ingest/parsers/cms-crosswalk";
 import { deriveMethodology, parseNotPayableCsv, parsePaymentLimitCsv } from "@/ingest/parsers/cms-payment";
@@ -138,6 +139,55 @@ describe("CMS MUE table parser (real excerpt)", () => {
   });
   it("reads the effective date from the CMS file name", () => {
     expect(mueEffectiveDate("MCR_MUE_PractitionerServices_Eff_10-01-2026.csv")).toBe("2026-10-01");
+  });
+});
+
+describe("Medicaid Drug Rebate Program product parser (real excerpt)", () => {
+  const bytes = new Uint8Array(readFileSync(join(FIXTURE_DIR, "mdrp-products-2026q2.csv")));
+  /** Feed the file in small, awkward chunks so records and quoted fields straddle chunk boundaries. */
+  async function* chunked(size: number) {
+    for (let i = 0; i < bytes.length; i += size) yield bytes.subarray(i, i + size);
+  }
+
+  it("parses quoted fields with commas and doubled quotes", () => {
+    expect(csvFields('2026,2,"GENENTECH, INC.",50242005121')).toEqual(["2026", "2", "GENENTECH, INC.", "50242005121"]);
+    expect(csvFields('a,"say ""hi""",c')).toEqual(["a", 'say "hi"', "c"]);
+  });
+
+  it("keeps only the requested quarter and in-scope NDCs, across chunk boundaries", async () => {
+    const all = await parseMdrpStream(chunked(97), { year: 2026, quarter: 2, keep: () => true });
+    const scoped = await parseMdrpStream(chunked(4096), { year: 2026, quarter: 2, keep: (n) => n === "50242005121" });
+    expect(all.quarterRows).toBe(104);
+    expect(all.totalRows).toBe(107);
+    expect(all.quartersSeen).toEqual(["2026-Q1", "2026-Q2"]);
+    expect(scoped.rows).toHaveLength(1);
+    expect(scoped.rows[0]).toMatchObject({
+      ndc11: "50242005121",
+      labelerName: "GENENTECH, INC.",
+      fdaProductName: "RITUXAN (RITUXIMAB)",
+      unitType: "ML",
+      unitsPerPackage: "10",
+      drugCategory: "S",
+      drugType: "1",
+      codStatus: "02",
+      terminationDate: null,
+      marketDate: "1997-12-16",
+      clottingFactor: false,
+      applicationNumber: "0103705",
+    });
+    expect(all.rejected).toEqual([]);
+  });
+
+  it("discovers the newest posted quarter by probing predictable URLs", async () => {
+    expect(recentQuarters(new Date("2026-10-16"), 3)).toEqual(["2026-Q4", "2026-Q3", "2026-Q2"]);
+    expect(mdrpUrl("2026-Q2")).toBe("https://download.medicaid.gov/data/drugproducts-q2-2026.csv");
+    const head = async (url: string) => {
+      if (!url.endsWith("q2-2026.csv")) throw new Error("HTTP 404");
+      return { lastModified: "Mon, 03 Aug 2026 12:00:00 GMT", etag: null, contentLength: null };
+    };
+    expect(await discoverMdrp(new Date("2026-10-16"), head)).toEqual([
+      { sourceKey: "cms_mdrp_products", period: "2026-Q2", url: mdrpUrl("2026-Q2"), publicationLabel: "Last-Modified Mon, 03 Aug 2026 12:00:00 GMT", publicationDate: "2026-08-03" },
+    ]);
   });
 });
 

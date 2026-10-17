@@ -20,6 +20,7 @@ export const FIXTURE_URLS = {
   muePractitioner2026q4: "https://www.cms.gov/files/zip/medicare-ncci-2026-q4-practitioner-services-mue-table.zip",
   mueOutpatient2026q4: "https://www.cms.gov/files/zip/medicare-ncci-2026-q4-facility-outpatient-hospital-services-mue-table.zip",
   mueDme2026q4: "https://www.cms.gov/files/zip/medicare-ncci-2026-q4-dme-supplier-services-mue-table.zip",
+  mdrp2026q2: "https://download.medicaid.gov/data/drugproducts-q2-2026.csv",
   fdaNdc: "https://www.accessdata.fda.gov/cder/ndctext.zip",
   fdaExcluded: "https://www.accessdata.fda.gov/cder/ndc_excluded.zip",
   purpleBook: "https://www.accessdata.fda.gov/drugsatfda_docs/PurpleBook/2026/purplebook-search-September-data-download.csv",
@@ -57,6 +58,7 @@ function bodies(): Map<string, Uint8Array> {
     [FIXTURE_URLS.fdaNdc, archive({ "product.txt": read("fda-product.txt"), "package.txt": read("fda-package.txt") })],
     [FIXTURE_URLS.fdaExcluded, archive({ "Products_excluded.txt": read("fda-products-excluded.txt"), "Packages_excluded.txt": read("fda-packages-excluded.txt") })],
     [FIXTURE_URLS.purpleBook, read("purplebook.csv")],
+    [FIXTURE_URLS.mdrp2026q2, read("mdrp-products-2026q2.csv")],
   ]);
   return cache;
 }
@@ -89,6 +91,7 @@ export const FIXTURE_RELEASES: ReleaseCandidate[] = [
   { sourceKey: "cms_mue_dme", period: "2026-Q4", url: FIXTURE_URLS.mueDme2026q4, publicationLabel: "Effective October 1, 2026; Posted September 1, 2026", publicationDate: "2026-09-01" },
   { sourceKey: "fda_ndc", period: null, url: FIXTURE_URLS.fdaNdc },
   { sourceKey: "fda_ndc_excluded", period: null, url: FIXTURE_URLS.fdaExcluded },
+  { sourceKey: "cms_mdrp_products", period: "2026-Q2", url: FIXTURE_URLS.mdrp2026q2, publicationLabel: "2Q 2026 product data" },
   { sourceKey: "fda_purple_book", period: "2026-09", url: FIXTURE_URLS.purpleBook, publicationLabel: "September 2026 data download" },
 ];
 

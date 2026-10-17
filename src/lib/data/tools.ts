@@ -8,10 +8,11 @@ import { getDb, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { EXCLUDE_FLAG_LABELS, formatPeriod } from "@/lib/format";
 import { isCodeActive } from "@/lib/hcpcs";
+import { medicaidFlags, type MedicaidInfo } from "@/lib/medicaid";
 import type { MueEntry } from "@/lib/mue";
 import { formatNdc11 } from "@/lib/ndc";
 import { loadReleases, toProvenance, type Provenance, type ReleaseRow } from "./provenance";
-import { mueFor, mueReleases } from "./queries";
+import { medicaidFor, mueFor, mueReleases } from "./queries";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -59,6 +60,7 @@ export interface AuditNdcInfo {
     /** Current Part B payment limit of the crosswalked code, when CMS publishes one. */
     payment: { period: string; limit: string | null; dosage: string | null; coinsurancePct: string | null } | null;
   }[];
+  medicaid: MedicaidInfo | null;
 }
 
 export interface AuditRow {
@@ -124,6 +126,8 @@ export async function auditItems(items: AuditItem[], dbArg?: Database) {
       : [],
   ]);
 
+  const medicaid = await medicaidFor(db, ndcs);
+  const mdrpPeriod = latest.get("cms_mdrp_products")?.periodLabel ?? null;
   const payCodes = [...new Set([...codes, ...xwByNdc.map((x) => x.hcpcsCode).filter((c): c is string => !!c)])];
   const payRows =
     payCodes.length && payPeriod
@@ -189,6 +193,7 @@ export async function auditItems(items: AuditItem[], dbArg?: Database) {
           }
         : null,
       crosswalk: [...xw.values()],
+      medicaid: medicaid.get(ndc) ?? null,
     });
   }
 
@@ -212,6 +217,9 @@ export async function auditItems(items: AuditItem[], dbArg?: Database) {
       else if (n.fda.listingStatus === "excluded")
         findings.push({ level: "warning", text: `${n.formatted} was removed from the active FDA directory: ${EXCLUDE_FLAG_LABELS[n.fda.excludeFlag ?? ""] ?? `flag ${n.fda.excludeFlag ?? "unknown"}`}.` });
       else if (!n.fda.isActive) findings.push({ level: "warning", text: `FDA lists a marketing end date of ${n.fda.marketingEnd} for ${n.formatted}.` });
+      if (n.medicaid) for (const f of medicaidFlags(n.medicaid, today())) findings.push({ level: "warning", text: `${n.formatted}: ${f}` });
+      else if (mdrpPeriod)
+        findings.push({ level: "info", text: `${n.formatted} is not in the CMS Medicaid Drug Rebate Program product file for ${formatPeriod(mdrpPeriod)}; Medicaid generally requires a rebate agreement.` });
       const xwCodes = n.crosswalk.map((x) => x.hcpcsCode).filter((x): x is string => !!x);
       if (!n.crosswalk.length) findings.push({ level: c ? "warning" : "info", text: `${n.formatted} is not on the CMS NDC–HCPCS crosswalk for ${xwLabel}.` });
       else if (!c) findings.push({ level: "info", text: `CMS crosswalks ${n.formatted} to ${xwCodes.join(", ") || "a NOC entry"} (${xwLabel}).` });
@@ -228,7 +236,7 @@ export async function auditItems(items: AuditItem[], dbArg?: Database) {
     return { index, code: c, ndc: n, pairMatches, findings, worst };
   });
 
-  const provenance: Provenance[] = (["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "fda_ndc", "fda_ndc_excluded"] as const)
+  const provenance: Provenance[] = (["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products"] as const)
     .map((k) => latest.get(k))
     .filter((r): r is ReleaseRow => !!r)
     .map((r) => toProvenance(r));

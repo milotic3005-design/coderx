@@ -11,6 +11,7 @@ import { ProvenanceFooter } from "@/components/provenance";
 import { StickyRecordBar } from "@/components/sticky-record-bar";
 import { cachedNdcDetail } from "@/lib/data/cached";
 import { EXCLUDE_FLAG_LABELS, formatDate, formatMoney, formatNumber, formatPeriod, titleCase } from "@/lib/format";
+import { COD_STATUS, DRUG_CATEGORY, MDRP_UNIT_TYPES, medicaidFlags, qualifierForUnitType } from "@/lib/medicaid";
 import { formatNdc11, parseNdc } from "@/lib/ndc";
 import { SITE } from "@/lib/site";
 
@@ -88,6 +89,16 @@ export default async function NdcPage({ params }: { params: Params }) {
     { label: "Billable units / package", value: units != null ? <span className="code-chip">{formatNumber(units)}</span> : "—", hint: mainCode?.billingUnit.text ? `units of ${mainCode.billingUnit.text}` : "From the CMS crosswalk" },
     { label: "Payment per package", value: perPackage != null ? <span className="code-chip">{formatMoney(perPackage, 2)}</span> : "—", hint: perPackage != null && pay ? `Derived: units × ${formatMoney(limit)} (${formatPeriod(pay.period)})` : "No current payment limit" },
     { label: "FDA listing", value: fdaStatus, hint: primary?.manufacturerName ?? primary?.product.labelerName ?? "FDA NDC Directory", tone: fdaStatus === "Listed" ? "default" : "attention" },
+    {
+      label: "Medicaid unit type",
+      value: d.medicaid?.unitType ? <span className="code-chip">{d.medicaid.unitType}</span> : "Not listed",
+      hint: d.medicaid
+        ? `${d.medicaid.unitsPerPackage ? `${formatNumber(d.medicaid.unitsPerPackage)} per package · ` : ""}claim qualifier ${qualifierForUnitType(d.medicaid.unitType) ?? "—"}`
+        : d.medicaidPeriod
+          ? `Not in the ${formatPeriod(d.medicaidPeriod)} rebate file`
+          : "Medicaid rebate data not imported",
+      tone: d.medicaid ? (medicaidFlags(d.medicaid, new Date().toISOString().slice(0, 10)).length ? "attention" : "default") : "attention",
+    },
   ];
   const glanceActions: GlanceAction[] = [
     ...(mainCode ? [{ href: `/calculator?code=${mainCode.code}&ndc=${formatted}`, label: "Calculate with this NDC", icon: <Calculator aria-hidden="true" className="h-4 w-4" />, primary: true }] : []),
@@ -204,6 +215,38 @@ export default async function NdcPage({ params }: { params: Params }) {
               </div>
             ))}
             <ProvenanceFooter sources={[primary?.package.listingStatus === "excluded" ? d.releases.fdaExcluded : d.releases.fda]} />
+
+            <h3 id="medicaid" className="mt-8 mb-3 text-sm font-semibold text-ink">
+              Medicaid Drug Rebate Program
+            </h3>
+            {d.medicaid ? (
+              <>
+                <KeyValueGrid
+                  columns={3}
+                  items={[
+                    { label: "Unit type", value: d.medicaid.unitType ? `${d.medicaid.unitType} — ${MDRP_UNIT_TYPES[d.medicaid.unitType] ?? "as published"}` : "—" },
+                    { label: "Units per package", value: d.medicaid.unitsPerPackage ? formatNumber(d.medicaid.unitsPerPackage) : "—", mono: true },
+                    { label: "Claim NDC qualifier", value: qualifierForUnitType(d.medicaid.unitType) ?? "No matching qualifier", mono: true },
+                    { label: "COD status", value: d.medicaid.codStatus ? `${d.medicaid.codStatus} — ${COD_STATUS[d.medicaid.codStatus] ?? "as published"}` : "Not reported by the labeler" },
+                    { label: "Drug category", value: d.medicaid.drugCategory ? `${d.medicaid.drugCategory} — ${DRUG_CATEGORY[d.medicaid.drugCategory] ?? "as published"}` : "—" },
+                    { label: "Termination date", value: d.medicaid.terminationDate ? formatDate(d.medicaid.terminationDate) : "None" },
+                  ]}
+                />
+                {medicaidFlags(d.medicaid, new Date().toISOString().slice(0, 10)).map((f) => (
+                  <div key={f} className="mt-3">
+                    <Callout tone="warning">{f}</Callout>
+                  </div>
+                ))}
+                <p className="mt-2 text-xs text-ink-muted">The claim qualifier is the one state Medicaid programs pair with this unit type; commercial payers may differ.</p>
+              </>
+            ) : (
+              <NoData>
+                {d.medicaidPeriod
+                  ? `This NDC is not in the CMS Medicaid Drug Rebate Program product file for ${formatPeriod(d.medicaidPeriod)}. Medicaid generally covers outpatient drugs only from labelers with a rebate agreement — verify with the state.`
+                  : SITE.noData}
+              </NoData>
+            )}
+            <ProvenanceFooter sources={[d.releases.medicaid]} />
           </Section>
 
           <Section id="hcpcs" number="02" title="HCPCS coding and billing units" description="Official CMS crosswalk rows for this NDC, newest first.">

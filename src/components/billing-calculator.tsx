@@ -27,6 +27,9 @@ export interface CalculatorPackage {
   mlPerItem: number | null;
   containerType: "single-dose" | "multi-dose" | null;
   isPowder: boolean;
+  /** CMS Medicaid Drug Rebate Program unit type for this NDC (EA, ML, GM, AHF…), when listed. */
+  medicaidUnitType: string | null;
+  medicaidPeriod: string | null;
 }
 
 export interface CalculatorPrefill {

@@ -30,7 +30,7 @@ describe("ingestion pipeline (real CMS/FDA excerpts)", () => {
       expect(r.isCurrent).toBe(true);
       expect(r.checksumSha256).toMatch(/^[a-f0-9]{64}$/);
       expect(r.recordCount).toBeGreaterThan(0);
-      expect(r.downloadUrl).toMatch(/^https:\/\/(www\.cms\.gov|www\.accessdata\.fda\.gov)\//);
+      expect(r.downloadUrl).toMatch(/^https:\/\/(www\.cms\.gov|www\.accessdata\.fda\.gov|download\.medicaid\.gov)\//);
     }
     const pay = releases.find((r) => r.sourceKey === "cms_payment_limits" && r.periodLabel === "2026-Q4")!;
     expect(pay).toMatchObject({ effectiveStart: "2026-10-01", effectiveEnd: "2026-12-31", publicationLabel: "09/17/2026 - Final file" });
@@ -43,6 +43,15 @@ describe("ingestion pipeline (real CMS/FDA excerpts)", () => {
     const release = (await h.db.select().from(t.sourceReleases).where(eq(t.sourceReleases.sourceKey, "cms_mue_practitioner")))[0];
     expect(release).toMatchObject({ effectiveStart: "2026-10-01", effectiveEnd: "2026-12-31", periodLabel: "2026-Q4" });
     expect((release.report as { excluded: { cptRows: number } }).excluded.cptRows).toBe(2);
+  });
+
+  it("loads Medicaid rebate product data for indexed NDCs only", async () => {
+    const [row] = await h.db.select().from(t.mdrpProducts).where(eq(t.mdrpProducts.ndc11, "50242005121"));
+    expect(row).toMatchObject({ period: "2026-Q2", unitType: "ML", unitsPerPackage: "10", codStatus: "02", drugCategory: "S" });
+    const outside = rowsOf<{ n: number }>(
+      await h.db.execute(sql`SELECT count(*)::int AS n FROM mdrp_products m WHERE NOT EXISTS (SELECT 1 FROM ndc_packages p WHERE p.ndc11 = m.ndc11) AND NOT EXISTS (SELECT 1 FROM ndc_hcpcs_crosswalk x WHERE x.ndc11 = m.ndc11)`),
+    );
+    expect(outside[0].n).toBe(0);
   });
 
   it("stores no CPT content", async () => {

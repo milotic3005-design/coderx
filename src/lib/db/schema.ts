@@ -271,6 +271,39 @@ export const mueValues = pgTable(
   ],
 );
 
+/**
+ * CMS "Drug Products in the Medicaid Drug Rebate Program" — one quarter, limited to
+ * NDCs CodeRx indexes (FDA directory packages and CMS-crosswalked NDCs).
+ */
+export const mdrpProducts = pgTable(
+  "mdrp_products",
+  {
+    id: serial("id").primaryKey(),
+    ndc11: text("ndc11").notNull(),
+    period: text("period").notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+    labelerName: text("labeler_name"),
+    fdaProductName: text("fda_product_name"),
+    /** As published: EA, ML, GM, AHF, TAB, CAP, SUP, TDP (and occasionally other values, e.g. MCI). */
+    unitType: text("unit_type"),
+    unitsPerPackage: numeric("units_per_package"),
+    /** S single source, I innovator multiple source, N non-innovator multiple source */
+    drugCategory: text("drug_category"),
+    /** 1 Rx, 2 OTC */
+    drugType: text("drug_type"),
+    codStatus: text("cod_status"),
+    terminationDate: date("termination_date"),
+    reactivationDate: date("reactivation_date"),
+    marketDate: date("market_date"),
+    clottingFactor: boolean("clotting_factor"),
+    lineExtension: text("line_extension"),
+    applicationNumber: text("application_number"),
+  },
+  (t) => [uniqueIndex("mdrp_products_uq").on(t.ndc11, t.sourceReleaseId), index("mdrp_products_ndc_idx").on(t.ndc11)],
+);
+
 /* ------------------------------------------------------------------ */
 /* FDA NDC Directory and Purple Book                                    */
 /* ------------------------------------------------------------------ */
@@ -520,6 +553,7 @@ export type HcpcsCode = typeof hcpcsCodes.$inferSelect;
 export type PaymentLimit = typeof paymentLimits.$inferSelect;
 export type CrosswalkRow = typeof ndcHcpcsCrosswalk.$inferSelect;
 export type MueValue = typeof mueValues.$inferSelect;
+export type MdrpProduct = typeof mdrpProducts.$inferSelect;
 export type NdcProduct = typeof ndcProducts.$inferSelect;
 export type NdcPackage = typeof ndcPackages.$inferSelect;
 export type Drug = typeof drugs.$inferSelect;

@@ -5,7 +5,7 @@
  * A native modal <dialog> (focus trap and Escape built in) with a WAI-ARIA combobox
  * and listbox inside. Suggestions come from the same /api/suggest endpoint as search.
  */
-import { ArrowRight, Calculator, ClipboardCheck, Command, CornerDownLeft, Database, FileSearch, GitCompareArrows, History, LoaderCircle, Moon, Scale, Search, Sun, Wrench } from "lucide-react";
+import { Armchair, ArrowRight, Calculator, ClipboardCheck, Command, CornerDownLeft, Database, FileSearch, GitCompareArrows, History, LoaderCircle, Moon, Scale, ScanLine, Search, Sun, Wrench } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -36,10 +36,12 @@ const icon = (C: typeof Search) => <C aria-hidden="true" className="h-4 w-4" />;
 
 const NAV_ITEMS: Omit<Item, "id" | "group">[] = [
   { title: "Billing-unit calculator", subtitle: "Units, MUE check, JW/JZ claim lines, vial optimizer", href: "/calculator", icon: icon(Calculator), keywords: "units dose vial jw jz mue claim" },
+  { title: "Vial barcode scanner", subtitle: "Scan a vial or carton: NDC, code, units, lot, expiry", href: "/tools/scan", icon: icon(ScanLine), keywords: "scan barcode camera vial gs1 datamatrix lot expiry" },
   { title: "Chargemaster & formulary audit", subtitle: "Check a list of codes and NDCs", href: "/tools/audit", icon: icon(ClipboardCheck), keywords: "cdm audit crosswalk ndc list" },
   { title: "Margin analyzer", subtitle: "Your cost vs. Medicare payment", href: "/tools/margin", icon: icon(Scale), keywords: "cost margin underwater asp" },
   { title: "Biosimilar comparator", subtitle: "Reference products and biosimilars", href: "/tools/biosimilars", icon: icon(GitCompareArrows), keywords: "biosimilar reference purple book" },
-  { title: "What changed this quarter", subtitle: "Payment-limit movers, new and terminated codes", href: "/tools/changes", icon: icon(History), keywords: "changes quarter new terminated watchlist" },
+  { title: "What changed this quarter", subtitle: "Payment-limit movers, new and terminated codes", href: "/tools/changes", icon: icon(History), keywords: "changes quarter new terminated watchlist rss feed" },
+  { title: "Chair capacity planner", subtitle: "Utilization, chairs needed, day packing", href: "/tools/capacity", icon: icon(Armchair), keywords: "chairs capacity schedule utilization operations" },
   { title: "All tools", href: "/tools", icon: icon(Wrench), keywords: "tools" },
   { title: "Search all records", href: "/search", icon: icon(FileSearch), keywords: "search" },
   { title: "Data sources & releases", href: "/sources", icon: icon(Database), keywords: "sources cms fda releases" },

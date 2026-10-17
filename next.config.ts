@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // The vial scanner is the only page that may use the camera.
+      { source: "/tools/scan", headers: [{ key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()" }] },
       {
         // Public, read-only data API: allow cross-origin GETs (no cookies or credentials are used).
         source: "/api/:path((?!admin|cron).*)",

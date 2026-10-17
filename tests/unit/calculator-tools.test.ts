@@ -113,3 +113,97 @@ describe("margin analyzer arithmetic", () => {
     expect(m.status).toBe("underwater");
   });
 });
+
+describe("vial barcode parsing (GS1 / UPC / NDC)", () => {
+  // NDC 50242-051-21 is the 10-digit (5-3-2) form of Rituxan 100 mg/10 mL, 11-digit 50242-0051-21.
+  const ndc10 = "5024205121";
+  const withCheck = (body: string) => {
+    const digits = body.split("").map(Number).reverse();
+    const sum = digits.reduce((acc, d, i) => acc + d * (i % 2 === 0 ? 3 : 1), 0);
+    return `${body}${(10 - (sum % 10)) % 10}`;
+  };
+  const gtin = withCheck(`003${ndc10}`);
+
+  it("reads GTIN, expiry, lot, and serial from a GS1 DataMatrix string", async () => {
+    const { parseScan } = await import("@/lib/gs1");
+    const p = parseScan(`]d201${gtin}17271231` + `10LOT123\u001d21SER9`);
+    expect(p).toMatchObject({ kind: "gs1", gtin, ndc10, expiry: "2027-12-31", lot: "LOT123", serial: "SER9", problems: [] });
+    expect(p.candidates).toEqual(["05024205121", "50242005121", "50242051201"]);
+  });
+  it("reads the human-readable form and end-of-month expiry", async () => {
+    const { parseScan } = await import("@/lib/gs1");
+    expect(parseScan(`(01)${gtin}(17)270200(10)A1`)).toMatchObject({ expiry: "2027-02-28", lot: "A1" });
+  });
+  it("reads UPC-A and plain NDCs, and flags a bad check digit", async () => {
+    const { parseScan } = await import("@/lib/gs1");
+    const upc = withCheck(`3${ndc10}`);
+    expect(parseScan(upc)).toMatchObject({ kind: "upc", ndc10, problems: [] });
+    expect(parseScan("50242-0051-21")).toMatchObject({ kind: "ndc", candidates: ["50242005121"] });
+    const bad = `${gtin.slice(0, 13)}${(Number(gtin[13]) + 1) % 10}`;
+    expect(parseScan(`01${bad}`).problems[0]).toMatch(/check digit/);
+    expect(parseScan("hello").kind).toBe("unknown");
+  });
+});
+
+describe("biosimilar switch simulator", () => {
+  it("compares all-reference volume with a partial switch", async () => {
+    const { simulateSwitch } = await import("@/lib/biosimilar-switch");
+    // Rituxan J9312 $72.094 / 10 mg vs Truxima Q5115 $35.988 / 10 mg, 70,000 mg a year, half switched.
+    const r = simulateSwitch({
+      annualMg: 70_000,
+      reference: { name: "Rituxan", perMg: 7.2094, coinsurancePct: 20 },
+      target: { name: "Truxima", perMg: 3.5988, coinsurancePct: 20 },
+      sharePct: 50,
+    });
+    expect(r.before).toMatchObject({ mg: 70_000, allowed: 504_658, patient: 100_931.6, cost: null, margin: null });
+    expect(r.after.allowed).toBe(378_287);
+    expect(r.delta.allowed).toBe(-126_371);
+    expect(r.delta.patient).toBe(-25_274.2);
+  });
+  it("adds costs and margin only when every switched product has a cost", async () => {
+    const { simulateSwitch } = await import("@/lib/biosimilar-switch");
+    const base = { annualMg: 1000, reference: { name: "R", perMg: 10, coinsurancePct: 20, costPerMg: 9 }, sharePct: 100 };
+    expect(simulateSwitch({ ...base, target: { name: "B", perMg: 6, coinsurancePct: 20 } }).after.margin).toBeNull();
+    const withCost = simulateSwitch({ ...base, target: { name: "B", perMg: 6, coinsurancePct: 20, costPerMg: 4 } });
+    // after: allowed 6,000; expected 6,000 × 0.2 + 6,000 × 0.8 × 0.98 = 5,904; cost 4,000
+    expect(withCost.after).toMatchObject({ allowed: 6000, expected: 5904, cost: 4000, margin: 1904 });
+    expect(withCost.delta.margin).toBe(1904 - (9840 - 9000));
+  });
+});
+
+describe("chair capacity planner", () => {
+  const input = {
+    chairs: 10,
+    openMinutes: 600,
+    turnoverMinutes: 15,
+    targetPct: 85,
+    visits: [
+      { name: "Short", chairMinutes: 45, perDay: 40 },
+      { name: "Long", chairMinutes: 285, perDay: 8 },
+    ],
+  };
+  it("computes utilization, chairs needed, and headroom", async () => {
+    const { planCapacity } = await import("@/lib/capacity");
+    const r = planCapacity(input);
+    // demand: 40 × 60 + 8 × 300 = 4,800 of 6,000 chair-minutes
+    expect(r).toMatchObject({ availableMinutes: 6000, demandMinutes: 4800, utilizationPct: 80, chairsNeeded: 10, tooLong: [] });
+    // target 85% of 6,000 = 5,100; 300 spare minutes ÷ 100-minute average slot = 3 visits
+    expect(r.headroomVisits).toBe(3);
+    expect(r.byType.map((t) => t.sharePct)).toEqual([50, 50]);
+  });
+  it("packs the day and reports visits that do not fit", async () => {
+    const { packChairs } = await import("@/lib/capacity");
+    const ok = packChairs(input);
+    expect(ok.overflow).toEqual([]);
+    expect(ok.chairs.every((c) => c.minutes - input.turnoverMinutes <= input.openMinutes)).toBe(true);
+    const tight = packChairs({ ...input, chairs: 4 });
+    expect(tight.overflow.reduce((n, o) => n + o.count, 0)).toBeGreaterThan(0);
+  });
+});
+
+describe("vial barcode parsing: decoder output", () => {
+  it("ignores the leading FNC1 that DataMatrix decoders return as GS", async () => {
+    const { parseScan } = await import("@/lib/gs1");
+    expect(parseScan("\u001d0100350242051217172712311" + "0LOTA1")).toMatchObject({ kind: "gs1", gtin: "00350242051217", lot: "LOTA1", expiry: "2027-12-31" });
+  });
+});

@@ -2,10 +2,10 @@
  * Discover the newest releases by reading the publishers' public landing pages.
  * Only links on the official CMS/FDA domains are accepted.
  */
-import { fetchPage } from "./fetch";
+import { fetchPage, headInfo } from "./fetch";
 import type { MueSourceKey, ReleaseCandidate, SourceKey } from "./sources";
 import { MUE_SOURCES, SOURCES } from "./sources";
-import { parseLongDate, parseUsDate, periodFromMonthYear } from "./values";
+import { parseHttpDate, parseLongDate, parseUsDate, periodFromMonthYear } from "./values";
 
 interface Link {
   href: string;
@@ -136,6 +136,45 @@ export function parseMueLandingPage(html: string): ReleaseCandidate[] {
   return [...out.values()];
 }
 
+export function mdrpUrl(period: string): string {
+  const [year, q] = period.split("-Q");
+  return `https://download.medicaid.gov/data/drugproducts-q${q}-${year}.csv`;
+}
+
+/** Quarters to probe for the Medicaid product file, newest first, starting from `today`. */
+export function recentQuarters(today: Date, count = 4): string[] {
+  const out: string[] = [];
+  let year = today.getUTCFullYear();
+  let q = Math.floor(today.getUTCMonth() / 3) + 1;
+  for (let i = 0; i < count; i++) {
+    out.push(`${year}-Q${q}`);
+    q--;
+    if (q === 0) {
+      q = 4;
+      year--;
+    }
+  }
+  return out;
+}
+
+/**
+ * The Medicaid product file has no stable landing-page link, but its URL is predictable;
+ * probe the most recent quarters and keep the newest one that exists.
+ */
+export async function discoverMdrp(today = new Date(), head = headInfo): Promise<ReleaseCandidate[]> {
+  for (const period of recentQuarters(today)) {
+    const url = mdrpUrl(period);
+    try {
+      const info = await head(url);
+      const lastModified = info.lastModified ? parseHttpDate(info.lastModified) : null;
+      return [{ sourceKey: "cms_mdrp_products", period, url, publicationLabel: info.lastModified ? `Last-Modified ${info.lastModified}` : null, publicationDate: lastModified }];
+    } catch {
+      // not posted (404) — try the previous quarter
+    }
+  }
+  return [];
+}
+
 export async function discoverReleases(): Promise<{ candidates: ReleaseCandidate[]; errors: string[] }> {
   const errors: string[] = [];
   const candidates: ReleaseCandidate[] = [];
@@ -145,14 +184,22 @@ export async function discoverReleases(): Promise<{ candidates: ReleaseCandidate
     [SOURCES.fda_purple_book.landingPageUrl, parsePurpleBookDownloads],
     [SOURCES.cms_mue_practitioner.landingPageUrl, parseMueLandingPage],
   ];
-  await Promise.all(
-    tasks.map(async ([url, parse]) => {
+  const mdrp = discoverMdrp()
+    .then((c) => {
+      candidates.push(...c);
+    })
+    .catch((error) => {
+      errors.push(`Medicaid product data: ${error instanceof Error ? error.message : String(error)}`);
+    });
+  await Promise.all([
+    mdrp,
+    ...tasks.map(async ([url, parse]) => {
       try {
         candidates.push(...parse(await fetchPage(url)));
       } catch (error) {
         errors.push(`${url}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }),
-  );
+  ]);
   return { candidates, errors };
 }

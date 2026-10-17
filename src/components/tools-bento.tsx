@@ -1,4 +1,4 @@
-import { ArrowUpRight, CircleAlert, CircleCheck, CircleX, Star, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowUpRight, CircleAlert, CircleCheck, CircleX, Rss, Star, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { TOOLS } from "@/lib/tools";
@@ -91,11 +91,50 @@ function ChangesPreview() {
       <span className="inline-flex items-center gap-1 rounded-full bg-accent-tint px-2 py-0.5 font-semibold text-ink">
         <Star className="h-3.5 w-3.5 text-accent" /> watchlist
       </span>
+      <span className="inline-flex items-center gap-1 rounded-full bg-brand-tint px-2 py-0.5 font-semibold text-ink">
+        <Rss className="h-3.5 w-3.5 text-brand" /> RSS
+      </span>
+    </div>
+  );
+}
+
+function ScanPreview() {
+  return (
+    <div className="mt-4 flex items-center gap-3">
+      <span className="grid shrink-0 grid-cols-6 gap-px rounded-md border hairline bg-paper/60 p-1.5">
+        {"101101011010110011101010010111101001".split("").map((b, i) => (
+          <span key={i} className={`h-1.5 w-1.5 ${b === "1" ? "bg-ink" : "bg-transparent"}`} />
+        ))}
+      </span>
+      <span className="font-mono text-[0.72rem] leading-relaxed text-ink-muted">
+        NDC 50242-0051-21 → J9312
+        <br />
+        10 units / pkg · single-dose
+      </span>
+    </div>
+  );
+}
+
+function CapacityPreview() {
+  return (
+    <div className="mt-4 space-y-1">
+      {[
+        [55, 30],
+        [70, 20],
+        [40, 45],
+      ].map(([a, b], i) => (
+        <span key={i} className="flex h-2.5 overflow-hidden rounded-sm bg-paper-sunken">
+          <span className="bg-brand/70" style={{ width: `${a}%` }} />
+          <span className="bg-accent/70" style={{ width: `${b}%` }} />
+        </span>
+      ))}
     </div>
   );
 }
 
 const PREVIEW: Record<string, ReactNode> = {
+  "/tools/scan": <ScanPreview />,
+  "/tools/capacity": <CapacityPreview />,
   "/calculator": <CalculatorPreview />,
   "/tools/audit": <AuditPreview />,
   "/tools/margin": <MarginPreview />,
@@ -109,6 +148,7 @@ const LAYOUT: Record<string, string> = {
   "/tools/margin": "",
   "/tools/biosimilars": "",
   "/tools/changes": "",
+  "/tools/capacity": "xl:col-span-2",
 };
 
 /** The five tools as a bento grid: the calculator large, the director tools around it. */

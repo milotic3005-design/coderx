@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Breadcrumbs, Disclaimer, NoData, PageHeader, Section } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
+import { BiosimilarSimulator } from "@/components/tools/biosimilar-simulator";
 import { BiosimilarTable } from "@/components/tools/biosimilar-table";
 import { cachedBiosimilarGroups } from "@/lib/data/cached";
 import { formatPeriod } from "@/lib/format";
@@ -14,7 +15,11 @@ export const metadata: Metadata = {
 const slugId = (s: string) => `ref-${s.replace(/[^a-z0-9-]/gi, "")}`;
 const generic = (g: { genericName: string | null; referenceName: string }) => (g.genericName ?? g.referenceName).toLowerCase();
 
-export default async function BiosimilarsPage() {
+type SP = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function BiosimilarsPage({ searchParams }: { searchParams: SP }) {
+  const sp = await searchParams;
+  const initialRef = typeof sp.ref === "string" ? sp.ref.slice(0, 120) : null;
   const { groups, paymentPeriod, provenance } = await cachedBiosimilarGroups();
   const repeated = new Set(groups.map(generic).filter((name, i, all) => all.indexOf(name) !== i));
   const label = (g: (typeof groups)[number]) => (repeated.has(generic(g)) ? `${generic(g)} (${g.referenceName})` : generic(g));
@@ -27,6 +32,7 @@ export default async function BiosimilarsPage() {
       />
       {groups.length ? (
         <>
+          <BiosimilarSimulator groups={groups} initialRef={initialRef} />
           <nav aria-label="Reference products" className="mb-8">
             <ul className="flex flex-wrap gap-2">
               {groups.map((g) => (

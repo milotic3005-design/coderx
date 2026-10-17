@@ -49,6 +49,7 @@ export default function MethodologyPage() {
               <li>CMS Medicare Part B drug payment limit files and NDC–HCPCS crosswalks (ASP, OPPS, AWP, PrEP; NOC in 2025) — every quarter from Q1 2021 onward, including CMS revisions of earlier quarters.</li>
               <li>FDA NDC Directory and its excluded-listings file — published daily; imported weekly by default, and whenever a new CMS crosswalk arrives.</li>
               <li>FDA Purple Book monthly data — imported when a new month is posted.</li>
+              <li>CMS “Drug Products in the Medicaid Drug Rebate Program” (data.medicaid.gov) — the newest quarter, for the NDCs CodeRx indexes: unit type, units per package, COD status, and termination dates.</li>
               <li>CMS NCCI Medically Unlikely Edit tables (practitioner, outpatient hospital, DME supplier) — the current quarter, imported when CMS posts a new one. Only HCPCS Level II rows are kept; CPT rows are dropped.</li>
             </ul>
             <p className="mt-3">
@@ -92,6 +93,9 @@ export default function MethodologyPage() {
             </p>
             <p className="mt-3">
               Container facts (single- or multi-dose, milliliters per vial, powder) are read from the words of the FDA package description; when the text does not say, the field stays unknown. Vial amounts are the CMS billable units per item × the billing unit. The vial optimizer searches whole-vial combinations for the least unused drug; dose-rounding options are whole-vial doses within the threshold you set and are decision support only. The claim-line view places the NDC as <span className="code-chip">N4</span> + 11 digits + unit qualifier + quantity; milliliter quantities are split in proportion to drug administered and discarded, and other payer conventions must be entered by hand.
+            </p>
+            <p className="mt-3">
+              The vial scanner reads the GS1 barcode (GTIN, expiry, lot, serial); a US drug GTIN embeds the 10-digit NDC, whose segment layout is resolved by looking up all three 11-digit forms. The claim-line NDC qualifier is taken from the Medicaid unit type when the NDC is in the rebate file (ML→ML, GM→GR, AHF→F2, EA/TAB/CAP/SUP/TDP→UN), otherwise suggested from the FDA package text.
             </p>
             <p className="mt-3">
               The MUE check compares units with the published CMS MUE value for each setting and shows the adjudication indicator; it is not a payment determination, and other payers set their own limits. The margin analyzer multiplies the payment limit by the billable units, applies the coinsurance percentage in the CMS file to the patient share, and reduces Medicare’s share by the sequestration percentage you enter; the costs you enter stay in your browser.

@@ -82,7 +82,7 @@ export default async function DrugPage({ params }: { params: Params }) {
   const refSlug = d.reference?.slug ?? (d.biosimilars.length ? drug.slug : null);
   const glanceActions: GlanceAction[] = [
     ...(primaryCode ? [{ href: `/calculator?code=${primaryCode.code}`, label: "Calculate units", icon: <Calculator aria-hidden="true" className="h-4 w-4" />, primary: true }] : []),
-    ...(refSlug ? [{ href: `/tools/biosimilars#ref-${refSlug}`, label: "Compare biosimilars", icon: <GitCompareArrows aria-hidden="true" className="h-4 w-4" /> }] : []),
+    ...(refSlug ? [{ href: `/tools/biosimilars?ref=${refSlug}#ref-${refSlug}`, label: "Compare biosimilars", icon: <GitCompareArrows aria-hidden="true" className="h-4 w-4" /> }] : []),
     { href: "#coverage", label: "Coverage & policy", icon: <ShieldCheck aria-hidden="true" className="h-4 w-4" /> },
   ];
 

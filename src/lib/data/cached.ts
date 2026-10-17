@@ -12,7 +12,7 @@ const SIX_HOURS = 6 * 60 * 60;
 
 function cached<A extends unknown[], R>(fn: (...args: A) => Promise<R>, key: string): (...args: A) => Promise<R> {
   if (!process.env.NEXT_RUNTIME || process.env.CODERX_DISABLE_DATA_CACHE === "1") return fn;
-  return unstable_cache(fn, [`coderx:${key}:v2`], { tags: [DATA_TAG], revalidate: SIX_HOURS });
+  return unstable_cache(fn, [`coderx:${key}:v3`], { tags: [DATA_TAG], revalidate: SIX_HOURS });
 }
 
 export const cachedHcpcsDetail = cached((code: string) => getHcpcsDetail(code), "hcpcs");

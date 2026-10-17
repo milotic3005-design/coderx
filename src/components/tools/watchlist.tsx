@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Plus, Star, X } from "lucide-react";
+import { Download, Plus, Rss, Star, X } from "lucide-react";
 import Link from "next/link";
 import { useId, useMemo, useState, useSyncExternalStore } from "react";
 import type { LimitChange } from "@/lib/data/tools";
@@ -119,6 +119,12 @@ export function Watchlist({ events, limitChanges, period }: { events: WatchEvent
         >
           <Download aria-hidden="true" className="h-4 w-4" /> All limit changes (CSV)
         </button>
+        <a
+          href={`/feeds/changes${codes.length ? `?codes=${codes.join(",")}` : ""}`}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-rule-strong px-3 text-sm font-semibold text-ink hover:border-brand hover:text-brand"
+        >
+          <Rss aria-hidden="true" className="h-4 w-4" /> {codes.length ? "RSS for my watchlist" : "RSS feed"}
+        </a>
       </div>
       {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
       {codes.length ? (

@@ -73,7 +73,7 @@ export function AuditTool() {
     if (!rows) return;
     const mue = (r: AuditRow, k: keyof typeof MUE_SERVICE_LABELS) => r.code?.mue.find((m) => m.serviceType === k)?.value ?? "";
     downloadCsv(`coderx-audit-${new Date().toISOString().slice(0, 10)}.csv`, [
-      ["line", "input", "hcpcs", "hcpcs_status", "short_description", "ndc", "fda_status", "labeler", "crosswalk_codes", "pair_matches_cms", "payment_limit", "payment_dosage", "payment_period", "mue_practitioner", "mue_outpatient", "mue_dme", "result", "findings"],
+      ["line", "input", "hcpcs", "hcpcs_status", "short_description", "ndc", "fda_status", "labeler", "crosswalk_codes", "pair_matches_cms", "medicaid_unit_type", "medicaid_units_per_package", "medicaid_cod_status", "payment_limit", "payment_dosage", "payment_period", "mue_practitioner", "mue_outpatient", "mue_dme", "result", "findings"],
       ...rows.map((r) => {
         const input = sent[r.index];
         return [
@@ -87,6 +87,9 @@ export function AuditTool() {
           r.ndc?.fda?.labeler,
           r.ndc?.crosswalk.map((x) => x.hcpcsCode ?? "NOC").join(" "),
           r.pairMatches == null ? "" : r.pairMatches ? "yes" : "no",
+          r.ndc?.medicaid?.unitType,
+          r.ndc?.medicaid?.unitsPerPackage,
+          r.ndc?.medicaid?.codStatus,
           r.code?.payment?.limit ?? r.code?.payment?.limitText ?? "",
           r.code?.payment?.dosage,
           r.code?.payment?.period,
@@ -262,6 +265,7 @@ export function AuditTool() {
                               {r.ndc.formatted}
                             </Link>
                             <span className="block max-w-[14rem] text-xs text-ink-muted">{r.ndc.fda?.drugName ?? r.ndc.fda?.labeler ?? ""}</span>
+                            {r.ndc.medicaid?.unitType ? <span className="block text-xs text-ink-faint">Medicaid unit {r.ndc.medicaid.unitType}</span> : null}
                           </>
                         ) : (
                           "—"

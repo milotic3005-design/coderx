@@ -10,7 +10,7 @@ import { formatDate, formatMoney, formatPeriod } from "@/lib/format";
 export const metadata: Metadata = {
   title: "What changed this quarter",
   description: "Quarter-over-quarter changes in Medicare Part B drug payment limits, new and terminated drug HCPCS codes, and CMS NDC–HCPCS crosswalk additions and removals.",
-  alternates: { canonical: "/tools/changes" },
+  alternates: { canonical: "/tools/changes", types: { "application/rss+xml": "/feeds/changes" } },
 };
 
 type SP = Promise<Record<string, string | string[] | undefined>>;

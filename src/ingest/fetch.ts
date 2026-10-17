@@ -108,6 +108,69 @@ export async function download(url: string, options: DownloadOptions = {}): Prom
   return result;
 }
 
+export interface StreamedDownload {
+  url: string;
+  lastModified: string | null;
+  etag: string | null;
+  contentType: string | null;
+  /** Body chunks; hashing and size limits are applied as they arrive. Iterate once. */
+  chunks: AsyncIterable<Uint8Array>;
+  /** Available after `chunks` has been fully consumed. */
+  result(): { sha256: string; byteSize: number };
+}
+
+/** Wrap bytes already in memory (tests, uploads) as a single-chunk stream. */
+export function streamFromBytes(file: Downloaded): StreamedDownload {
+  return {
+    url: file.url,
+    lastModified: file.lastModified,
+    etag: file.etag,
+    contentType: file.contentType,
+    chunks: (async function* () {
+      yield file.bytes;
+    })(),
+    result: () => ({ sha256: file.sha256, byteSize: file.byteSize }),
+  };
+}
+
+/**
+ * Streaming download for very large files (hundreds of MB): the body is never held in
+ * memory, so a serverless function can filter it on the fly.
+ */
+export async function streamDownload(url: string, options: Pick<DownloadOptions, "maxBytes" | "timeoutMs" | "retries"> = {}): Promise<StreamedDownload> {
+  const { maxBytes = 800 * 1024 * 1024, timeoutMs = 600_000, retries = 2 } = options;
+  const res = await fetchWithRetry(url, { headers: { "User-Agent": USER_AGENT, Accept: "*/*" } }, retries, timeoutMs);
+  if (!res.ok || !res.body) throw new Error(`Download failed for ${url}: HTTP ${res.status}`);
+  const encoded = !!res.headers.get("content-encoding") && res.headers.get("content-encoding") !== "identity";
+  const declared = encoded ? 0 : Number(res.headers.get("content-length") ?? "0");
+  if (declared > maxBytes) throw new Error(`Refusing ${url}: ${declared} bytes exceeds the ${maxBytes}-byte limit.`);
+  const hash = createHash("sha256");
+  let size = 0;
+  let done = false;
+  const body = res.body;
+  return {
+    url,
+    lastModified: res.headers.get("last-modified"),
+    etag: res.headers.get("etag"),
+    contentType: res.headers.get("content-type"),
+    chunks: (async function* () {
+      for await (const chunk of body as unknown as AsyncIterable<Uint8Array>) {
+        size += chunk.length;
+        if (size > maxBytes) throw new Error(`Refusing ${url}: body exceeds the ${maxBytes}-byte limit.`);
+        hash.update(chunk);
+        yield chunk;
+      }
+      if (size === 0) throw new Error(`Empty download for ${url}.`);
+      if (declared && size !== declared) throw new Error(`Truncated download for ${url}: ${size} of ${declared} bytes.`);
+      done = true;
+    })(),
+    result: () => {
+      if (!done) throw new Error("Stream not fully consumed.");
+      return { sha256: hash.digest("hex"), byteSize: size };
+    },
+  };
+}
+
 export async function headInfo(url: string, timeoutMs = 30_000): Promise<{ lastModified: string | null; etag: string | null; contentLength: number | null }> {
   const res = await fetchWithRetry(url, { method: "HEAD", headers: { "User-Agent": USER_AGENT } }, 1, timeoutMs);
   if (!res.ok) throw new Error(`HEAD ${url}: HTTP ${res.status}`);

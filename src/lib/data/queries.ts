@@ -7,6 +7,7 @@ import { parseCmsDosage, parseDescriptorDosage, type ParsedDosage } from "@/lib/
 import { getDb, rowsOf, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { CODE_FAMILIES, familyOf, isCodeActive } from "@/lib/hcpcs";
+import type { MedicaidInfo } from "@/lib/medicaid";
 import { type MueEntry, type MueServiceType } from "@/lib/mue";
 import { formatNdc11 } from "@/lib/ndc";
 import { MUE_SOURCES, type MueSourceKey } from "@/ingest/sources";
@@ -114,6 +115,28 @@ export function mueReleases(latest: Map<string, ReleaseRow>): Provenance[] {
   return (Object.keys(MUE_SOURCES) as MueSourceKey[]).map((k) => latest.get(k)).filter((r): r is ReleaseRow => !!r).map((r) => toProvenance(r));
 }
 
+/** Medicaid Drug Rebate Program product rows (newest imported quarter) for these NDCs. */
+export async function medicaidFor(db: Database, ndc11s: string[]): Promise<Map<string, MedicaidInfo>> {
+  const out = new Map<string, MedicaidInfo>();
+  if (!ndc11s.length) return out;
+  const rows = await db.select().from(t.mdrpProducts).where(inArray(t.mdrpProducts.ndc11, ndc11s));
+  for (const r of rows) {
+    const prev = out.get(r.ndc11);
+    if (prev && prev.period >= r.period) continue;
+    out.set(r.ndc11, {
+      period: r.period,
+      unitType: r.unitType,
+      unitsPerPackage: r.unitsPerPackage,
+      drugCategory: r.drugCategory,
+      codStatus: r.codStatus,
+      terminationDate: r.terminationDate,
+      labelerName: r.labelerName,
+      releaseId: r.sourceReleaseId,
+    });
+  }
+  return out;
+}
+
 export interface CrosswalkEntry {
   ndcRaw: string;
   ndc11: string | null;
@@ -133,6 +156,8 @@ export interface CrosswalkEntry {
   isCurrent: boolean;
   releaseId: number;
   fda: { listingStatus: string; packageDescription: string | null; drugSlug: string | null; drugName: string | null; marketingEnd: string | null } | null;
+  /** CMS Medicaid Drug Rebate Program product data for this NDC, when present. */
+  medicaid: MedicaidInfo | null;
 }
 
 async function crosswalkEntries(db: Database, where: { codes?: string[]; ndc11s?: string[] }, latestPeriod: string | null): Promise<CrosswalkEntry[]> {
@@ -167,6 +192,7 @@ async function crosswalkEntries(db: Database, where: { codes?: string[]; ndc11s?
         .where(inArray(t.ndcPackages.ndc11, ndcs))
     : [];
   const fdaByNdc = new Map(fdaRows.map((f) => [f.ndc11, f]));
+  const medicaid = await medicaidFor(db, ndcs);
   return [...groups.values()]
     .map((list) => {
       const ordered = [...list].sort((a, b) => b.period.localeCompare(a.period));
@@ -193,6 +219,7 @@ async function crosswalkEntries(db: Database, where: { codes?: string[]; ndc11s?
         fda: fda
           ? { listingStatus: fda.listingStatus, packageDescription: fda.description, drugSlug: fda.drugSlug, drugName: fda.drugName, marketingEnd: fda.marketingEnd }
           : null,
+        medicaid: latest.ndc11 ? (medicaid.get(latest.ndc11) ?? null) : null,
       };
     })
     .sort((a, b) => Number(b.isCurrent) - Number(a.isCurrent) || (a.labelerName ?? "").localeCompare(b.labelerName ?? "") || a.ndcFormatted.localeCompare(b.ndcFormatted));
@@ -471,8 +498,11 @@ export async function getNdcDetail(ndc11: string, dbArg?: Database) {
   const codes = [...new Set(crosswalk.map((x) => x.hcpcsCode).filter((c): c is string => !!c))];
   const codeRows = codes.length ? await db.select().from(t.hcpcsCodes).where(inArray(t.hcpcsCodes.code, codes)) : [];
   const payments = await paymentHistory(db, codes, byId);
+  const medicaid = (await medicaidFor(db, [ndc11])).get(ndc11) ?? null;
+  const mdrpRelease = latest.get("cms_mdrp_products");
 
   const provenance: Provenance[] = [];
+  if (medicaid && byId.get(medicaid.releaseId)) provenance.push(toProvenance(byId.get(medicaid.releaseId)!));
   const listing = fda.map((f) => f.k.sourceReleaseId);
   for (const id of new Set(listing)) if (byId.get(id)) provenance.push(toProvenance(byId.get(id)!));
   const xwRelease = latest.get("cms_ndc_hcpcs");
@@ -499,7 +529,10 @@ export async function getNdcDetail(ndc11: string, dbArg?: Database) {
       return { ...c, family: familyOf(c.code) ?? null, isActive: isCodeActive(c.terminationDate, today()), payments: pay, billingUnit: billingUnit(c, pay), crosswalk: xw ?? null };
     }),
     latestCrosswalkPeriod: latestCrosswalk,
+    medicaid,
+    medicaidPeriod: mdrpRelease?.periodLabel ?? null,
     releases: {
+      medicaid: mdrpRelease ? toProvenance(mdrpRelease) : null,
       fda: latest.get("fda_ndc") ? toProvenance(latest.get("fda_ndc")!) : null,
       fdaExcluded: latest.get("fda_ndc_excluded") ? toProvenance(latest.get("fda_ndc_excluded")!) : null,
       crosswalk: xwRelease ? toProvenance(xwRelease) : null,

@@ -5,7 +5,7 @@
  *
  * <raw-dir> holds the original downloads (layout used during discovery):
  *   hcpcs-2026q4/, hist/hc-2025q4/, asp-2026q4/, hist/asp-2026q3/, xwalk-2026q4/,
- *   fda-ndc/, fda-ndc-excluded/, purplebook/pb.csv, mue-2026q4/ (the three MCR_MUE_*.csv tables)
+ *   fda-ndc/, fda-ndc-excluded/, purplebook/pb.csv, mue-2026q4/ (the three MCR_MUE_*.csv tables), mdrp/drugproducts-q2-2026.csv
  *
  * Header/preamble rows are kept verbatim; only data rows for a fixed list of
  * codes/NDCs are retained. No values are edited or invented.
@@ -145,6 +145,17 @@ for (const [file, out] of [
   [/MCR_MUE_DMESupplierServices.*\.csv$/i, "mue-dme-2026q4.csv"],
 ] as const) {
   csvExcerpt(find(join(RAW, "mue-2026q4"), file), out, (r) => /^"HCPCS\/\r?\nCPT Code",/.test(r), startsWithCode([...FIXTURE_CODES, "J1569", "J2783", "A4206", "0001U", "96365"]));
+}
+
+// --- Medicaid Drug Rebate Program product data: header + 2026-Q2 rows for crosswalked fixture NDCs ---
+{
+  const src = find(join(RAW, "mdrp"), /^drugproducts-q2-2026\.csv$/i);
+  const all = csvRecords(readFileSync(src, "utf8"));
+  const ndc11 = (pkg: string) => pkg.replace(/-/g, "");
+  const wanted = new Set([...xwNdcs].map(ndc11));
+  const rows = all.slice(1).filter((r) => r.startsWith("2026,2,") && [...wanted].some((n) => r.includes(`,${n},`)));
+  writeFileSync(join(OUT, "mdrp-products-2026q2.csv"), [all[0], ...rows].join(""), "utf8");
+  provenance.push(`mdrp-products-2026q2.csv: header + ${rows.length} 2026-Q2 records from ${src.split("/").pop()} (sha256 ${sha(src)})`);
 }
 
 // --- Purple Book: both section headers + rows for the fixture biologics ---

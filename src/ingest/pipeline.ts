@@ -4,12 +4,13 @@
  * back; the failure itself is then recorded as a `failed` release.
  */
 import { and, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
-import type { Database } from "@/lib/db/client";
+import { rowsOf, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { insertBatches } from "./batch";
 import { deriveAll, type DeriveReport } from "./derive";
-import { download, type DownloadOptions, type Downloaded } from "./fetch";
+import { download, streamDownload, streamFromBytes, type DownloadOptions, type Downloaded } from "./fetch";
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
+import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
 import { parseNotPayableCsv, parsePaymentLimitCsv } from "./parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, type FdaPackage, type FdaProduct } from "./parsers/fda";
@@ -329,6 +330,37 @@ function parseMueRelease(file: Downloaded, period: string, sourceKey: MueSourceK
   };
 }
 
+/** NDCs CodeRx indexes: FDA directory packages in scope plus every CMS-crosswalked NDC. */
+async function indexedNdcSet(db: Database): Promise<Set<string>> {
+  const rows = rowsOf<{ n: string }>(await db.execute(sql`SELECT ndc11 AS n FROM ndc_packages UNION SELECT ndc11 FROM ndc_hcpcs_crosswalk WHERE ndc11 IS NOT NULL`));
+  return new Set(rows.map((r) => r.n));
+}
+
+function parseMdrpRelease(parsed: MdrpParse, period: string, fileName: string): Parsed {
+  assertPlausible(parsed.quarterRows >= 20_000, `Medicaid product file has only ${parsed.quarterRows} rows for ${period}; expected at least 20,000.`);
+  assertPlausible(parsed.rows.length >= 1000, `Only ${parsed.rows.length} Medicaid product rows match indexed NDCs; expected at least 1,000.`);
+  const bounds = quarterBounds(period);
+  const units: Record<string, number> = {};
+  for (const r of parsed.rows) units[r.unitType ?? "blank"] = (units[r.unitType ?? "blank"] ?? 0) + 1;
+  return {
+    fileName,
+    encoding: "utf-8",
+    effectiveStart: bounds.start,
+    effectiveEnd: bounds.end,
+    recordCount: parsed.rows.length,
+    rejected: parsed.rejected,
+    excluded: { outsideIndexedNdcs: parsed.quarterRows - parsed.rows.length, otherQuarters: parsed.totalRows - parsed.quarterRows },
+    warnings: parsed.quartersSeen.at(-1) !== period ? [`The file's newest quarter is ${parsed.quartersSeen.at(-1)}; imported ${period}.`] : [],
+    details: { quartersInFile: parsed.quartersSeen.length, rowsForQuarter: parsed.quarterRows, unitTypes: units },
+    load: async (tx, releaseId) => {
+      // Only the newest quarter is served; older quarters remain in the CMS files themselves.
+      await tx.delete(t.mdrpProducts);
+      await insertBatches(tx, t.mdrpProducts, parsed.rows.map((r) => ({ ...r, period, sourceReleaseId: releaseId })), 17);
+      return undefined;
+    },
+  };
+}
+
 async function crosswalkNdcSet(tx: Database): Promise<Set<string>> {
   const rows = await tx.selectDistinct({ ndc11: t.ndcHcpcsCrosswalk.ndc11 }).from(t.ndcHcpcsCrosswalk).where(isNotNull(t.ndcHcpcsCrosswalk.ndc11));
   return new Set(rows.map((r) => r.ndc11!));
@@ -559,9 +591,23 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
   let file: Downloaded | null = null;
   let period: string | null = candidate.period;
 
+  relaxedChecks = options.plausibility === "relaxed";
+  let streamed: Parsed | null = null;
   try {
     log(`${candidate.sourceKey} ${candidate.period ?? ""}: downloading ${candidate.url}`);
-    file = options.fetcher ? await options.fetcher(candidate.url) : await download(candidate.url, options.download);
+    if (candidate.sourceKey === "cms_mdrp_products") {
+      // ~330 MB: stream and filter instead of buffering the file.
+      if (!candidate.period) throw new ValidationError("Medicaid product data needs a quarter.");
+      const scope = await indexedNdcSet(db);
+      const src = options.fetcher ? streamFromBytes(await options.fetcher(candidate.url)) : await streamDownload(candidate.url);
+      const [year, quarter] = candidate.period.split("-Q").map(Number);
+      const mdrp = await parseMdrpStream(src.chunks, { year, quarter, keep: (n) => scope.has(n) });
+      const { sha256: digest, byteSize } = src.result();
+      file = { url: candidate.url, bytes: new Uint8Array(0), sha256: digest, byteSize, lastModified: src.lastModified, etag: src.etag, contentType: src.contentType, fromCache: false };
+      streamed = parseMdrpRelease(mdrp, candidate.period, baseName(new URL(candidate.url).pathname));
+    } else {
+      file = options.fetcher ? await options.fetcher(candidate.url) : await download(candidate.url, options.download);
+    }
     period = resolvePeriod(candidate, file);
 
     const existing = await db
@@ -581,7 +627,6 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
     }
 
     log(`${candidate.sourceKey} ${period}: parsing ${file.byteSize.toLocaleString()} bytes`);
-    relaxedChecks = options.plausibility === "relaxed";
     let parsed: Parsed;
     switch (candidate.sourceKey) {
       case "cms_hcpcs":
@@ -601,6 +646,9 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
         break;
       case "fda_purple_book":
         parsed = parsePurpleBookRelease(file);
+        break;
+      case "cms_mdrp_products":
+        parsed = streamed!;
         break;
       default:
         if (!isMueSource(candidate.sourceKey)) throw new Error(`Unknown source ${String(candidate.sourceKey)}`);
@@ -692,4 +740,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "fda_purple_book"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book"];

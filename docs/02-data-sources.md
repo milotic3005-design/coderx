@@ -20,6 +20,7 @@ files that were current on that date.
 | 5 | `fda_ndc_excluded` | FDA | NDC Directory — excluded products/packages | Daily | **Ingested** (NDCs that CMS crosswalks only) |
 | 6 | `fda_purple_book` | FDA | Purple Book monthly data download | Monthly | **Ingested** |
 | 7 | `cms_mue_practitioner`, `cms_mue_outpatient`, `cms_mue_dme` | CMS | NCCI Medically Unlikely Edit tables (practitioner, facility outpatient hospital, DME supplier) | Quarterly | **Ingested** (current quarter; HCPCS Level II rows only) |
+| 8 | `cms_mdrp_products` | CMS | Drug Products in the Medicaid Drug Rebate Program | Quarterly | **Ingested** (newest quarter, indexed NDCs only) |
 | — | — | CMS | OPPS Addendum B | Quarterly | Evaluated, **not ingested** (AMA license click-through) |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
 | — | — | NLM | DailyMed | Daily | Link-out only |
@@ -131,6 +132,20 @@ files that were current on that date.
 | Fields used | HCPCS code, MUE value (max units of service per patient per date of service), MUE adjudication indicator (1 line edit, 2 date-of-service policy, 3 date-of-service clinical), MUE rationale |
 | Known limitations | CMS keeps some MUE values confidential; a missing value is not evidence that no limit exists. A value of 0 means the code is not reportable in that setting. Medicare fee-for-service only. |
 | Ingestion | Discovered on the MUE page by file name (the page nests its links); each table is its own source key so the three settings keep separate release histories. 2026-Q4: 4,549 practitioner, 4,500 outpatient hospital, 3,109 DME supplier HCPCS rows. |
+
+## 8. CMS Medicaid Drug Rebate Program — drug product data
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | CMS (Medicaid.gov / data.medicaid.gov) |
+| Dataset | Drug Products in the Medicaid Drug Rebate Program |
+| Source URL | https://download.medicaid.gov/data/drugproducts-q2-2026.csv (pattern `drugproducts-q{N}-{YYYY}.csv`; data dictionary on data.medicaid.gov) |
+| Format | CSV, ~330 MB, ~2 million rows: every quarter since 2022 repeated in each file (~47,500 NDCs per quarter) |
+| Update frequency | Quarterly snapshots ("not updated by subsequent changes") |
+| Licensing / restrictions | U.S. Government work |
+| Fields used | NDC (11-digit), labeler, FDA product name, unit type (EA, ML, GM, AHF, TAB, CAP, SUP, TDP — and occasionally others such as MCI), units per package size, drug category (S/I/N), Rx/OTC, COD status (01 ANDA … 13), termination and reactivation dates, market date, clotting-factor and line-extension indicators, FDA application number |
+| Known limitations | Labeler-reported. An NDC missing from the file is not proof of no rebate agreement. The claim NDC qualifier CodeRx pairs with each unit type (ML→ML, GM→GR, AHF→F2, EA/TAB/CAP/SUP/TDP→UN) follows state Medicaid billing guides; commercial payers may differ. |
+| Ingestion | Discovered by probing the predictable URL for recent quarters; streamed (never buffered) and filtered to the file's quarter and to NDCs CodeRx indexes. 2026-Q2: 8,425 of 47,538 rows in scope; ~15 s locally, ~170 MB peak memory for the parser. Only the newest quarter is kept. |
 
 ## Evaluated but not ingested
 

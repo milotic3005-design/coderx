@@ -4,12 +4,17 @@ import { FileText } from "lucide-react";
 import { useId } from "react";
 import type { CalculatorResult, ContainerType } from "@/lib/billing";
 import { buildClaimLines, claimLineText, NDC_QUALIFIERS, ndcSegment, type NdcQualifier } from "@/lib/claims";
+import { formatPeriod } from "@/lib/format";
+import { MDRP_UNIT_TYPES, qualifierForUnitType } from "@/lib/medicaid";
 import { CopyButton } from "../client-bits";
 import { TableScroll, td, th } from "../layout-bits";
 import type { CalculatorPackage } from "../billing-calculator";
 
 export function suggestedQualifier(pkg: CalculatorPackage | null): NdcQualifier | "" {
   if (!pkg) return "";
+  // The CMS Medicaid unit type is authoritative for the NDC; fall back to the FDA package text.
+  const medicaid = qualifierForUnitType(pkg.medicaidUnitType);
+  if (medicaid) return medicaid;
   if (pkg.isPowder) return "UN";
   if (pkg.mlPerItem) return "ML";
   return "";
@@ -81,7 +86,11 @@ export function ClaimLines({
           </select>
           <p id={`${id}-q-hint`} className="text-xs text-ink-muted sm:col-span-2">
             {qualifier ? NDC_QUALIFIERS.find((q) => q.key === qualifier)?.hint : "Payers specify the qualifier."}
-            {suggested ? ` The FDA package text describes ${pkg.isPowder ? "a powder" : `${pkg.mlPerItem} mL per container`}, so ${suggested} is a common choice — confirm with the payer.` : ""}
+            {pkg.medicaidUnitType && qualifierForUnitType(pkg.medicaidUnitType)
+              ? ` The CMS Medicaid Drug Rebate Program lists this NDC's unit type as ${pkg.medicaidUnitType} (${MDRP_UNIT_TYPES[pkg.medicaidUnitType] ?? pkg.medicaidUnitType}${pkg.medicaidPeriod ? `, ${formatPeriod(pkg.medicaidPeriod)}` : ""}); state Medicaid programs expect the matching qualifier, ${qualifierForUnitType(pkg.medicaidUnitType)}.`
+              : suggested
+                ? ` The FDA package text describes ${pkg.isPowder ? "a powder" : `${pkg.mlPerItem} mL per container`}, so ${suggested} is a common choice — confirm with the payer.`
+                : ""}
           </p>
         </div>
       ) : null}
