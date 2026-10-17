@@ -142,7 +142,7 @@ export default function MethodologyPage() {
 
           <Section id="assumptions" number="10" title="Assumptions">
             <ul>
-              <li>A HCPCS code is “active” when it has no termination date or the termination date is today or later.</li>
+              <li>A HCPCS code is “active” when it has no termination date or the termination date is today or later; “today” is the calendar date in U.S. Eastern time.</li>
               <li>An NDC package is “active” when it is in the active FDA directory and its marketing end date has not passed.</li>
               <li>Quarterly CMS files apply to the quarter named in the file (and stated in its header when present).</li>
               <li>“Brand” means the product has a proprietary name different from its nonproprietary name; product class comes from FDA marketing category and Purple Book license type.</li>

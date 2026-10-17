@@ -21,6 +21,30 @@ describe("unit parsing and conversion", () => {
     expect(parseDescriptorDosage("Factor viii (antihemophilic factor, recombinant) per i.u., not otherwise specified")).toMatchObject({ amount: 1, unit: "iu" });
     expect(parseDescriptorDosage("Unclassified drugs")).toBeNull();
   });
+  // Real CMS HCPCS 2026-Q4 long descriptors.
+  it("keeps 'up to' amounts and explicit per-unit clauses", () => {
+    expect(parseDescriptorDosage("Injection, hydromorphone, up to 4 mg")).toMatchObject({ amount: 4, unit: "mg" });
+    expect(parseDescriptorDosage("Infusion, normal saline solution, sterile (500 ml = 1 unit)")).toMatchObject({ amount: 500, unit: "ml" });
+    expect(parseDescriptorDosage("Low osmolar contrast material, 300-399 mg/ml iodine concentration, per ml")).toMatchObject({ amount: 1, unit: "ml" });
+    expect(parseDescriptorDosage("Triamcinolone, inhalation solution, compounded product, administered through dme, unit dose form, per milligram")).toMatchObject({ amount: 1, unit: "mg" });
+    expect(parseDescriptorDosage("Iodine i-131 sodium iodide, diagnostic, per microcurie (up to 100 microcuries)")).toMatchObject({ amount: 1, unit: "uci" });
+    expect(parseDescriptorDosage("Cellesta flowable amnion (25 mg per cc); per 0.5 cc")).toMatchObject({ amount: 0.5, unit: "ml" });
+  });
+  it("gives no unit when the descriptor's amount is not the billing unit", () => {
+    for (const d of [
+      "Injection, sodium nitrite 3 mg and sodium thiosulfate 125 mg (nithiodote)",
+      "Injection, meropenem and vaborbactam, 10mg/10mg (20mg)",
+      "Buprenorphine/naloxone, oral, greater than 3 mg, but less than or equal to 6 mg buprenorphine",
+      "Buprenorphine/naloxone, oral, greater than 10 mg buprenorphine",
+      "Injection, thyrotropin alpha, 0.9 mg, provided in 1.1 mg vial",
+      "Fluorodeoxyglucose f-18 fdg, diagnostic, per study dose, up to 45 millicuries",
+      "Syringe with needle, sterile, 1 cc or less, each",
+      "Bupropion hcl sustained release tablet, 150 mg, per bottle of 60 tablets",
+      "Take-home supply of nasal nalmefene hydrochloride; one carton of two, 2.7 mg per 0.1 ml nasal sprays",
+      "Palingen or promatrx, 0.36 mg per 0.25 cc",
+    ])
+      expect(parseDescriptorDosage(d), d).toBeNull();
+  });
   it("converts only within a dimension", () => {
     expect(convert(1, "g", "mg")).toBe(1000);
     expect(convert(500, "mcg", "mg")).toBe(0.5);

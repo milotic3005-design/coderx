@@ -8,6 +8,7 @@
  *   inactive/historical records sort after active ones (exact code matches excepted).
  */
 import { sql, type SQL } from "drizzle-orm";
+import { todayUs } from "@/lib/dates";
 import { getDb, rowsOf, type Database } from "@/lib/db/client";
 import { formatNdc11 } from "@/lib/ndc";
 import { escapeLike } from "@/lib/text";
@@ -435,7 +436,7 @@ export async function search(rawQuery: string, options: SearchOptions = {}, dbAr
 
   if (q.type === "ndc" || q.type === "ndc_ambiguous" || q.type === "product_ndc") {
     const ndcRows = wantKind("ndc") ? await ndcLookup(db, q.ndc11Candidates, q.productNdc9Candidates) : [];
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayUs();
     const ndcHits: SearchHit[] = ndcRows.map((r) => {
       const listing: "listed" | "excluded" | "cms-only" = r.listing_status === "listed" ? "listed" : r.listing_status === "excluded" ? "excluded" : "cms-only";
       const isActive = listing === "listed" && (!r.marketing_end || r.marketing_end >= today);

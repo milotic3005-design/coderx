@@ -102,7 +102,7 @@ export function MarginTool() {
   }
 
   function exportCsv() {
-    downloadCsv(`coderx-margin-${new Date().toISOString().slice(0, 10)}.csv`, [
+    downloadCsv(`coderx-margin-${new Date().toLocaleDateString("en-CA")}.csv`, [
       ["line", "hcpcs", "ndc", "cost_basis", "billable_units", "payment_limit_per_unit", "coinsurance_pct", "medicare_allowed", "expected_revenue", "your_cost", "margin", "margin_pct", "status", "note"],
       ...lines.map((l) => [
         l.input.line,

@@ -72,7 +72,7 @@ export function AuditTool() {
   function exportCsv() {
     if (!rows) return;
     const mue = (r: AuditRow, k: keyof typeof MUE_SERVICE_LABELS) => r.code?.mue.find((m) => m.serviceType === k)?.value ?? "";
-    downloadCsv(`coderx-audit-${new Date().toISOString().slice(0, 10)}.csv`, [
+    downloadCsv(`coderx-audit-${new Date().toLocaleDateString("en-CA")}.csv`, [
       ["line", "input", "hcpcs", "hcpcs_status", "short_description", "ndc", "fda_status", "labeler", "crosswalk_codes", "pair_matches_cms", "medicaid_unit_type", "medicaid_units_per_package", "medicaid_cod_status", "payment_limit", "payment_dosage", "payment_period", "mue_practitioner", "mue_outpatient", "mue_dme", "result", "findings"],
       ...rows.map((r) => {
         const input = sent[r.index];

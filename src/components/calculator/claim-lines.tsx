@@ -113,8 +113,8 @@ export function ClaimLines({
               </tr>
             </thead>
             <tbody>
-              {lines.map((l) => (
-                <tr key={l.role}>
+              {lines.map((l, i) => (
+                <tr key={`${l.role}-${i}`}>
                   <td className={td}>
                     <span className="code-chip font-semibold whitespace-nowrap text-ink">
                       {l.hcpcsCode}

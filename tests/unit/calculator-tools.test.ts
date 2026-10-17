@@ -84,6 +84,23 @@ describe("claim lines", () => {
       expect(out.notes.join(" ")).toMatch(/single-dose/);
     }
   });
+  // CMS JW/JZ FAQs 16 and 18: a claim line holds at most 9,999 billing units.
+  it("splits large doses across lines with JZ, keeping a no-modifier line to pair with JW", () => {
+    const big = { ...base, qualifier: null, ndc11: null };
+    const faq16 = buildClaimLines({ ...big, dose: 49_000, result: { administeredUnits: 49_000, discardedUnits: 1_000, discardedAmount: 1_000, containersOpened: 1 } });
+    expect(faq16.lines.map((l) => [l.units, l.modifier])).toEqual([[9999, "JZ"], [9999, "JZ"], [9999, "JZ"], [9999, "JZ"], [9004, null], [1000, "JW"]]);
+    const faq18 = buildClaimLines({ ...big, dose: 22_000, result: { administeredUnits: 22_000, discardedUnits: 0, discardedAmount: 0, containersOpened: 1 } });
+    expect(faq18.lines.map((l) => [l.units, l.modifier])).toEqual([[9999, "JZ"], [9999, "JZ"], [2002, "JZ"]]);
+    expect(faq18.notes.join(" ")).toMatch(/9,999/);
+    const exact = buildClaimLines({ ...big, dose: 19_998, result: { administeredUnits: 19_998, discardedUnits: 2, discardedAmount: 2, containersOpened: 1 } });
+    expect(exact.lines.map((l) => [l.units, l.modifier])).toEqual([[9999, "JZ"], [9999, null], [2, "JW"]]);
+    const multi = buildClaimLines({ ...big, containerType: "multi-dose", dose: 12_000, result: { administeredUnits: 12_000, discardedUnits: null, discardedAmount: null, containersOpened: 1 } });
+    expect(multi.lines.map((l) => [l.units, l.modifier])).toEqual([[9999, null], [2001, null]]);
+  });
+  it("divides NDC milliliters across split lines so they still add up", () => {
+    const { lines } = buildClaimLines({ ...base, dose: 15_000, containerAmount: 1_000, mlPerContainer: 10, result: { administeredUnits: 15_000, discardedUnits: 0, discardedAmount: 0, containersOpened: 15 } });
+    expect(lines.map((l) => l.ndcQuantity)).toEqual([99.99, 50.01]);
+  });
   it("formats the N4 segment without hyphens", () => {
     expect(ndcSegment("50242-0051-21", "UN", 4)).toBe("N450242005121UN4");
     expect(ndcSegment("50242005121", "ML", 1 / 3)).toBe("N450242005121ML0.333");

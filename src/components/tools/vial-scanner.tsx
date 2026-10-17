@@ -20,7 +20,8 @@ interface Scanned {
 
 type Controls = { stop: () => void };
 
-const today = () => new Date().toISOString().slice(0, 10);
+/** The viewer's local calendar date (YYYY-MM-DD) for the expiry check. */
+const today = () => new Date().toLocaleDateString("en-CA");
 
 async function lookup(scan: ScanParse): Promise<{ matches: NdcDetail[]; error: string | null }> {
   if (!scan.candidates.length) return { matches: [], error: scan.problems[0] ?? "No NDC found in the scan." };

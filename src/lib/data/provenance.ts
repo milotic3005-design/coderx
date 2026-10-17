@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import type { Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { SOURCES, type SourceKey } from "@/ingest/sources";
@@ -50,9 +50,9 @@ export function toProvenance(r: ReleaseRow, status?: DataStatus): Provenance {
 
 /** All successful releases keyed by id, plus the newest current release per source. */
 export async function loadReleases(db: Database) {
-  const rows = await db.select().from(t.sourceReleases).where(eq(t.sourceReleases.status, "succeeded"));
-  const superseded = await db.select().from(t.sourceReleases).where(eq(t.sourceReleases.status, "superseded"));
-  const byId = new Map<number, ReleaseRow>([...rows, ...superseded].map((r) => [r.id, r]));
+  const all = await db.select().from(t.sourceReleases).where(inArray(t.sourceReleases.status, ["succeeded", "superseded"]));
+  const rows = all.filter((r) => r.status === "succeeded");
+  const byId = new Map<number, ReleaseRow>(all.map((r) => [r.id, r]));
   const latest = new Map<string, ReleaseRow>();
   for (const r of rows) {
     if (!r.isCurrent) continue;

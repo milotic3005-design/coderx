@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CODE_FAMILIES, familyOf, isCdtLike, isCodeActive, isCptLike, isDrugCode, normalizeHcpcs, normalizeHcpcsPrefix } from "@/lib/hcpcs";
 import { displayCase, escapeLike, indexTokens, normalizeText, slugify } from "@/lib/text";
+import { todayUs } from "@/lib/dates";
 
 describe("HCPCS helpers", () => {
   it("normalizes case and validates Level II codes", () => {
@@ -49,5 +50,15 @@ describe("text normalization", () => {
     expect(escapeLike("50%_off")).toBe("50\\%\\_off");
     expect(displayCase("KEYTRUDA")).toBe("Keytruda");
     expect(displayCase("pH")).toBe("pH");
+  });
+});
+
+describe("today for active checks", () => {
+  it("uses the U.S. Eastern calendar date, not UTC", () => {
+    // 10 PM Eastern on Dec 31 is already Jan 1 in UTC; a code terminated Dec 31 is still active.
+    const lateEvening = new Date("2027-01-01T03:00:00Z");
+    expect(todayUs(lateEvening)).toBe("2026-12-31");
+    expect(isCodeActive("2026-12-31", todayUs(lateEvening))).toBe(true);
+    expect(todayUs(new Date("2026-07-04T16:00:00Z"))).toBe("2026-07-04");
   });
 });

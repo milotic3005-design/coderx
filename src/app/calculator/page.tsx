@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BillingCalculator, type CalculatorPackage, type CalculatorPrefill } from "@/components/billing-calculator";
 import { Callout, Disclaimer, PageHeader } from "@/components/layout-bits";
 import { cachedHcpcsDetail } from "@/lib/data/cached";
+import { todayUs } from "@/lib/dates";
 import { formatPeriod } from "@/lib/format";
 import { normalizeHcpcs } from "@/lib/hcpcs";
 import { parseNdc } from "@/lib/ndc";
@@ -59,7 +60,7 @@ export default async function CalculatorPage({ searchParams }: { searchParams: S
               unit: parsedUnit.unit,
               billUnitsPerItem: Number(x.billUnitsPerItem),
               packageDescription: x.fda?.packageDescription ?? null,
-              fdaListed: !!x.fda && x.fda.listingStatus === "listed" && (!x.fda.marketingEnd || x.fda.marketingEnd >= new Date().toISOString().slice(0, 10)),
+              fdaListed: !!x.fda && x.fda.listingStatus === "listed" && (!x.fda.marketingEnd || x.fda.marketingEnd >= todayUs()),
               mlPerItem: facts.mlPerItem,
               containerType: facts.containerType,
               isPowder: facts.isPowder,

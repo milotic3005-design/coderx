@@ -6,6 +6,7 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { parseCmsDosage, parseDescriptorDosage, type ParsedDosage } from "@/lib/billing";
 import { getDb, rowsOf, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
+import { todayUs } from "@/lib/dates";
 import { CODE_FAMILIES, familyOf, isCodeActive } from "@/lib/hcpcs";
 import type { MedicaidInfo } from "@/lib/medicaid";
 import { type MueEntry, type MueServiceType } from "@/lib/mue";
@@ -13,7 +14,7 @@ import { formatNdc11 } from "@/lib/ndc";
 import { MUE_SOURCES, type MueSourceKey } from "@/ingest/sources";
 import { loadReleases, toProvenance, type Provenance, type ReleaseRow } from "./provenance";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => todayUs();
 
 /* ------------------------------------------------------------------ */
 /* Shared pieces                                                       */
@@ -233,12 +234,13 @@ export interface BillingUnitInfo {
   period: string | null;
 }
 
-function billingUnit(code: { longDescription: string }, payments: PaymentPeriod[] | undefined): BillingUnitInfo {
+function billingUnit(code: { longDescription: string; isDrug: boolean }, payments: PaymentPeriod[] | undefined): BillingUnitInfo {
   const latest = payments?.[0];
   if (latest?.dosageDescriptor) {
     return { text: latest.dosageDescriptor, parsed: parseCmsDosage(latest.dosageDescriptor), source: "cms_payment_limits", period: latest.period };
   }
-  const parsed = parseDescriptorDosage(code.longDescription);
+  // Only drug codes: an amount in a visit or quality-measure descriptor is not a billing unit.
+  const parsed = code.isDrug ? parseDescriptorDosage(code.longDescription) : null;
   return { text: parsed ? `${parsed.amount} ${parsed.unit}` : null, parsed, source: parsed ? "hcpcs_descriptor" : null, period: null };
 }
 

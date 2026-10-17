@@ -238,6 +238,7 @@ export const ndcHcpcsCrosswalk = pgTable(
     index("ndc_hcpcs_crosswalk_ndc_idx").on(t.ndc11),
     index("ndc_hcpcs_crosswalk_code_idx").on(t.hcpcsCode),
     index("ndc_hcpcs_crosswalk_release_idx").on(t.sourceReleaseId),
+    index("ndc_hcpcs_crosswalk_period_type_idx").on(t.period, t.crosswalkType),
   ],
 );
 

@@ -1,0 +1,1 @@
+CREATE INDEX "ndc_hcpcs_crosswalk_period_type_idx" ON "ndc_hcpcs_crosswalk" USING btree ("period","crosswalk_type");

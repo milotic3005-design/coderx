@@ -4,6 +4,7 @@
  * elsewhere (CLI, tests) the functions run uncached.
  */
 import { unstable_cache } from "next/cache";
+import { todayUs } from "@/lib/dates";
 import { getDrugDetail, getFamilyCounts, getFamilyListing, getHcpcsDetail, getHomeData, getManufacturerDetail, getNdcDetail, getSourcesOverview } from "./queries";
 import { biosimilarGroups, quarterlyChanges } from "./tools";
 
@@ -12,7 +13,9 @@ const SIX_HOURS = 6 * 60 * 60;
 
 function cached<A extends unknown[], R>(fn: (...args: A) => Promise<R>, key: string): (...args: A) => Promise<R> {
   if (!process.env.NEXT_RUNTIME || process.env.CODERX_DISABLE_DATA_CACHE === "1") return fn;
-  return unstable_cache(fn, [`coderx:${key}:v3`], { tags: [DATA_TAG], revalidate: SIX_HOURS });
+  // The day is part of the cache key so active/terminated status turns over at midnight.
+  const store = unstable_cache((_day: string, ...args: A) => fn(...args), [`coderx:${key}:v4`], { tags: [DATA_TAG], revalidate: SIX_HOURS });
+  return (...args: A) => store(todayUs(), ...args);
 }
 
 export const cachedHcpcsDetail = cached((code: string) => getHcpcsDetail(code), "hcpcs");

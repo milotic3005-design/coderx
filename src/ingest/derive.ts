@@ -9,6 +9,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import manualFile from "../../data/manual-relationships.json";
+import { todayUs } from "@/lib/dates";
 import * as t from "@/lib/db/schema";
 import { isDrugCode } from "@/lib/hcpcs";
 import { displayCase, indexTokens, normalizeText, slugify, uniq } from "@/lib/text";
@@ -296,7 +297,7 @@ async function rebuildHcpcs(tx: Tx, drugFileCodes: Set<string>) {
 export async function deriveAll(tx: Tx, log: (msg: string) => void = () => {}): Promise<DeriveReport> {
   const started = Date.now();
   const warnings: string[] = [];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayUs();
 
   // --- Source data -----------------------------------------------------
   const crosswalk = await loadCurrentCrosswalk(tx);

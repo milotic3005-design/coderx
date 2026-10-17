@@ -113,20 +113,45 @@ export function parseCmsDosage(text: string | null | undefined): ParsedDosage | 
 
 /**
  * Derive a billing unit from a HCPCS long descriptor ("Injection, pembrolizumab, 1 mg").
- * Only the last dosage expression is used, and only when it is unambiguous.
+ * Only the last dosage expression is used, and only when it is unambiguous: a descriptor
+ * with several different amounts — a combination product ("3 mg and … 125 mg") or a dose
+ * range ("greater than 3 mg, but less than or equal to 6 mg") — gives no unit unless the
+ * last amount is its own "per" clause ("(25 mg per cc); per 0.5 cc") or the text says
+ * "500 ml = 1 unit". "2.7 mg per 0.1 ml" is a concentration, not a billing unit.
  */
 export function parseDescriptorDosage(descriptor: string | null | undefined): ParsedDosage | null {
   if (!descriptor) return null;
   const re = /(\d[\d,]*(?:\.\d+)?)\s*(mg|mcg|micrograms?|milligrams?|grams?|gm|g|ml|cc|units?|iu|i\.u\.|meq|mmol|millicuries?|microcuries?|mci|uci)(?=$|[\s,;).])/gi;
+  // A clause of its own like ", per ml" or ", per milligram" bills one of that unit, whatever
+  // concentrations the rest of the text mentions ("300-399 mg/ml iodine concentration, per ml").
+  const perClause = descriptor.match(/(?:^|[,;])\s*per\s+(milligrams?|micrograms?|microcuries?|millicuries?|ml|milliliters?|cc|iu|i\.u\.)(?=$|[\s,;).])/i);
+  if (perClause) {
+    const u = resolveUnit(perClause[1].replace(/s$/i, ""));
+    if (u) return { amount: 1, unit: u, source: descriptor };
+  }
   const matches = [...descriptor.matchAll(re)];
   if (matches.length === 0) {
     if (/\bper\s+(?:i\.u\.|iu\b)/i.test(descriptor)) return { amount: 1, unit: "iu", source: descriptor };
     return null;
   }
+  // "(500 ml = 1 unit)": the descriptor states the billing unit outright.
+  const equals = descriptor.match(/(\d[\d,]*(?:\.\d+)?)\s*(ml|cc)\s*=\s*1\s*unit\b/i);
+  if (equals) return { amount: Number(equals[1].replace(/,/g, "")), unit: "ml", source: descriptor };
+  // Billed per dose, source, or package: the amount is a cap or a strength, not the unit.
+  if (/\bper (?:study|treatment) dose\b|\bper source\b/i.test(descriptor)) return null;
+  const read = (m: RegExpMatchArray) => ({ amount: Number(m[1].replace(/,/g, "")), unit: resolveUnit(m[2]) });
   const last = matches[matches.length - 1];
-  const amount = Number(last[1].replace(/,/g, ""));
-  const unit = resolveUnit(last[2]);
+  const { amount, unit } = read(last);
   if (!unit || !Number.isFinite(amount) || amount <= 0) return null;
+  // A band ("greater than 10 mg", "1 cc or less"), a rate ("50 ml per hour"), a count
+  // ("2 cc, each"), or an equation ("100 calories = 1 unit") does not name the billing unit.
+  // "Up to 4 mg" does: one unit covers up to that amount.
+  const before = descriptor.slice(0, last.index);
+  const after = descriptor.slice((last.index ?? 0) + last[0].length);
+  if (/(?:greater|less|more|fewer) than\s*$|equal to\s*$|exceed(?:s|ing)?\s*$|[=<>≤≥]\s*$/i.test(before)) return null;
+  if (/^\s*(?:or (?:less|greater|more|fewer)\b|per (?:hour|minute|day|week|month|kg)\b|\/\s*(?:hr|hour|day|kg|ml)\b|daily\b|,?\s*each\b|,?\s*per (?:bottle|package|pack|kit|carton|box)\b|=)/i.test(after)) return null;
+  const distinct = new Set(matches.map((m) => { const r = read(m); return `${r.amount} ${r.unit}`; }));
+  if (distinct.size > 1 && !/(?:^|[;,])\s*per\s*$/i.test(descriptor.slice(0, last.index))) return null;
   return { amount, unit, source: descriptor };
 }
 

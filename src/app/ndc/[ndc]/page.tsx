@@ -10,6 +10,7 @@ import { GlanceStrip, type GlanceAction, type GlanceItem } from "@/components/gl
 import { ProvenanceFooter } from "@/components/provenance";
 import { StickyRecordBar } from "@/components/sticky-record-bar";
 import { cachedNdcDetail } from "@/lib/data/cached";
+import { todayUs } from "@/lib/dates";
 import { EXCLUDE_FLAG_LABELS, formatDate, formatMoney, formatNumber, formatPeriod, titleCase } from "@/lib/format";
 import { COD_STATUS, DRUG_CATEGORY, MDRP_UNIT_TYPES, medicaidFlags, qualifierForUnitType } from "@/lib/medicaid";
 import { formatNdc11, parseNdc } from "@/lib/ndc";
@@ -97,7 +98,7 @@ export default async function NdcPage({ params }: { params: Params }) {
         : d.medicaidPeriod
           ? `Not in the ${formatPeriod(d.medicaidPeriod)} rebate file`
           : "Medicaid rebate data not imported",
-      tone: d.medicaid ? (medicaidFlags(d.medicaid, new Date().toISOString().slice(0, 10)).length ? "attention" : "default") : "attention",
+      tone: d.medicaid ? (medicaidFlags(d.medicaid, todayUs()).length ? "attention" : "default") : "attention",
     },
   ];
   const glanceActions: GlanceAction[] = [
@@ -232,7 +233,7 @@ export default async function NdcPage({ params }: { params: Params }) {
                     { label: "Termination date", value: d.medicaid.terminationDate ? formatDate(d.medicaid.terminationDate) : "None" },
                   ]}
                 />
-                {medicaidFlags(d.medicaid, new Date().toISOString().slice(0, 10)).map((f) => (
+                {medicaidFlags(d.medicaid, todayUs()).map((f) => (
                   <div key={f} className="mt-3">
                     <Callout tone="warning">{f}</Callout>
                   </div>

@@ -6,6 +6,7 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { getDb, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
+import { todayUs } from "@/lib/dates";
 import { EXCLUDE_FLAG_LABELS, formatPeriod } from "@/lib/format";
 import { isCodeActive } from "@/lib/hcpcs";
 import { medicaidFlags, type MedicaidInfo } from "@/lib/medicaid";
@@ -14,7 +15,7 @@ import { formatNdc11 } from "@/lib/ndc";
 import { loadReleases, toProvenance, type Provenance, type ReleaseRow } from "./provenance";
 import { medicaidFor, mueFor, mueReleases } from "./queries";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => todayUs();
 
 /* ------------------------------------------------------------------ */
 /* Chargemaster / formulary audit                                      */
@@ -345,33 +346,54 @@ export interface LimitChange {
 
 export async function quarterlyChanges(period: string | null, dbArg?: Database) {
   const db = dbArg ?? (await getDb());
-  const { latest } = await loadReleases(db);
-  const periods = (
-    await db
+  // Two round trips: the quarter lists, then every per-quarter query at once.
+  const [{ latest }, periodRows, xwPeriodRows] = await Promise.all([
+    loadReleases(db),
+    db
       .selectDistinct({ period: t.paymentLimits.period })
       .from(t.paymentLimits)
       .innerJoin(t.sourceReleases, and(eq(t.sourceReleases.id, t.paymentLimits.sourceReleaseId), eq(t.sourceReleases.isCurrent, true)))
-      .orderBy(desc(t.paymentLimits.period))
-  ).map((r) => r.period);
+      .orderBy(desc(t.paymentLimits.period)),
+    db.selectDistinct({ period: t.ndcHcpcsCrosswalk.period }).from(t.ndcHcpcsCrosswalk).where(eq(t.ndcHcpcsCrosswalk.crosswalkType, "ASP")).orderBy(desc(t.ndcHcpcsCrosswalk.period)),
+  ]);
+  const periods = periodRows.map((r) => r.period);
   const current = period && periods.includes(period) ? period : periods[0] ?? null;
   const previous = current ? (periods.find((p) => p < current) ?? null) : null;
   if (!current) return { period: null, previous: null, periods, limitChanges: [], added: [], removed: [], newCodes: [], terminatedCodes: [], crosswalk: { added: [], removed: [], period: null, previous: null }, provenance: [] };
 
+  // NDC–HCPCS crosswalk changes between the two newest crosswalk quarters.
+  const xwPeriods = xwPeriodRows.map((r) => r.period);
+  const xwNow = xwPeriods.includes(current) ? current : null;
+  const xwPrev = xwNow ? (xwPeriods.find((p) => p < xwNow) ?? null) : null;
+
   const limitsFor = async (p: string) =>
     db
-      .select({ code: t.paymentLimits.hcpcsCode, limit: t.paymentLimits.paymentLimit, dosage: t.paymentLimits.dosageDescriptor, short: t.paymentLimits.shortDescription })
+      .select({ code: t.paymentLimits.hcpcsCode, limit: t.paymentLimits.paymentLimit, dosage: t.paymentLimits.dosageDescriptor, short: t.paymentLimits.shortDescription, isDrug: t.hcpcsCodes.isDrug })
       .from(t.paymentLimits)
       .innerJoin(t.sourceReleases, and(eq(t.sourceReleases.id, t.paymentLimits.sourceReleaseId), eq(t.sourceReleases.isCurrent, true)))
+      .leftJoin(t.hcpcsCodes, eq(t.hcpcsCodes.code, t.paymentLimits.hcpcsCode))
       .where(eq(t.paymentLimits.period, p));
-  const [now, before] = await Promise.all([limitsFor(current), previous ? limitsFor(previous) : Promise.resolve([])]);
+  const xwRowsFor = async (p: string) =>
+    db
+      .selectDistinct({ ndc11: t.ndcHcpcsCrosswalk.ndc11, hcpcsCode: t.ndcHcpcsCrosswalk.hcpcsCode, labeler: t.ndcHcpcsCrosswalk.labelerName, drugName: t.ndcHcpcsCrosswalk.drugName })
+      .from(t.ndcHcpcsCrosswalk)
+      .where(and(eq(t.ndcHcpcsCrosswalk.period, p), eq(t.ndcHcpcsCrosswalk.crosswalkType, "ASP"), sql`${t.ndcHcpcsCrosswalk.ndc11} IS NOT NULL`));
+  const none = Promise.resolve([]);
+  const [now, before, hist, xwA, xwB] = await Promise.all([
+    limitsFor(current),
+    previous ? limitsFor(previous) : none,
+    // HCPCS file changes for the same quarter (drug codes only).
+    db
+      .select({ code: t.hcpcsCodeHistory.code, changeType: t.hcpcsCodeHistory.changeType, longDescription: t.hcpcsCodes.longDescription, terminationDate: t.hcpcsCodes.terminationDate, addedDate: t.hcpcsCodes.addedDate })
+      .from(t.hcpcsCodeHistory)
+      .innerJoin(t.hcpcsCodes, eq(t.hcpcsCodes.code, t.hcpcsCodeHistory.code))
+      .where(and(eq(t.hcpcsCodeHistory.period, current), eq(t.hcpcsCodes.isDrug, true), inArray(t.hcpcsCodeHistory.changeType, ["added", "terminated"])))
+      .orderBy(asc(t.hcpcsCodeHistory.code)),
+    xwNow && xwPrev ? xwRowsFor(xwNow) : none,
+    xwNow && xwPrev ? xwRowsFor(xwPrev) : none,
+  ]);
   const beforeMap = new Map(before.map((b) => [b.code, b]));
   const nowMap = new Map(now.map((b) => [b.code, b]));
-  const allCodes = [...new Set([...nowMap.keys(), ...beforeMap.keys()])];
-  const drugCodes = new Set(
-    allCodes.length
-      ? (await db.select({ code: t.hcpcsCodes.code }).from(t.hcpcsCodes).where(and(inArray(t.hcpcsCodes.code, allCodes), eq(t.hcpcsCodes.isDrug, true)))).map((r) => r.code)
-      : [],
-  );
   const limitChanges: LimitChange[] = [];
   for (const n of now) {
     const b = beforeMap.get(n.code);
@@ -379,45 +401,18 @@ export async function quarterlyChanges(period: string | null, dbArg?: Database) 
     const after = Number(n.limit);
     const prior = Number(b.limit);
     if (!(prior > 0) || after === prior) continue;
-    limitChanges.push({ code: n.code, shortDescription: n.short, dosage: n.dosage, before: prior, after, changePct: Math.round(((after - prior) / prior) * 1000) / 10, isDrug: drugCodes.has(n.code) });
+    limitChanges.push({ code: n.code, shortDescription: n.short, dosage: n.dosage, before: prior, after, changePct: Math.round(((after - prior) / prior) * 1000) / 10, isDrug: n.isDrug === true });
   }
   limitChanges.sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct));
   const added = previous ? now.filter((n) => !beforeMap.has(n.code)).map((n) => ({ code: n.code, shortDescription: n.short, dosage: n.dosage, limit: n.limit })) : [];
   const removed = previous ? before.filter((b) => !nowMap.has(b.code)).map((b) => ({ code: b.code, shortDescription: b.short, dosage: b.dosage, limit: b.limit })) : [];
 
-  // HCPCS file changes for the same quarter (drug codes only).
-  const hist = await db
-    .select({ code: t.hcpcsCodeHistory.code, changeType: t.hcpcsCodeHistory.changeType, longDescription: t.hcpcsCodes.longDescription, terminationDate: t.hcpcsCodes.terminationDate, addedDate: t.hcpcsCodes.addedDate })
-    .from(t.hcpcsCodeHistory)
-    .innerJoin(t.hcpcsCodes, eq(t.hcpcsCodes.code, t.hcpcsCodeHistory.code))
-    .where(and(eq(t.hcpcsCodeHistory.period, current), eq(t.hcpcsCodes.isDrug, true), inArray(t.hcpcsCodeHistory.changeType, ["added", "terminated"])))
-    .orderBy(asc(t.hcpcsCodeHistory.code));
-
-  // NDC–HCPCS crosswalk changes between the two newest crosswalk quarters.
-  const xwPeriods = (
-    await db
-      .selectDistinct({ period: t.ndcHcpcsCrosswalk.period })
-      .from(t.ndcHcpcsCrosswalk)
-      .orderBy(desc(t.ndcHcpcsCrosswalk.period))
-  ).map((r) => r.period);
-  const xwNow = xwPeriods.includes(current) ? current : null;
-  const xwPrev = xwNow ? (xwPeriods.find((p) => p < xwNow) ?? null) : null;
-  let xwAdded: { ndc11: string; formatted: string; hcpcsCode: string | null; labeler: string | null; drugName: string | null }[] = [];
-  let xwRemoved: typeof xwAdded = [];
-  if (xwNow && xwPrev) {
-    const rowsFor = async (p: string) =>
-      db
-        .selectDistinct({ ndc11: t.ndcHcpcsCrosswalk.ndc11, hcpcsCode: t.ndcHcpcsCrosswalk.hcpcsCode, labeler: t.ndcHcpcsCrosswalk.labelerName, drugName: t.ndcHcpcsCrosswalk.drugName })
-        .from(t.ndcHcpcsCrosswalk)
-        .where(and(eq(t.ndcHcpcsCrosswalk.period, p), eq(t.ndcHcpcsCrosswalk.crosswalkType, "ASP"), sql`${t.ndcHcpcsCrosswalk.ndc11} IS NOT NULL`));
-    const [a, b] = await Promise.all([rowsFor(xwNow), rowsFor(xwPrev)]);
-    const key = (r: { ndc11: string | null; hcpcsCode: string | null }) => `${r.ndc11}|${r.hcpcsCode}`;
-    const bKeys = new Set(b.map(key));
-    const aKeys = new Set(a.map(key));
-    const shape = (r: (typeof a)[number]) => ({ ndc11: r.ndc11!, formatted: formatNdc11(r.ndc11!), hcpcsCode: r.hcpcsCode, labeler: r.labeler, drugName: r.drugName });
-    xwAdded = a.filter((r) => !bKeys.has(key(r))).map(shape);
-    xwRemoved = b.filter((r) => !aKeys.has(key(r))).map(shape);
-  }
+  const key = (r: { ndc11: string | null; hcpcsCode: string | null }) => `${r.ndc11}|${r.hcpcsCode}`;
+  const bKeys = new Set(xwB.map(key));
+  const aKeys = new Set(xwA.map(key));
+  const shape = (r: (typeof xwA)[number]) => ({ ndc11: r.ndc11!, formatted: formatNdc11(r.ndc11!), hcpcsCode: r.hcpcsCode, labeler: r.labeler, drugName: r.drugName });
+  const xwAdded = xwA.filter((r) => !bKeys.has(key(r))).map(shape);
+  const xwRemoved = xwB.filter((r) => !aKeys.has(key(r))).map(shape);
 
   const provenance = (["cms_payment_limits", "cms_hcpcs", "cms_ndc_hcpcs"] as const)
     .map((k) => latest.get(k))

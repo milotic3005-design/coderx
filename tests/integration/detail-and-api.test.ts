@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { DbHandle } from "@/lib/db/client";
 import { getDrugDetail, getHcpcsDetail, getNdcDetail } from "@/lib/data/queries";
+import { quarterlyChanges } from "@/lib/data/tools";
 import { GET as searchGET } from "@/app/api/search/route";
 import { GET as suggestGET } from "@/app/api/suggest/route";
 import { GET as hcpcsGET } from "@/app/api/hcpcs/[code]/route";
@@ -59,6 +60,21 @@ describe("read models expose provenance and honest gaps", () => {
     expect(d.formatted).toBe("00006-3026-02");
     expect(d.fda[0].product.proprietaryName).toBe("KEYTRUDA");
     expect(d.codes.map((c) => c.code)).toEqual(["J9271"]);
+  });
+});
+
+describe("quarterly changes", () => {
+  it("compares the two newest payment quarters and flags drug codes", async () => {
+    const d = await quarterlyChanges(null, h.db);
+    expect(d.period).toBe("2026-Q4");
+    expect(d.previous).toBe("2026-Q3");
+    expect(d.periods).toEqual(["2026-Q4", "2026-Q3"]);
+    const j9312 = d.limitChanges.find((c) => c.code === "J9312");
+    expect(j9312).toMatchObject({ after: 72.094, isDrug: true });
+    for (const c of d.limitChanges) expect(c.before).not.toBe(c.after);
+    // One crosswalk quarter in the fixtures: nothing to compare, and nothing invented.
+    expect(d.crosswalk).toMatchObject({ period: "2026-Q4", previous: null, added: [], removed: [] });
+    expect((await quarterlyChanges("2026-Q3", h.db)).previous).toBeNull();
   });
 });
 
