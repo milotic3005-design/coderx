@@ -1,6 +1,6 @@
 import { Calculator, CircleAlert, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import type { BillingUnitInfo, CrosswalkEntry, PaymentPeriod } from "@/lib/data/queries";
+import type { BillingUnitInfo, CrosswalkEntry, DrugDetail, PaymentPeriod } from "@/lib/data/queries";
 import { formatDate, formatMoney, formatNumber, formatPeriod } from "@/lib/format";
 import { ACTION_CODES } from "@/lib/hcpcs";
 import { DataStatusBadge } from "./badges";
@@ -330,6 +330,44 @@ export function LimitationsList({ items }: { items: string[] }) {
         <li key={it} className="flex gap-2">
           <CircleAlert aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
           <span>{it}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Home infusion per diem S-codes for a drug, with the official values that selected them. */
+export function PerDiemCodes({ perDiem }: { perDiem: DrugDetail["perDiem"] }) {
+  if (perDiem.status === "not-applicable") return <NoData>{perDiem.reason}</NoData>;
+  return (
+    <ul className="space-y-3">
+      {perDiem.matches.map((m) => (
+        <li key={m.therapy.id} className="rounded-xl border hairline bg-surface p-4 sm:p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-base font-semibold text-ink">{m.therapy.label}</h4>
+            <DataStatusBadge status="derived" />
+            <DataStatusBadge status="verification-needed" />
+          </div>
+          <p className="mt-1 text-xs text-ink-muted">
+            <span className="font-semibold text-ink">{m.basis === "route-only" ? "No category matched · FDA class: " : "Matched on: "}</span>
+            {m.evidence.join("; ")}
+          </p>
+          <ul className="mt-3">
+            {m.codes.map((c) => (
+              <li key={c.code} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t hairline py-2">
+                <Link href={`/hcpcs/${c.code}`} className="code-chip w-14 font-semibold text-brand hover:underline">
+                  {c.code}
+                </Link>
+                <span className="min-w-0 flex-1 text-sm text-ink">
+                  {c.when}
+                  {c.suggested ? <span className="ml-2 inline-block rounded-full bg-brand-tint px-2 text-[0.72rem] leading-5 font-semibold whitespace-nowrap text-brand">Fits this drug’s route</span> : null}
+                  {c.isActive === false ? <span className="ml-2 text-xs font-semibold text-accent">Terminated</span> : null}
+                  <span className="block text-xs text-ink-muted">{c.description ? `CMS: ${c.description}` : "Not in the imported CMS HCPCS file"}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          {m.therapy.note ? <p className="mt-2 text-xs text-ink-muted">{m.therapy.note}</p> : null}
         </li>
       ))}
     </ul>

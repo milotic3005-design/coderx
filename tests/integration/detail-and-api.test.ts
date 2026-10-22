@@ -55,6 +55,19 @@ describe("read models expose provenance and honest gaps", () => {
     expect(d.provenance.some((p) => p.sourceKey === "fda_purple_book" && p.status === "official-fda")).toBe(true);
   });
 
+  it("drug detail: home infusion per diem S-codes from the FDA class and route", async () => {
+    const rituxan = (await getDrugDetail("rituxan-rituximab", h.db))!;
+    expect(rituxan.perDiem.status).toBe("matched");
+    expect(rituxan.perDiem.matches[0]).toMatchObject({ therapy: { id: "chemotherapy" }, basis: "fda-epc", evidence: ["CD20-directed Cytolytic Antibody"] });
+    // The fixture HCPCS file carries no S-codes, so the descriptor is reported missing rather than invented.
+    expect(rituxan.perDiem.matches[0].codes.map((c) => [c.code, c.description])).toEqual([["S9329", null], ["S9330", null], ["S9331", null]]);
+    const prolia = (await getDrugDetail("prolia-denosumab", h.db))!;
+    expect(prolia.perDiem.status).toBe("unclassified");
+    expect(prolia.perDiem.matches[0].codes.find((c) => c.suggested)?.code).toBe("S9542");
+    const ozurdex = (await getDrugDetail("ozurdex-dexamethasone", h.db))!;
+    expect(ozurdex.perDiem).toMatchObject({ status: "not-applicable", matches: [] });
+  });
+
   it("NDC detail: FDA listing plus CMS crosswalk", async () => {
     const d = (await getNdcDetail("00006302602", h.db))!;
     expect(d.formatted).toBe("00006-3026-02");
@@ -123,7 +136,9 @@ describe("API routes return the documented envelope", () => {
   });
 
   it("GET /api/drugs/[slug] and /api/manufacturers/[id]", async () => {
-    expect((await drugGET(req("/x"), params({ slug: "keytruda-pembrolizumab" }))).status).toBe(200);
+    const keytruda = await drugGET(req("/x"), params({ slug: "keytruda-pembrolizumab" }));
+    expect(keytruda.status).toBe(200);
+    expect((await keytruda.json()).data.perDiem.matches.map((m: { therapy: { id: string } }) => m.therapy.id)).toEqual(["chemotherapy"]);
     expect((await drugGET(req("/x"), params({ slug: "no-such-drug" }))).status).toBe(404);
     expect((await drugGET(req("/x"), params({ slug: "../etc" }))).status).toBe(400);
     expect((await mfrGET(req("/x"), params({ id: "genentech-inc" }))).status).toBe(200);

@@ -11,6 +11,7 @@ import { CODE_FAMILIES, familyOf, isCodeActive } from "@/lib/hcpcs";
 import type { MedicaidInfo } from "@/lib/medicaid";
 import { type MueEntry, type MueServiceType } from "@/lib/mue";
 import { formatNdc11 } from "@/lib/ndc";
+import { isClottingFactorFlag, PER_DIEM_CODES, perDiemDescriptor, perDiemFor } from "@/lib/per-diem";
 import { MUE_SOURCES, type MueSourceKey } from "@/ingest/sources";
 import { loadReleases, toProvenance, type Provenance, type ReleaseRow } from "./provenance";
 
@@ -396,8 +397,16 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
   const latestCrosswalk = latest.get("cms_ndc_hcpcs")?.periodLabel ?? null;
   const crosswalk = ndc11s.length ? await crosswalkEntries(db, { ndc11s }, latestCrosswalk) : [];
   const codes = drug.hcpcsCodes;
-  const codeRows = codes.length ? await db.select().from(t.hcpcsCodes).where(inArray(t.hcpcsCodes.code, codes)) : [];
+  // One query for the drug's own codes and the home infusion per diem descriptors.
+  const lookupRows = await db.select().from(t.hcpcsCodes).where(inArray(t.hcpcsCodes.code, [...codes, ...PER_DIEM_CODES]));
+  const codeRows = lookupRows.filter((c) => codes.includes(c.code));
+  const perDiemRows = new Map(lookupRows.filter((c) => PER_DIEM_CODES.includes(c.code)).map((c) => [c.code, c]));
   const payments = await paymentHistory(db, codes, byId);
+  const perDiem = perDiemFor({
+    pharmClasses: drug.pharmClasses,
+    routes: drug.routes,
+    clottingFactorCodes: codes.filter((c) => (payments.get(c) ?? []).some((p) => isClottingFactorFlag(p.clottingFactor))),
+  });
   const productById = new Map(products.map((p) => [p.p.productId, p]));
   const [codeHistory, sameCodeDrugs] = codes.length
     ? await Promise.all([
@@ -421,7 +430,7 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
   const payRelease = latest.get("cms_payment_limits");
   if ([...payments.values()].some((p) => p.length) && payRelease) provenance.push(toProvenance(payRelease));
   const hcpcsRelease = latest.get("cms_hcpcs");
-  if (codeRows.length && hcpcsRelease) provenance.push(toProvenance(hcpcsRelease));
+  if ((codeRows.length || (perDiem.matches.length && perDiemRows.size)) && hcpcsRelease) provenance.push(toProvenance(hcpcsRelease));
   const pbRelease = latest.get("fda_purple_book");
   if ((drug.biosimilarStatus || biosimilars.length) && pbRelease) provenance.push(toProvenance(pbRelease));
 
@@ -460,6 +469,16 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
         };
       })
       .sort((a, b) => Number(b.relationship?.isCurrent ?? false) - Number(a.relationship?.isCurrent ?? false) || a.code.localeCompare(b.code)),
+    perDiem: {
+      ...perDiem,
+      matches: perDiem.matches.map((m) => ({
+        ...m,
+        codes: m.codes.map((c) => {
+          const row = perDiemRows.get(c.code);
+          return { ...c, description: row ? perDiemDescriptor(row.longDescription) : null, isActive: row ? isCodeActive(row.terminationDate, today()) : null };
+        }),
+      })),
+    },
     codeHistory,
     sameCodeDrugs,
     nocRelationship: relationships.find((r) => r.kind === "DRUG_NOC") ?? null,
