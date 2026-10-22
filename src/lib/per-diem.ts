@@ -29,7 +29,7 @@ export interface PerDiemCode {
   code: string;
   /** Plain-language use; the CMS descriptor is shown next to it. */
   when: string;
-  /** When set, the first code whose routes include one of the drug's routes is marked suggested. */
+  /** When set and this is the only code whose routes include one of the drug's routes, it is marked suggested. */
   routes?: RouteKind[];
 }
 
@@ -308,17 +308,20 @@ export function isClottingFactorFlag(value: string | null | undefined): boolean 
   return v !== "" && !/^(n|no|0|false)$/i.test(v);
 }
 
+/** Suggests a code only when the drug's routes fit exactly one; IV-and-subcutaneous products stay unmarked. */
 function withSuggestion(codes: PerDiemCode[], kinds: Set<RouteKind>): PerDiemMatch["codes"] {
-  const pick = codes.find((c) => c.routes?.some((r) => kinds.has(r)));
-  return codes.map((c) => ({ ...c, suggested: c === pick }));
+  const fits = codes.filter((c) => c.routes?.some((r) => kinds.has(r)));
+  return codes.map((c) => ({ ...c, suggested: fits.length === 1 && c === fits[0] }));
 }
 
 export function perDiemFor(input: { pharmClasses: string[]; routes: string[]; clottingFactorCodes?: string[] }): PerDiemResult {
-  const kinds = routeKinds(input.routes);
+  // Some FDA listings (e.g., factor kits) give no route at all: consider every route but suggest none.
+  const routeUnknown = !input.routes.some((r) => r.trim());
+  const kinds = routeUnknown ? new Set<RouteKind>(ROUTE_KINDS.map(([k]) => k)) : routeKinds(input.routes);
+  const suggestFrom = routeUnknown ? new Set<RouteKind>() : kinds;
   const epcs = epcNames(input.pharmClasses);
   if (!kinds.size) {
-    const routes = input.routes.length ? input.routes.join(", ").toLowerCase() : "none listed";
-    return { status: "not-applicable", matches: [], reason: `Home infusion per diems apply to infused or injected therapy; FDA lists this drug’s route(s) as ${routes}.` };
+    return { status: "not-applicable", matches: [], reason: `Home infusion per diems apply to infused or injected therapy; FDA lists this drug’s route(s) as ${input.routes.join(", ").toLowerCase()}.` };
   }
   if (epcs.some((e) => /Vaccine/i.test(e))) {
     return { status: "not-applicable", matches: [], reason: "Vaccines are billed with vaccine product and administration codes, not home infusion per diems." };
@@ -336,14 +339,14 @@ export function perDiemFor(input: { pharmClasses: string[]; routes: string[]; cl
     if (!evidence.length) continue;
     const existing = matches.find((m) => m.therapy.id === rule.id);
     if (existing) existing.evidence.push(...evidence);
-    else matches.push({ therapy: { id: rule.id, label: rule.label, note: rule.note }, codes: withSuggestion(rule.codes, kinds), basis, evidence });
+    else matches.push({ therapy: { id: rule.id, label: rule.label, note: rule.note }, codes: withSuggestion(rule.codes, suggestFrom), basis, evidence });
   }
   if (matches.length) return { status: "matched", matches, reason: null };
 
   const { codes, ...therapy } = UNCLASSIFIED;
   return {
     status: "unclassified",
-    matches: [{ therapy, codes: withSuggestion(codes, kinds), basis: "route-only", evidence: epcs.length ? epcs : ["No FDA pharmacologic class (EPC) listed"] }],
+    matches: [{ therapy, codes: withSuggestion(codes, suggestFrom), basis: "route-only", evidence: epcs.length ? epcs : ["No FDA pharmacologic class (EPC) listed"] }],
     reason: null,
   };
 }

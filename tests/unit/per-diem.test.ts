@@ -55,8 +55,16 @@ describe("home infusion per diem S-codes", () => {
     expect(suggestedOf(hbig)).toEqual(["S9563"]);
     const enox = perDiemFor({ pharmClasses: ["Low Molecular Weight Heparin [EPC]"], routes: ["SUBCUTANEOUS"] });
     expect(suggestedOf(enox)).toEqual(["S9372"]);
-    const ondansetron = perDiemFor({ pharmClasses: ["Serotonin-3 Receptor Antagonist [EPC]"], routes: ["INTRAMUSCULAR", "INTRAVENOUS"] });
+    const ondansetron = perDiemFor({ pharmClasses: ["Serotonin-3 Receptor Antagonist [EPC]"], routes: ["INTRAVENOUS"] });
     expect(suggestedOf(ondansetron)).toEqual(["S9351"]);
+  });
+
+  it("suggests nothing when the routes fit more than one code (Lovenox: IV and subcutaneous)", () => {
+    const lovenox = perDiemFor({ pharmClasses: ["Low Molecular Weight Heparin [EPC]", "Low-Molecular-Weight [CS]"], routes: ["INTRAVENOUS", "SUBCUTANEOUS"] });
+    expect(codesOf(lovenox)).toEqual(["S9336", "S9372"]);
+    expect(suggestedOf(lovenox)).toEqual([]);
+    const gamunex = perDiemFor({ pharmClasses: ["Human Immunoglobulin G [EPC]"], routes: ["INTRAVENOUS", "SUBCUTANEOUS"] });
+    expect(suggestedOf(gamunex)).toEqual([]);
   });
 
   it("uses the CMS clotting-factor flag as official evidence for S9345", () => {
@@ -64,6 +72,11 @@ describe("home infusion per diem S-codes", () => {
     expect(r.matches[0].therapy.id).toBe("anti-hemophilic");
     expect(r.matches[0].basis).toBe("cms-clotting-factor");
     expect(r.matches[0].evidence[0]).toMatch(/J7192/);
+    // Factor kits such as Advate list no FDA route and no pharmacologic class; the CMS flag still applies.
+    const advate = perDiemFor({ pharmClasses: [], routes: [], clottingFactorCodes: ["J7192"] });
+    expect(advate.status).toBe("matched");
+    expect(codesOf(advate)).toEqual(["S9345"]);
+    expect(isClottingFactorFlag("1")).toBe(true); // the value CMS publishes
     expect(isClottingFactorFlag("Y")).toBe(true);
     expect(isClottingFactorFlag("")).toBe(false);
     expect(isClottingFactorFlag("N")).toBe(false);
@@ -96,6 +109,10 @@ describe("home infusion per diem S-codes", () => {
     expect(suggestedOf(sc)).toEqual(["S9542"]);
     const none = perDiemFor({ pharmClasses: [], routes: ["INTRAVENOUS"] });
     expect(none.matches[0].evidence).toEqual(["No FDA pharmacologic class (EPC) listed"]);
+    const noRoute = perDiemFor({ pharmClasses: [], routes: [] });
+    expect(noRoute.status).toBe("unclassified");
+    expect(codesOf(noRoute)).toEqual(["S9379", "S9542"]);
+    expect(suggestedOf(noRoute)).toEqual([]);
   });
 
   it("returns no per diem for oral, intravitreal, and vaccine products", () => {

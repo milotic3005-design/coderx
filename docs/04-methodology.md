@@ -30,7 +30,7 @@ rules the code enforces and where each rule lives.
 | Billing unit (when CMS publishes no dosage column) | last dosage expression in the HCPCS long descriptor; “per i.u.” → 1 IU | Derived |
 | Product class | FDA marketing category + Purple Book license type (351(a)/351(k)) | Derived (label explains) |
 | Drug → HCPCS | aggregation of CMS crosswalk rows for the drug’s package NDCs; evidence lists the NDCs and quarters | Derived |
-| Home infusion per diem S-code | therapy category from the FDA Established Pharmacologic Class (EPC) and route, plus the CMS payment-file clotting-factor flag (`src/lib/per-diem.ts`); no name matching; no EPC match → S9379/S9542 by route; no infused or injected route → none | Derived + Verification needed |
+| Home infusion per diem S-code | therapy category from the FDA Established Pharmacologic Class (EPC) and route, plus the CMS payment-file clotting-factor flag (`src/lib/per-diem.ts`); no name matching; no EPC match → S9379/S9542 by route; FDA routes all non-infused → none; no FDA route listed → all categories considered, none suggested | Derived + Verification needed |
 | $ per NDC package | billable units per NDC (CMS) × current payment limit (CMS) | Derived |
 | Payment change % | quarter-over-quarter difference of published limits | Derived |
 | Calculator units | `ceil(dose ÷ unit)`; discarded units for single-dose containers `ceil(opened ÷ unit) − administered` | Derived |
