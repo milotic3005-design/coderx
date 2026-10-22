@@ -247,6 +247,31 @@ export const ndcHcpcsCrosswalk = pgTable(
  * One row per code, service type, and release; the current release for the newest
  * period is served.
  */
+/** One published state Medicaid fee schedule row (e.g. Washington HCA home infusion). */
+export const stateFeeSchedule = pgTable(
+  "state_fee_schedule",
+  {
+    id: serial("id").primaryKey(),
+    /** USPS state code, e.g. "WA". */
+    state: text("state").notNull(),
+    program: text("program").notNull(),
+    hcpcsCode: text("hcpcs_code").notNull(),
+    modifier: text("modifier"),
+    /** Publisher's status indicator, verbatim (e.g. "L/R"). */
+    statusIndicator: text("status_indicator"),
+    /** Maximum allowable fee per payment area as published; amount is null for text such as "BR" or "N/A". */
+    fees: jsonb("fees").$type<{ area: string; amount: string | null; text: string }[]>().notNull(),
+    /** Prior-authorization column, verbatim (e.g. "PA", "EPA"). */
+    priorAuth: text("prior_auth"),
+    comments: text("comments"),
+    effectiveDate: date("effective_date").notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("state_fee_schedule_code_idx").on(t.hcpcsCode), index("state_fee_schedule_release_idx").on(t.sourceReleaseId)],
+);
+
 export const mueValues = pgTable(
   "mue_values",
   {

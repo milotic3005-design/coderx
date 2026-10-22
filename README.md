@@ -19,7 +19,7 @@ CodeRx lets pharmacists, infusion centers, coders, billers, revenue-cycle, and p
 - **Provenance by design**: badges for Official CMS, Official FDA, Derived calculation, Manually reviewed, Historical, and Verification needed; “No authoritative public data was located for this field.” wherever data is missing.
 - **JSON API** with a consistent envelope (`data`, `meta.pagination`, `meta.match`, `meta.provenance`, `error`).
 
-## Data sources (all public U.S. Government data)
+## Data sources (all public U.S. federal and state government data)
 
 | Source | Publisher | Cadence | In CodeRx |
 | --- | --- | --- | --- |
@@ -30,6 +30,7 @@ CodeRx lets pharmacists, infusion centers, coders, billers, revenue-cycle, and p
 | Purple Book (licensed biologics) | FDA | Monthly | Latest month |
 | NCCI Medically Unlikely Edits — practitioner, outpatient hospital, DME supplier | CMS | Quarterly | Current quarter; HCPCS Level II rows only (CPT rows dropped) |
 | Drug Products in the Medicaid Drug Rebate Program (data.medicaid.gov) | CMS | Quarterly | Newest quarter for indexed NDCs (unit type, units per package, COD status, termination); the ~330 MB file is streamed and filtered |
+| Apple Health (Medicaid) Home Infusion Therapy/Parenteral Nutrition fee schedule | Washington State Health Care Authority | As published (effective-date releases) | Effective 2026-07-01; HCPCS Level II rows only, maximum allowable fee per payment area |
 
 Not ingested: CMS OPPS Addendum B (distributed under the AMA CPT license), Medicare Coverage Database content such as covered diagnosis lists (its API requires accepting AMA/ADA/AHA terms limited to personal use, so CodeRx links to it instead), AWP/WAC, commercial payer rates, and all CPT/CDT content. Full catalog with URLs, formats, fields, licensing, and limitations: [`docs/02-data-sources.md`](docs/02-data-sources.md).
 
@@ -179,4 +180,4 @@ Operations, refresh schedule, rollback, and manual review: [`docs/05-operations.
 
 ## License and attribution
 
-Code © the CodeRx authors. Data: CMS and FDA (public domain U.S. Government works). CPT® is a registered trademark of the American Medical Association; no CPT content is included. CodeRx is not affiliated with or endorsed by CMS, FDA, Medicare, or any payer.
+Code © the CodeRx authors. Data: CMS and FDA (public domain U.S. Government works) and the Washington State Health Care Authority (state government publication). CPT® is a registered trademark of the American Medical Association; no CPT content is included. CodeRx is not affiliated with or endorsed by CMS, FDA, Medicare, or any payer.

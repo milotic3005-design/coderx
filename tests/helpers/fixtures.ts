@@ -24,6 +24,7 @@ export const FIXTURE_URLS = {
   fdaNdc: "https://www.accessdata.fda.gov/cder/ndctext.zip",
   fdaExcluded: "https://www.accessdata.fda.gov/cder/ndc_excluded.zip",
   purpleBook: "https://www.accessdata.fda.gov/drugsatfda_docs/PurpleBook/2026/purplebook-search-September-data-download.csv",
+  waHcaHomeInfusion: "https://www.hca.wa.gov/assets/billers-and-providers/home-infusion-parenteral-nutrition-20260701.xlsx",
 } as const;
 
 function archive(entries: Record<string, Uint8Array>): Uint8Array {
@@ -59,6 +60,7 @@ function bodies(): Map<string, Uint8Array> {
     [FIXTURE_URLS.fdaExcluded, archive({ "Products_excluded.txt": read("fda-products-excluded.txt"), "Packages_excluded.txt": read("fda-packages-excluded.txt") })],
     [FIXTURE_URLS.purpleBook, read("purplebook.csv")],
     [FIXTURE_URLS.mdrp2026q2, read("mdrp-products-2026q2.csv")],
+    [FIXTURE_URLS.waHcaHomeInfusion, read("wa-hca-home-infusion-20260701.xlsx")],
   ]);
   return cache;
 }
@@ -93,6 +95,7 @@ export const FIXTURE_RELEASES: ReleaseCandidate[] = [
   { sourceKey: "fda_ndc_excluded", period: null, url: FIXTURE_URLS.fdaExcluded },
   { sourceKey: "cms_mdrp_products", period: "2026-Q2", url: FIXTURE_URLS.mdrp2026q2, publicationLabel: "2Q 2026 product data" },
   { sourceKey: "fda_purple_book", period: "2026-09", url: FIXTURE_URLS.purpleBook, publicationLabel: "September 2026 data download" },
+  { sourceKey: "wa_hca_home_infusion", period: "2026-07-01", url: FIXTURE_URLS.waHcaHomeInfusion, publicationLabel: "July 1, 2026", publicationDate: "2026-07-01" },
 ];
 
 export { strToU8 };

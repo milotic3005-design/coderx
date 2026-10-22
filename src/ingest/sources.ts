@@ -16,7 +16,8 @@ export type SourceKey =
   | "fda_ndc"
   | "fda_ndc_excluded"
   | "fda_purple_book"
-  | "cms_mdrp_products";
+  | "cms_mdrp_products"
+  | "wa_hca_home_infusion";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -29,6 +30,7 @@ export const SOURCE_KEYS: SourceKey[] = [
   "fda_ndc_excluded",
   "fda_purple_book",
   "cms_mdrp_products",
+  "wa_hca_home_infusion",
 ];
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
@@ -41,15 +43,28 @@ export type MueSourceKey = keyof typeof MUE_SOURCES;
 export type MueServiceType = (typeof MUE_SOURCES)[MueSourceKey]["serviceType"];
 export const isMueSource = (key: string): key is MueSourceKey => key in MUE_SOURCES;
 
+/** State Medicaid fee schedules: the state, payer, and program each one describes. */
+export const STATE_FEE_SOURCES = {
+  wa_hca_home_infusion: {
+    state: "WA",
+    payer: "Washington Apple Health (Medicaid)",
+    publisher: "HCA",
+    program: "Home Infusion Therapy/Parenteral Nutrition Program",
+    /** Legend and payment rule, from HCA's fee schedule legend and WAC 182-553. */
+    note: "BR = by report (invoice required); DP = covered under another program (see comments); N/A = no separate rate for that area. HCA pays the lesser of the provider’s usual charge and the maximum allowable fee (WAC 182-553).",
+  },
+} as const;
+export type StateFeeSourceKey = keyof typeof STATE_FEE_SOURCES;
+
 export interface SourceDefinition {
   key: SourceKey;
-  organization: "CMS" | "FDA";
+  organization: "CMS" | "FDA" | "Washington State HCA";
   dataset: string;
   shortName: string;
   landingPageUrl: string;
-  cadence: "quarterly" | "daily" | "monthly";
+  cadence: "quarterly" | "daily" | "monthly" | "as published";
   /** Badge used for data from this source. */
-  badge: "official-cms" | "official-fda";
+  badge: "official-cms" | "official-fda" | "official-state";
   licenseNote: string;
 }
 
@@ -148,6 +163,16 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     badge: "official-fda",
     licenseNote: "Public data. Records removed from the active directory (flags E, U, I, D).",
   },
+  wa_hca_home_infusion: {
+    key: "wa_hca_home_infusion",
+    organization: "Washington State HCA",
+    dataset: "Apple Health (Medicaid) Home Infusion Therapy/Parenteral Nutrition Program fee schedule",
+    shortName: "Washington HCA home infusion fee schedule",
+    landingPageUrl: "https://www.hca.wa.gov/billers-providers-partners/prior-authorization-claims-and-billing/provider-billing-guides-and-fee-schedules",
+    cadence: "as published",
+    badge: "official-state",
+    licenseNote: "Washington State government publication. Maximum allowable fees; HCA pays the lesser of the provider's usual charge and the schedule (WAC 182-553). Only HCPCS Level II rows are stored.",
+  },
   fda_purple_book: {
     key: "fda_purple_book",
     organization: "FDA",
@@ -210,6 +235,16 @@ export const MANIFEST: ReleaseCandidate[] = [
 
   // Medicaid Drug Rebate Program product data (one file per quarter; each file repeats every quarter since 2022)
   { sourceKey: "cms_mdrp_products", period: "2026-Q2", url: "https://download.medicaid.gov/data/drugproducts-q2-2026.csv", publicationLabel: "2Q 2026 product data" },
+
+  // Washington HCA fee schedules (period = effective date). Add a row when HCA posts a new effective date.
+  // The 2026-07-01 file (SHA-256 4c56a327…) was checked by hand; the URL follows HCA's asset naming.
+  {
+    sourceKey: "wa_hca_home_infusion",
+    period: "2026-07-01",
+    url: "https://www.hca.wa.gov/assets/billers-and-providers/home-infusion-parenteral-nutrition-20260701.xlsx",
+    publicationLabel: "July 1, 2026",
+    publicationDate: "2026-07-01",
+  },
 
   // FDA (period assigned from the file's Last-Modified date at download time)
   { sourceKey: "fda_ndc", period: null, url: "https://www.accessdata.fda.gov/cder/ndctext.zip" },

@@ -12,7 +12,7 @@ import type { MedicaidInfo } from "@/lib/medicaid";
 import { type MueEntry, type MueServiceType } from "@/lib/mue";
 import { formatNdc11 } from "@/lib/ndc";
 import { isClottingFactorFlag, PER_DIEM_CODES, perDiemDescriptor, perDiemFor } from "@/lib/per-diem";
-import { MUE_SOURCES, type MueSourceKey } from "@/ingest/sources";
+import { MUE_SOURCES, STATE_FEE_SOURCES, type MueSourceKey, type StateFeeSourceKey } from "@/ingest/sources";
 import { loadReleases, toProvenance, type Provenance, type ReleaseRow } from "./provenance";
 
 const today = () => todayUs();
@@ -366,8 +366,12 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
   const [drug] = await db.select().from(t.drugs).where(eq(t.drugs.slug, slug));
   if (!drug) return null;
   const { byId, latest } = await loadReleases(db);
+  const stateReleases = (Object.keys(STATE_FEE_SOURCES) as StateFeeSourceKey[]).flatMap((key) => {
+    const rel = latest.get(key);
+    return rel ? [{ key, rel }] : [];
+  });
 
-  const [products, aliases, relationships, biosimilars, reference] = await Promise.all([
+  const [products, aliases, relationships, biosimilars, reference, stateFeeRows] = await Promise.all([
     db
       .select({ p: t.ndcProducts, mfrSlug: t.manufacturers.slug, mfrName: t.manufacturers.name })
       .from(t.ndcProducts)
@@ -386,6 +390,15 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
           .select({ slug: t.drugs.slug, displayName: t.drugs.displayName, genericName: t.drugs.genericName, hcpcsCodes: t.drugs.hcpcsCodes })
           .from(t.drugs)
           .where(eq(t.drugs.id, drug.referenceDrugId))
+      : Promise.resolve([]),
+    // State Medicaid fee schedules (small, drug-independent): what the state pays for home infusion instead of, or alongside, S-codes.
+    stateReleases.length
+      ? db
+          .select({ row: t.stateFeeSchedule, shortDescription: t.hcpcsCodes.shortDescription })
+          .from(t.stateFeeSchedule)
+          .leftJoin(t.hcpcsCodes, eq(t.hcpcsCodes.code, t.stateFeeSchedule.hcpcsCode))
+          .where(inArray(t.stateFeeSchedule.sourceReleaseId, stateReleases.map((s) => s.rel.id)))
+          .orderBy(asc(t.stateFeeSchedule.hcpcsCode), asc(t.stateFeeSchedule.modifier))
       : Promise.resolve([]),
   ]);
 
@@ -434,6 +447,7 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
   if ((codeRows.length || (perDiem.matches.length && perDiemRows.size)) && hcpcsRelease) provenance.push(toProvenance(hcpcsRelease));
   const pbRelease = latest.get("fda_purple_book");
   if ((drug.biosimilarStatus || biosimilars.length) && pbRelease) provenance.push(toProvenance(pbRelease));
+  if (perDiem.matches.length) for (const s of stateReleases) provenance.push(toProvenance(s.rel));
 
   return {
     drug,
@@ -487,6 +501,22 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
         }),
       })),
     },
+    stateFeeSchedules: stateReleases.map(({ key, rel }) => ({
+      ...STATE_FEE_SOURCES[key],
+      effectiveDate: rel.effectiveStart ?? rel.periodLabel,
+      release: toProvenance(rel),
+      rows: stateFeeRows
+        .filter((r) => r.row.sourceReleaseId === rel.id)
+        .map(({ row, shortDescription }) => ({
+          hcpcsCode: row.hcpcsCode,
+          modifier: row.modifier,
+          shortDescription,
+          statusIndicator: row.statusIndicator,
+          fees: row.fees,
+          priorAuth: row.priorAuth,
+          comments: row.comments,
+        })),
+    })),
     codeHistory,
     sameCodeDrugs,
     nocRelationship: relationships.find((r) => r.kind === "DRUG_NOC") ?? null,

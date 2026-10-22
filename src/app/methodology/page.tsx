@@ -35,7 +35,7 @@ export default function MethodologyPage() {
         <div className="max-w-3xl min-w-0 text-ink-muted [&_li]:mt-1.5 [&_strong]:text-ink [&_ul]:list-disc [&_ul]:pl-5">
           <Section id="principles" number="01" title="Principles">
             <ul>
-              <li><strong>Government sources only.</strong> CMS and FDA files are downloaded directly from the publisher; nothing is copied from commercial or third-party sites.</li>
+              <li><strong>Government sources only.</strong> CMS, FDA, and state Medicaid agency (Washington HCA) files are downloaded directly from the publisher; nothing is copied from commercial or third-party sites.</li>
               <li><strong>No inferred codes.</strong> A NDC is linked to a HCPCS code only when a CMS NDC–HCPCS crosswalk row says so. Similar names, ingredients, or NDCs never create a link, and no language model is used to map codes.</li>
               <li><strong>Provenance everywhere.</strong> Each data section names its source file, publication and effective dates, import time, and a direct link.</li>
               <li><strong>Gaps are shown, not filled.</strong> Missing values read “No authoritative public data was located for this field.”</li>
@@ -73,7 +73,7 @@ export default function MethodologyPage() {
             <ul>
               <li><DataStatusBadge status="official-cms" /> <strong>NDC → HCPCS:</strong> CMS crosswalk rows, aggregated across quarters with first and last quarter seen.</li>
               <li><DataStatusBadge status="derived" /> <strong>Drug → HCPCS:</strong> derived from those NDC-level rows; each link states how many of the drug’s packages CMS crosswalks to the code.</li>
-              <li><DataStatusBadge status="derived" /> <strong>Drug → home infusion per diem S-code:</strong> CMS publishes no crosswalk, so the therapy category (antibiotic, chemotherapy, immune globulin, TPN …) is matched from the FDA Established Pharmacologic Class and route, plus the CMS clotting-factor flag for anti-hemophilic agents — never from the drug name. Drugs with no matching class get the not-otherwise-classified per diem for their route; drugs whose FDA routes are all non-infused (oral, topical, intravitreal …) get none. A code is marked as fitting the route only when exactly one code fits. In Reimbursement, each S-code’s Medicare status and pricing indicator come verbatim from the CMS HCPCS file; CMS publishes no national per diem rate.</li>
+              <li><DataStatusBadge status="derived" /> <strong>Drug → home infusion per diem S-code:</strong> CMS publishes no crosswalk, so the therapy category (antibiotic, chemotherapy, immune globulin, TPN …) is matched from the FDA Established Pharmacologic Class and route, plus the CMS clotting-factor flag for anti-hemophilic agents — never from the drug name. Drugs with no matching class get the not-otherwise-classified per diem for their route; drugs whose FDA routes are all non-infused (oral, topical, intravitreal …) get none. A code is marked as fitting the route only when exactly one code fits. In Reimbursement, each S-code’s Medicare status and pricing indicator come verbatim from the CMS HCPCS file; CMS publishes no national per diem rate. Washington Apple Health is checked against HCA’s Home Infusion Therapy/Parenteral Nutrition fee schedule: a per diem code absent from it is reported as not separately paid, and the schedule’s own supply, pump, and nutrition fees are shown instead.</li>
               <li><DataStatusBadge status="official-fda" /> <strong>Biosimilar → reference:</strong> FDA Purple Book license type and reference product, matched to NDC products by BLA number.</li>
               <li><DataStatusBadge status="official-cms" /> <strong>HCPCS cross-references:</strong> the CMS cross-reference field, shown verbatim; not presented as a guaranteed replacement.</li>
               <li><DataStatusBadge status="manual" /> <strong>Manual reviews:</strong> supported through a reviewed file that requires evidence, reviewer, and date. None are published yet.</li>
@@ -124,6 +124,7 @@ export default function MethodologyPage() {
             <ul className="space-y-2 [&]:list-none [&]:pl-0">
               <li><DataStatusBadge status="official-cms" /> Value published by CMS, shown as published.</li>
               <li><DataStatusBadge status="official-fda" /> Value published by FDA, shown as published.</li>
+              <li><DataStatusBadge status="official-state" /> Value published by a state Medicaid agency (Washington HCA), shown as published.</li>
               <li><DataStatusBadge status="derived" /> Calculated by CodeRx from official values; the formula is shown.</li>
               <li><DataStatusBadge status="manual" /> Relationship approved by a named reviewer with cited evidence.</li>
               <li><DataStatusBadge status="historical" /> No longer in the most recent source file.</li>

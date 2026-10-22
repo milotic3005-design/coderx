@@ -58,6 +58,7 @@ export function ActiveBadge({ active, endDate, inactiveLabel = "Inactive" }: { a
 const STATUS_STYLE: Record<DataStatus, { className: string; icon: ReactNode }> = {
   "official-cms": { className: "bg-brand-tint text-brand", icon: <Landmark aria-hidden="true" className="h-3 w-3" /> },
   "official-fda": { className: "bg-[var(--fam-c-bg)] text-[var(--fam-c)]", icon: <ShieldCheck aria-hidden="true" className="h-3 w-3" /> },
+  "official-state": { className: "bg-[var(--fam-p-bg)] text-[var(--fam-p)]", icon: <Landmark aria-hidden="true" className="h-3 w-3" /> },
   derived: { className: "bg-surface text-ink-muted ring-1 ring-dashed ring-rule-strong ring-inset border border-dashed border-rule-strong", icon: <Calculator aria-hidden="true" className="h-3 w-3" /> },
   manual: { className: "bg-ok-tint text-ok", icon: <BadgeCheck aria-hidden="true" className="h-3 w-3" /> },
   historical: { className: "bg-paper-sunken text-ink-muted", icon: <FileClock aria-hidden="true" className="h-3 w-3" /> },

@@ -21,6 +21,7 @@ files that were current on that date.
 | 6 | `fda_purple_book` | FDA | Purple Book monthly data download | Monthly | **Ingested** |
 | 7 | `cms_mue_practitioner`, `cms_mue_outpatient`, `cms_mue_dme` | CMS | NCCI Medically Unlikely Edit tables (practitioner, facility outpatient hospital, DME supplier) | Quarterly | **Ingested** (current quarter; HCPCS Level II rows only) |
 | 8 | `cms_mdrp_products` | CMS | Drug Products in the Medicaid Drug Rebate Program | Quarterly | **Ingested** (newest quarter, indexed NDCs only) |
+| 9 | `wa_hca_home_infusion` | Washington State HCA | Apple Health (Medicaid) Home Infusion Therapy/Parenteral Nutrition Program fee schedule | As published | **Ingested** (effective-date releases; HCPCS Level II rows only) |
 | — | — | CMS | OPPS Addendum B | Quarterly | Evaluated, **not ingested** (AMA license click-through) |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
 | — | — | NLM | DailyMed | Daily | Link-out only |
@@ -147,6 +148,20 @@ files that were current on that date.
 | Known limitations | Labeler-reported. An NDC missing from the file is not proof of no rebate agreement. The claim NDC qualifier CodeRx pairs with each unit type (ML→ML, GM→GR, AHF→F2, EA/TAB/CAP/SUP/TDP→UN) follows state Medicaid billing guides; commercial payers may differ. |
 | Ingestion | Discovered by probing the predictable URL for recent quarters; streamed (never buffered) and filtered to the file's quarter and to NDCs CodeRx indexes. 2026-Q2: 8,425 of 47,538 rows in scope; ~15 s locally, ~170 MB peak memory for the parser. Only the newest quarter is kept. |
 
+## 9. Washington State HCA — Apple Health home infusion fee schedule
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | Washington State Health Care Authority (HCA), Apple Health (Medicaid) |
+| Dataset | Home Infusion Therapy/Parenteral Nutrition Program fee schedule |
+| Source URL | https://www.hca.wa.gov/assets/billers-and-providers/home-infusion-parenteral-nutrition-20260701.xlsx (pattern `home-infusion-parenteral-nutrition-{YYYYMMDD}.xlsx`; listed on [HCA's billing guides and fee schedules page](https://www.hca.wa.gov/billers-providers-partners/prior-authorization-claims-and-billing/provider-billing-guides-and-fee-schedules)) |
+| Format | XLSX: sheet 1 = schedule (title block with "Effective July 1, 2026", then Code Status Indicator, Code, Modifier, Maximum Allowable Fee Non-rural / Rural / Seattle CBA / Vancouver CBA, PA/EPA, Comments); sheet 2 = A4223 pump pricing; sheet 3 = rural ZIP codes |
+| Update frequency | On HCA's own timeline (typically January 1 and July 1, plus revisions) |
+| Licensing / restrictions | Washington State government publication. CPT rows (e.g. 95249, 95250) are counted and dropped. |
+| Fields used | Code, modifier, status indicator, maximum allowable fee per payment area (numbers normalized to 4 decimals; text such as `BR`, `DP`, `N/A` kept verbatim), PA/EPA, comments |
+| Known limitations | Maximum allowable fees, not payments: HCA pays the lesser of the provider's usual charge and the schedule (WAC 182-553). The 2026 HCA billing guide pays home infusion through supply (A4221–A4232), pump (E0776–E0791, B9004/B9006), and parenteral nutrition (B4164–B5100, B4220–B4224) codes; none of the per diem S-codes (S9325–S9563) are on the schedule, so CodeRx reports them as not separately paid. Drugs are billed separately. |
+| Ingestion | Pinned in the manifest per effective date (no discovery yet); the daily refresh imports a newer pinned effective date. If HCA blocks cloud downloads, use the admin upload mode with the official `www.hca.wa.gov` URL. 2026-07-01: 59 HCPCS rows, 2 CPT rows dropped. |
+
 ## Evaluated but not ingested
 
 | Source | Why not (yet) |
@@ -156,7 +171,7 @@ files that were current on that date.
 | **openFDA NDC API** | Same content as the bulk directory; the app must not depend on slow real-time government APIs, so bulk files are used. |
 | **Drugs@FDA, DailyMed** | Useful for labeling; CodeRx links out to DailyMed by NDC instead of storing labels. |
 | **Medicare Coverage Database (LCDs, NCDs, Billing & Coding articles, SAD exclusion lists)** | The CMS Coverage API returns these only with a token obtained by accepting the AMA, ADA, and AHA license agreements, which limit use to personal, non-commercial display — so covered-diagnosis lists cannot be republished on a public site. CodeRx links each code and drug to the official MCD search, SAD exclusion report, and MAC directory instead. |
-| **AWP, WAC, commercial payer rates, compendia** | Licensed; excluded by policy. |
+| **AWP, WAC, commercial payer rates, compendia** | Licensed; excluded by policy. Commercial negotiated rates published under the federal Transparency in Coverage rule (UnitedHealthcare, Aetna, Cigna, Regence, Premera) were requested; they need a separate monthly processing job outside this app (terabyte-scale files) and are not ingested yet. |
 
 ## Data-handling rules (enforced in code)
 
