@@ -27,6 +27,7 @@
 | FDA Purple Book | a newer monthly file is posted — but FDA blocks Vercel's egress for this file, so the weekly launchd job below does the actual import |
 | CMS Medicaid Drug Rebate Program product data | the next quarter's `drugproducts-q{N}-{YYYY}.csv` exists (HEAD probe); the ~330 MB file is streamed and filtered |
 | CMS NCCI MUE tables (practitioner, outpatient hospital, DME supplier) | a new quarter's table appears on the CMS MUE page (matched by file name), or a quarter's posting label changed |
+| Washington HCA home infusion fee schedule | the manifest pins a newer effective date than the current release. When HCA posts a new schedule, add its URL and effective date to `MANIFEST` in `src/ingest/sources.ts` (no automatic discovery yet) |
 
 Imports run sequentially with a 240-second budget; anything left is deferred to the next run. Derived tables are rebuilt once at the end and the Next.js data cache tag `coderx-data` is revalidated. Each run is logged in `import_runs`.
 
@@ -99,4 +100,10 @@ curl -sS -X POST "https://<domain>/api/admin/import?source=fda_purple_book&perio
   -H "Authorization: Bearer $CODERX_ADMIN_TOKEN" -H "Content-Type: text/csv" --data-binary @pb.csv
 ```
 
-Upload mode accepts only known source keys, official `www.cms.gov` / `www.accessdata.fda.gov` URLs, and files up to 4 MB.
+Upload mode accepts only known source keys, an official URL from that source's publisher (`www.cms.gov` / `www.accessdata.fda.gov` for federal sources, `www.hca.wa.gov` for the Washington HCA fee schedule), and files up to 4 MB. For example:
+
+```bash
+U=https://www.hca.wa.gov/assets/billers-and-providers/home-infusion-parenteral-nutrition-20260701.xlsx
+curl -sS -X POST "https://<domain>/api/admin/import?source=wa_hca_home_infusion&period=2026-07-01&url=$U" \
+  -H "Authorization: Bearer $CODERX_ADMIN_TOKEN" --data-binary @home-infusion-parenteral-nutrition-20260701.xlsx
+```

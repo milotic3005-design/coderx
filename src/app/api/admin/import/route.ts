@@ -33,8 +33,10 @@ export async function POST(request: Request) {
       try {
         host = new URL(officialUrl).hostname;
       } catch {}
-      if (!SOURCE_KEYS.includes(source) || !["www.cms.gov", "www.accessdata.fda.gov"].includes(host)) {
-        return fail("INVALID_PARAMETER", "source must be a known key and url an official CMS/FDA file URL.", { request });
+      // The URL must be on the source's own publisher: CMS/FDA for federal sources, the state agency for state fee schedules.
+      const officialHosts = SOURCES[source]?.organization === "Washington State HCA" ? ["www.hca.wa.gov"] : ["www.cms.gov", "www.accessdata.fda.gov"];
+      if (!SOURCE_KEYS.includes(source) || !officialHosts.includes(host)) {
+        return fail("INVALID_PARAMETER", "source must be a known key and url an official file URL from that source's publisher.", { request });
       }
       const bytes = new Uint8Array(await request.arrayBuffer());
       if (bytes.length === 0 || bytes.length > 4_000_000) return fail("INVALID_PARAMETER", "Upload must be 1 byte to 4 MB.", { request });

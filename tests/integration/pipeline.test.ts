@@ -30,7 +30,7 @@ describe("ingestion pipeline (real CMS/FDA excerpts)", () => {
       expect(r.isCurrent).toBe(true);
       expect(r.checksumSha256).toMatch(/^[a-f0-9]{64}$/);
       expect(r.recordCount).toBeGreaterThan(0);
-      expect(r.downloadUrl).toMatch(/^https:\/\/(www\.cms\.gov|www\.accessdata\.fda\.gov|download\.medicaid\.gov)\//);
+      expect(r.downloadUrl).toMatch(/^https:\/\/(www\.cms\.gov|www\.accessdata\.fda\.gov|download\.medicaid\.gov|www\.hca\.wa\.gov)\//);
     }
     const pay = releases.find((r) => r.sourceKey === "cms_payment_limits" && r.periodLabel === "2026-Q4")!;
     expect(pay).toMatchObject({ effectiveStart: "2026-10-01", effectiveEnd: "2026-12-31", publicationLabel: "09/17/2026 - Final file" });
@@ -54,7 +54,17 @@ describe("ingestion pipeline (real CMS/FDA excerpts)", () => {
     expect(outside[0].n).toBe(0);
   });
 
+  it("loads the Washington HCA home infusion fee schedule as published", async () => {
+    const release = (await h.db.select().from(t.sourceReleases).where(eq(t.sourceReleases.sourceKey, "wa_hca_home_infusion")))[0];
+    expect(release).toMatchObject({ organization: "Washington State HCA", periodLabel: "2026-07-01", effectiveStart: "2026-07-01", recordCount: 59 });
+    expect((release.report as { excluded: { cptRows: number } }).excluded.cptRows).toBe(2);
+    const [a4222] = await h.db.select().from(t.stateFeeSchedule).where(eq(t.stateFeeSchedule.hcpcsCode, "A4222"));
+    expect(a4222).toMatchObject({ state: "WA", program: "Home Infusion Therapy/Parenteral Nutrition Program", effectiveDate: "2026-07-01", statusIndicator: "R" });
+    expect(a4222.fees[0]).toEqual({ area: "Non-rural", amount: "47.35", text: "47.35" });
+  });
+
   it("stores no CPT content", async () => {
+    expect(await count("state_fee_schedule", sql`hcpcs_code ~ '^[0-9]'`)).toBe(0);
     expect(await count("payment_limits", sql`hcpcs_code ~ '^[0-9]'`)).toBe(0);
     expect(await count("mue_values", sql`hcpcs_code ~ '^[0-9]'`)).toBe(0);
     expect(await count("ndc_hcpcs_crosswalk", sql`hcpcs_code ~ '^[0-9]'`)).toBe(0);

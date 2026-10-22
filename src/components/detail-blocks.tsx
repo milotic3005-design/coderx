@@ -394,7 +394,92 @@ function byValue(codes: PerDiemCode[], value: (c: PerDiemCode) => string) {
 }
 
 /** Payment terms for a drug's per diem S-codes, from the CMS HCPCS and payment limit files. */
-export function PerDiemReimbursement({ perDiem, latestPaymentPeriod }: { perDiem: DrugDetail["perDiem"]; latestPaymentPeriod: string | null }) {
+type StateSchedule = DrugDetail["stateFeeSchedules"][number];
+
+/** A published fee with the precision the state used (HCA lists some per-unit fees to four decimals). */
+function stateFee(fee: StateSchedule["rows"][number]["fees"][number]) {
+  if (fee.amount === null) return fee.text;
+  const decimals = (fee.amount.split(".")[1] ?? "").length;
+  return formatMoney(fee.amount, Math.min(4, Math.max(2, decimals)));
+}
+
+/** Whether a state pays the drug's per diem codes, from its published fee schedule. */
+function stateValue(schedule: StateSchedule, perDiemCodes: string[]) {
+  const listed = schedule.rows.filter((r) => perDiemCodes.includes(r.hcpcsCode));
+  if (!listed.length) {
+    return `Not on ${schedule.publisher}’s ${schedule.program} fee schedule (effective ${formatDate(schedule.effectiveDate)}), so these per diems are not separately paid. Home infusion is paid with the supply, pump, and nutrition codes in that schedule instead (below).`;
+  }
+  return (
+    <span className="flex flex-col">
+      {listed.map((r) => (
+        <span key={`${r.hcpcsCode}-${r.modifier ?? ""}`}>
+          <span className="code-chip">{r.hcpcsCode}</span>: {r.fees.filter((f) => f.amount !== null).map((f) => `${stateFee(f)} (${f.area.toLowerCase()})`).join(", ") || r.fees[0]?.text}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** The full state schedule, collapsed: area columns with no published amount at all are left out. */
+function StateFeeScheduleTable({ schedule }: { schedule: StateSchedule }) {
+  const areas = (schedule.rows[0]?.fees ?? []).map((f) => f.area).filter((area) => schedule.rows.some((r) => r.fees.some((f) => f.area === area && f.amount !== null)));
+  const caption = `${schedule.payer}: ${schedule.program} fee schedule, effective ${formatDate(schedule.effectiveDate)}`;
+  return (
+    <details className="mt-4 rounded-xl border hairline bg-surface">
+      <summary className="flex min-h-11 cursor-pointer items-center px-4 text-sm font-semibold text-brand">
+        {schedule.payer} home infusion fee schedule — {schedule.rows.length} codes, effective {formatDate(schedule.effectiveDate)}
+      </summary>
+      <div className="border-t hairline p-4">
+        <TableScroll label={caption}>
+          <table className="w-full min-w-[44rem] border-collapse">
+            <caption className="sr-only">{caption}</caption>
+            <thead>
+              <tr>
+                <th scope="col" className={th}>Code</th>
+                <th scope="col" className={th}>Description (CMS)</th>
+                {areas.map((a) => (
+                  <th key={a} scope="col" className={`${th} text-right`}>
+                    Max fee · {a}
+                  </th>
+                ))}
+                <th scope="col" className={th}>PA / EPA</th>
+                <th scope="col" className={th}>{schedule.publisher} comments</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedule.rows.map((r) => (
+                <tr key={`${r.hcpcsCode}-${r.modifier ?? ""}`}>
+                  <th scope="row" className={`${td} text-left whitespace-nowrap`}>
+                    <Link href={`/hcpcs/${r.hcpcsCode}`} className="code-chip font-semibold text-brand hover:underline">
+                      {r.hcpcsCode}
+                    </Link>
+                    {r.modifier ? <span className="code-chip text-ink-muted">-{r.modifier}</span> : null}
+                  </th>
+                  <td className={`${td} min-w-[10rem] text-ink-muted`}>{r.shortDescription ?? "—"}</td>
+                  {areas.map((a) => {
+                    const fee = r.fees.find((f) => f.area === a);
+                    return (
+                      <td key={a} className={`${td} code-chip text-right whitespace-nowrap`}>
+                        {fee ? stateFee(fee) : "—"}
+                      </td>
+                    );
+                  })}
+                  <td className={`${td} text-xs whitespace-nowrap`}>{r.priorAuth ?? "—"}</td>
+                  <td className={`${td} min-w-[14rem] text-xs text-ink-muted`}>{r.comments ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableScroll>
+        <p className="mt-2 text-xs text-ink-muted">
+          Maximum allowable fees as published by {schedule.publisher}, per billing unit of each code. {schedule.note}
+        </p>
+      </div>
+    </details>
+  );
+}
+
+export function PerDiemReimbursement({ perDiem, latestPaymentPeriod, stateFeeSchedules = [] }: { perDiem: DrugDetail["perDiem"]; latestPaymentPeriod: string | null; stateFeeSchedules?: StateSchedule[] }) {
   const codes = [...new Map(perDiem.matches.flatMap((m) => m.codes).map((c) => [c.code, c])).values()];
   if (!codes.length) return <NoData>No home infusion per diem applies to this drug (see HCPCS coding above).</NoData>;
   const notInFile = "Not in the imported CMS HCPCS file";
@@ -405,7 +490,7 @@ export function PerDiemReimbursement({ perDiem, latestPaymentPeriod }: { perDiem
         items={[
           {
             label: "Medicare",
-            value: byValue(codes, (c) => (c.description === null ? notInFile : c.coverageCode ? `${COVERAGE_CODES[c.coverageCode] ?? "Unknown"} — CMS coverage code ${c.coverageCode}` :"No coverage code in the CMS file")),
+            value: byValue(codes, (c) => (c.description === null ? notInFile : c.coverageCode ? `${COVERAGE_CODES[c.coverageCode] ?? "Unknown"} — CMS coverage code ${c.coverageCode}` : "No coverage code in the CMS file")),
           },
           {
             label: "Part B pricing indicator",
@@ -425,11 +510,15 @@ export function PerDiemReimbursement({ perDiem, latestPaymentPeriod }: { perDiem
               `None. No per diem code here is in the CMS Part B payment limit file${latestPaymentPeriod ? ` for ${formatPeriod(latestPaymentPeriod)}` : ""}; CMS sets no national per diem rate.`
             ),
           },
+          ...stateFeeSchedules.map((s) => ({ label: s.payer, value: stateValue(s, codes.map((c) => c.code)) })),
           { label: "Billing unit", value: "1 unit = 1 day on service (the CMS descriptor ends “per diem”)" },
           { label: "Who sets the rate", value: "Each commercial plan’s contract or state Medicaid fee schedule. Some payers reduce a second per diem billed for the same day." },
           { label: "Billed separately", value: "The drug, with its own HCPCS code and units, and nursing visits — the CMS descriptor says “drugs and nursing visits coded separately”." },
         ]}
       />
+      {stateFeeSchedules.map((s) => (
+        <StateFeeScheduleTable key={s.release.releaseId} schedule={s} />
+      ))}
       <div className="mt-4">
         <Callout tone="info" title="How Medicare pays for home infusion instead">
           <p>

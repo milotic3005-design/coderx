@@ -36,6 +36,13 @@
       "when": 1792215794317,
       "tag": "0004_crosswalk_period_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792705887740,
+      "tag": "0005_state_fee_schedule",
+      "breakpoints": true
     }
   ]
 }

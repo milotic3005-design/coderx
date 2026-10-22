@@ -8,7 +8,7 @@ import * as t from "@/lib/db/schema";
 import { discoverReleases } from "./discover";
 import { headInfo } from "./fetch";
 import { importRelease, IMPORT_ORDER, runDerive, type ImportOutcome } from "./pipeline";
-import { manifestFor, SOURCE_KEYS, type ReleaseCandidate, type SourceKey } from "./sources";
+import { manifestFor, SOURCE_KEYS, STATE_FEE_SOURCES, type ReleaseCandidate, type SourceKey, type StateFeeSourceKey } from "./sources";
 import { parseHttpDate } from "./values";
 
 export interface RefreshOptions {
@@ -101,6 +101,16 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
     const [cur] = await currentReleases(db, "fda_purple_book");
     if (options.force || !cur || (latestPb.period ?? "") > (cur.periodLabel ?? "")) queue.push(latestPb);
     else skipped.push({ sourceKey: "fda_purple_book", reason: `${cur.periodLabel} is current` });
+  }
+
+  // State Medicaid fee schedules (each state publishes on its own timeline): the newest pinned effective date.
+  for (const key of Object.keys(STATE_FEE_SOURCES) as StateFeeSourceKey[]) {
+    if (!wanted.has(key)) continue;
+    const newest = manifestFor(key).at(-1);
+    if (!newest) continue;
+    const [cur] = await currentReleases(db, key);
+    if (options.force || !cur || (newest.period ?? "") > (cur.periodLabel ?? "")) queue.push(newest);
+    else skipped.push({ sourceKey: key, reason: `${cur.periodLabel} is current` });
   }
 
   const order = IMPORT_ORDER;

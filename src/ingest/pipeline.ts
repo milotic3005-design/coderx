@@ -15,8 +15,9 @@ import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
 import { parseNotPayableCsv, parsePaymentLimitCsv } from "./parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, type FdaPackage, type FdaProduct } from "./parsers/fda";
 import { parseHcpcsFixedWidth, parseNocCodeRows, type Rejected } from "./parsers/hcpcs";
+import { parseStateFeeSchedule } from "./parsers/state-fee-schedule";
 import { isClinicianAdministeredProduct } from "./scope";
-import { isMueSource, MUE_SOURCES, SOURCES, type MueSourceKey, type ReleaseCandidate, type SourceKey } from "./sources";
+import { isMueSource, MUE_SOURCES, SOURCES, STATE_FEE_SOURCES, type MueSourceKey, type ReleaseCandidate, type SourceKey } from "./sources";
 import { decodeText } from "./text-decode";
 import { parseHttpDate, quarterBounds } from "./values";
 import { readFirstSheet } from "./xlsx";
@@ -551,6 +552,51 @@ function parsePurpleBookRelease(file: Downloaded): Parsed {
   };
 }
 
+function parseStateFeeRelease(file: Downloaded, period: string, sourceKey: keyof typeof STATE_FEE_SOURCES): Parsed {
+  const { state, program } = STATE_FEE_SOURCES[sourceKey];
+  const parsed = parseStateFeeSchedule(readFirstSheet(file.bytes));
+  assertPlausible(parsed.rows.length >= 30, `Fee schedule has only ${parsed.rows.length} HCPCS rows; expected at least 30.`);
+  const warnings: string[] = [];
+  if (parsed.effectiveDate && parsed.effectiveDate !== period) warnings.push(`File states effective ${parsed.effectiveDate}; manifest period is ${period}.`);
+  if (parsed.program && parsed.program !== program) warnings.push(`File title is '${parsed.program}'; expected '${program}'.`);
+  const effectiveDate = parsed.effectiveDate ?? period;
+  return {
+    fileName: baseName(new URL(file.url).pathname),
+    effectiveStart: effectiveDate,
+    effectiveEnd: null,
+    recordCount: parsed.rows.length,
+    rejected: parsed.rejected,
+    excluded: { cptRows: parsed.excludedCpt },
+    warnings,
+    details: { state, program: parsed.program, areas: parsed.rows[0]?.fees.map((f) => f.area) ?? [] },
+    load: async (tx, releaseId) => {
+      const key = (r: { hcpcsCode: string; modifier: string | null }) => `${r.hcpcsCode}|${r.modifier ?? ""}`;
+      const prior = await tx
+        .select({ hcpcsCode: t.stateFeeSchedule.hcpcsCode, modifier: t.stateFeeSchedule.modifier, fees: t.stateFeeSchedule.fees, effectiveDate: t.stateFeeSchedule.effectiveDate })
+        .from(t.stateFeeSchedule)
+        .innerJoin(t.sourceReleases, eq(t.sourceReleases.id, t.stateFeeSchedule.sourceReleaseId))
+        .where(and(eq(t.stateFeeSchedule.state, state), eq(t.stateFeeSchedule.program, program), eq(t.sourceReleases.isCurrent, true), sql`${t.stateFeeSchedule.effectiveDate} <= ${effectiveDate}`));
+      const compareDate = prior.reduce<string | null>((max, r) => (max === null || r.effectiveDate > max ? r.effectiveDate : max), null);
+      const before = new Map(prior.filter((r) => r.effectiveDate === compareDate).map((r) => [key(r), JSON.stringify(r.fees)]));
+      await tx.delete(t.stateFeeSchedule).where(and(eq(t.stateFeeSchedule.state, state), eq(t.stateFeeSchedule.program, program), eq(t.stateFeeSchedule.effectiveDate, effectiveDate)));
+      await insertBatches(
+        tx,
+        t.stateFeeSchedule,
+        parsed.rows.map((r) => ({ ...r, state, program, effectiveDate, sourceReleaseId: releaseId })),
+        11,
+      );
+      if (!compareDate) return { comparedWith: null };
+      const now = new Map(parsed.rows.map((r) => [key(r), JSON.stringify(r.fees)]));
+      return {
+        comparedWith: compareDate,
+        added: [...now.keys()].filter((k) => !before.has(k)).length,
+        removed: [...before.keys()].filter((k) => !now.has(k)).length,
+        changed: [...now].filter(([k, v]) => before.has(k) && before.get(k) !== v).length,
+      };
+    },
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /* Orchestration                                                       */
 /* ------------------------------------------------------------------ */
@@ -650,6 +696,9 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
       case "cms_mdrp_products":
         parsed = streamed!;
         break;
+      case "wa_hca_home_infusion":
+        parsed = parseStateFeeRelease(file, period, candidate.sourceKey);
+        break;
       default:
         if (!isMueSource(candidate.sourceKey)) throw new Error(`Unknown source ${String(candidate.sourceKey)}`);
         parsed = parseMueRelease(file, period, candidate.sourceKey);
@@ -740,4 +789,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "wa_hca_home_infusion"];

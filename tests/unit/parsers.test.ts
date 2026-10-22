@@ -9,6 +9,7 @@ import { crosswalkTypeFromFileName, parseCrosswalkCsv } from "@/ingest/parsers/c
 import { deriveMethodology, parseNotPayableCsv, parsePaymentLimitCsv } from "@/ingest/parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, splitPharmClasses } from "@/ingest/parsers/fda";
 import { parseHcpcsFixedWidth, parseNocCodeRows } from "@/ingest/parsers/hcpcs";
+import { effectiveDateOf, parseStateFeeSchedule } from "@/ingest/parsers/state-fee-schedule";
 import { decodeText } from "@/ingest/text-decode";
 import { parseEffectiveRange, parseLongDate, parseUsDate, parseYmd, periodFromMonthYear, quarterBounds } from "@/ingest/values";
 import { readFirstSheet } from "@/ingest/xlsx";
@@ -61,6 +62,37 @@ describe("HCPCS fixed-width parser (real CMS excerpt)", () => {
     expect(noc.codes.has("J9999")).toBe(true);
     expect(noc.codes.has("C9399")).toBe(true);
     expect(noc.codes.has("J9271")).toBe(false);
+  });
+});
+
+describe("state Medicaid fee schedule parser (real Washington HCA file)", () => {
+  const parsed = parseStateFeeSchedule(readFirstSheet(new Uint8Array(readFileSync(join(FIXTURE_DIR, "wa-hca-home-infusion-20260701.xlsx")))));
+  const row = (code: string, modifier: string | null = null) => parsed.rows.find((r) => r.hcpcsCode === code && r.modifier === modifier);
+  it("reads the program and effective date from the title block", () => {
+    expect(parsed.program).toBe("Home Infusion Therapy/Parenteral Nutrition Program");
+    expect(parsed.effectiveDate).toBe("2026-07-01");
+    expect(effectiveDateOf("Effective October 1, 2026")).toBe("2026-10-01");
+  });
+  it("keeps HCPCS Level II rows with every payment area and drops CPT rows", () => {
+    expect(parsed.rows).toHaveLength(59);
+    expect(parsed.excludedCpt).toBe(2); // 95249, 95250
+    expect(parsed.rejected).toEqual([]);
+    expect(row("A4221")?.fees.map((f) => f.area)).toEqual(["Non-rural", "Rural", "Seattle CBA", "Vancouver CBA"]);
+    expect(row("A4221")?.fees[0]).toEqual({ area: "Non-rural", amount: "24.96", text: "24.96" });
+    expect(row("E0781", "RR")?.fees.slice(0, 2).map((f) => f.amount)).toEqual(["298.5", "331.38"]);
+  });
+  it("keeps text fees as published and trims float noise from amounts", () => {
+    expect(row("A4223")?.fees[0]).toEqual({ area: "Non-rural", amount: null, text: "BR*" });
+    expect(row("A4927")).toMatchObject({ priorAuth: "PA - Exceptions to Max", comments: "Please see Medical Equipment Fee Schedule for rates" });
+    expect(row("B4164")?.fees[0].amount).toBe("18.8947");
+    expect(row("B9004", "NU")?.fees[0].amount).toBe("2806.3937");
+  });
+  it("separates rows by modifier and lists no home infusion per diem S-codes", () => {
+    expect(parsed.rows.filter((r) => r.hcpcsCode === "E2102").map((r) => r.modifier)).toEqual(["NU", "RR", "UE"]);
+    expect(parsed.rows.some((r) => r.hcpcsCode.startsWith("S"))).toBe(false);
+  });
+  it("refuses a sheet without the Code and Modifier header", () => {
+    expect(() => parseStateFeeSchedule([["Health Care Authority"], ["Code", "Fee"]])).toThrow(/header row/);
   });
 });
 

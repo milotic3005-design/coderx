@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { DbHandle } from "@/lib/db/client";
 import { getDrugDetail, getHcpcsDetail, getNdcDetail } from "@/lib/data/queries";
@@ -12,6 +14,7 @@ import { GET as sourcesGET } from "@/app/api/sources/route";
 import { GET as healthGET } from "@/app/api/health/route";
 import { POST as importPOST } from "@/app/api/admin/import/route";
 import { seededDb, useAsGlobalDb } from "../helpers/db";
+import { FIXTURE_DIR, FIXTURE_URLS } from "../helpers/fixtures";
 
 let h: DbHandle;
 beforeAll(async () => {
@@ -63,6 +66,13 @@ describe("read models expose provenance and honest gaps", () => {
     expect(rituxan.perDiem.matches[0].codes.map((c) => [c.code, c.description])).toEqual([["S9329", null], ["S9330", null], ["S9331", null]]);
     // Reimbursement fields are read from the CMS files too, and stay empty when the file has no row.
     expect(rituxan.perDiem.matches[0].codes[0]).toMatchObject({ coverageCode: null, pricingIndicators: [], payment: null });
+    // State Medicaid: the Washington schedule rides along with its release, and lists none of the drug's per diems.
+    const [wa] = rituxan.stateFeeSchedules;
+    expect(wa).toMatchObject({ state: "WA", payer: "Washington Apple Health (Medicaid)", effectiveDate: "2026-07-01" });
+    expect(wa.release).toMatchObject({ sourceKey: "wa_hca_home_infusion", status: "official-state" });
+    expect(wa.rows).toHaveLength(59);
+    expect(wa.rows.some((r) => ["S9329", "S9330", "S9331"].includes(r.hcpcsCode))).toBe(false);
+    expect(rituxan.provenance.some((p) => p.sourceKey === "wa_hca_home_infusion")).toBe(true);
     const prolia = (await getDrugDetail("prolia-denosumab", h.db))!;
     expect(prolia.perDiem.status).toBe("unclassified");
     expect(prolia.perDiem.matches[0].codes.find((c) => c.suggested)?.code).toBe("S9542");
@@ -163,6 +173,16 @@ describe("API routes return the documented envelope", () => {
     expect(res.status).toBe(401);
     const bad = await importPOST(req("/api/admin/import", { method: "POST", headers: { authorization: `Bearer ${"a".repeat(48)}` }, body: "{not json" }));
     expect(bad.status).toBe(400);
+
+    // Upload mode: the official URL must belong to the source's own publisher.
+    const auth = { authorization: `Bearer ${"a".repeat(48)}` };
+    const xlsx = new Uint8Array(readFileSync(join(FIXTURE_DIR, "wa-hca-home-infusion-20260701.xlsx")));
+    const upload = (qs: string) => importPOST(req(`/api/admin/import?${qs}`, { method: "POST", headers: auth, body: xlsx }));
+    expect((await upload(`source=wa_hca_home_infusion&url=${encodeURIComponent("https://www.cms.gov/files/x.xlsx")}`)).status).toBe(400);
+    expect((await upload(`source=cms_hcpcs&url=${encodeURIComponent(FIXTURE_URLS.waHcaHomeInfusion)}`)).status).toBe(400);
+    const ok = await upload(`source=wa_hca_home_infusion&period=2026-07-01&url=${encodeURIComponent(FIXTURE_URLS.waHcaHomeInfusion)}`);
+    expect(ok.status).toBe(200);
+    expect((await ok.json()).data.outcome.status).toBe("skipped"); // same file the fixture import already loaded
     if (prev) process.env.CODERX_ADMIN_TOKEN = prev;
     else delete process.env.CODERX_ADMIN_TOKEN;
   });

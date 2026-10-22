@@ -376,8 +376,8 @@ export default async function DrugPage({ params }: { params: Params }) {
             <h3 id="per-diem-reimbursement" className="mt-8 mb-3 text-sm font-semibold text-ink">
               Home infusion per diem (S-codes)
             </h3>
-            <PerDiemReimbursement perDiem={d.perDiem} latestPaymentPeriod={d.latestPaymentPeriod} />
-            {d.perDiem.matches.length ? <ProvenanceFooter sources={[d.releases.hcpcs, d.releases.payment]} /> : null}
+            <PerDiemReimbursement perDiem={d.perDiem} latestPaymentPeriod={d.latestPaymentPeriod} stateFeeSchedules={d.stateFeeSchedules} />
+            {d.perDiem.matches.length ? <ProvenanceFooter sources={[d.releases.hcpcs, d.releases.payment, ...d.stateFeeSchedules.map((s) => s.release)]} /> : null}
           </Section>
 
           <Section id="related" number="06" title="Related products and codes">
