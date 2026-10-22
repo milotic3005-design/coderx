@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActiveBadge, ClassBadge, DataStatusBadge, FamilyBadge, NocBadge } from "@/components/badges";
 import { RecordView } from "@/components/client-bits";
-import { BillingUnitCard, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable } from "@/components/detail-blocks";
+import { BillingUnitCard, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, PerDiemCodes } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav, TableScroll, td, th } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
 import { GlanceStrip, type GlanceAction, type GlanceItem } from "@/components/glance";
@@ -215,7 +215,7 @@ export default async function DrugPage({ params }: { params: Params }) {
             id="hcpcs"
             number="02"
             title="HCPCS coding"
-            description="Codes appear here only when a CMS NDC–HCPCS crosswalk lists at least one of this drug’s NDC packages. CodeRx never assigns a code from the name or ingredient."
+            description="Drug codes appear here only when a CMS NDC–HCPCS crosswalk lists at least one of this drug’s NDC packages. CodeRx never assigns a code from the name or ingredient."
           >
             {d.codes.length ? (
               <ul className="space-y-3">
@@ -257,6 +257,17 @@ export default async function DrugPage({ params }: { params: Params }) {
               </div>
             ) : null}
             <ProvenanceFooter sources={[d.releases.crosswalk, d.releases.hcpcs]} extra={d.codes.length ? [{ status: "derived", note: "Drug-to-code links are aggregated from NDC-level CMS crosswalk rows." }] : undefined} />
+            <h3 id="per-diem" className="mt-8 mb-1 text-sm font-semibold text-ink">
+              Home infusion per diem (S-codes)
+            </h3>
+            <p className="mb-3 text-sm text-ink-muted">
+              When a home infusion pharmacy dispenses this drug, the drug is billed with the code above and each day of pharmacy services, supplies, and equipment with a per diem S-code. CMS publishes no drug-to-per-diem crosswalk, so CodeRx picks the therapy category from the FDA pharmacologic class and route. S-codes are not payable by Medicare; confirm the code against the payer contract.
+            </p>
+            <PerDiemCodes perDiem={d.perDiem} />
+            <ProvenanceFooter
+              sources={[d.releases.fda, d.perDiem.matches.length ? d.releases.hcpcs : null]}
+              extra={d.perDiem.matches.length ? [{ status: "derived", note: "Therapy category matched from the FDA Established Pharmacologic Class and route (and the CMS clotting-factor flag); descriptors from the CMS HCPCS file." }] : undefined}
+            />
           </Section>
 
           <Section id="ndc-packages" number="03" title="NDC packages" description="Package NDCs from the FDA directory, normalized to the 11-digit 5-4-2 format used on claims.">
@@ -462,6 +473,7 @@ export default async function DrugPage({ params }: { params: Params }) {
                 "HCPCS links are derived from CMS NDC–HCPCS crosswalks, which support ASP-based Part B payment and are not a complete list of billable NDCs.",
                 "Product class (brand, generic, biosimilar) is derived from the FDA marketing category and Purple Book license type, not from a commercial compendium.",
                 "Payment limits are Medicare Part B national limits; they do not reflect payer contracts, OPPS rates, 340B pricing, or acquisition cost.",
+                "Home infusion per diem S-codes are matched by therapy category from the FDA pharmacologic class and route, not from a CMS crosswalk. Payers choose which per diem codes they accept, and the right code can depend on the dosing schedule, infusion method, or daily volume.",
               ]}
             />
             <div className="mt-6">
