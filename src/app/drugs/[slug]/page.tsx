@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActiveBadge, ClassBadge, DataStatusBadge, FamilyBadge, NocBadge } from "@/components/badges";
 import { RecordView } from "@/components/client-bits";
-import { BillingUnitCard, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, PerDiemCodes } from "@/components/detail-blocks";
+import { BillingUnitCard, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, PerDiemCodes, PerDiemReimbursement } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav, TableScroll, td, th } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
 import { GlanceStrip, type GlanceAction, type GlanceItem } from "@/components/glance";
@@ -346,7 +346,12 @@ export default async function DrugPage({ params }: { params: Params }) {
             <ProvenanceFooter sources={[d.releases.payment, d.releases.hcpcs]} />
           </Section>
 
-          <Section id="reimbursement" number="05" title="Reimbursement" description="Medicare Part B payment limits for the codes above. Commercial payer rates, AWP, and WAC are not included.">
+          <Section
+            id="reimbursement"
+            number="05"
+            title="Reimbursement"
+            description="Medicare Part B payment limits for the codes above, then how the home infusion per diem S-codes are paid. Commercial payer rates, AWP, and WAC are not included."
+          >
             {d.codes.some((c) => c.payments.length) ? (
               <div className="space-y-8">
                 {d.codes
@@ -368,6 +373,11 @@ export default async function DrugPage({ params }: { params: Params }) {
               <NoData />
             )}
             <ProvenanceFooter sources={[d.releases.payment]} />
+            <h3 id="per-diem-reimbursement" className="mt-8 mb-3 text-sm font-semibold text-ink">
+              Home infusion per diem (S-codes)
+            </h3>
+            <PerDiemReimbursement perDiem={d.perDiem} latestPaymentPeriod={d.latestPaymentPeriod} />
+            {d.perDiem.matches.length ? <ProvenanceFooter sources={[d.releases.hcpcs, d.releases.payment]} /> : null}
           </Section>
 
           <Section id="related" number="06" title="Related products and codes">

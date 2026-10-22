@@ -272,6 +272,19 @@ const UNCLASSIFIED: PerDiemTherapy = {
   note: "No specific category was found in this drug’s FDA pharmacologic class. Use a specific code instead when the therapy is one CodeRx cannot detect: hydration (S9373–S9377), tocolytic (S9349), anti-spasmodic (S9363), blood products (S9538), or irrigation (S9590).",
 };
 
+/**
+ * Medicare pays no per diem. Its home infusion therapy services benefit pays per infusion
+ * day (subsequent visit, initial visit) for drugs given through a covered DME infusion pump.
+ * Categories follow the CMS descriptors of these codes.
+ */
+export const MEDICARE_HIT_CATEGORIES = [
+  { category: 1, codes: ["G0068", "G0088"], label: "IV anti-infective, pain management, chelation, pulmonary hypertension, inotropic, or other IV drug (not chemotherapy)" },
+  { category: 2, codes: ["G0069", "G0089"], label: "Subcutaneous immunotherapy or other subcutaneous infusion" },
+  { category: 3, codes: ["G0070", "G0090"], label: "IV chemotherapy or other highly complex drug" },
+] as const;
+
+export const CMS_HIT_RATES_URL = "https://www.cms.gov/medicare/payment/fee-for-service-providers/home-infusion-therapy/billing-and-rates";
+
 /** Every per diem code CodeRx can show, for looking up CMS descriptors in one query. */
 export const PER_DIEM_CODES: string[] = [...new Set([...RULES, UNCLASSIFIED].flatMap((r) => r.codes.map((c) => c.code)))];
 

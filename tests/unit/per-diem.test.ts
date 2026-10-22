@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { epcNames, isClottingFactorFlag, PER_DIEM_CODES, perDiemFor, routeKinds } from "@/lib/per-diem";
+import { epcNames, isClottingFactorFlag, MEDICARE_HIT_CATEGORIES, PER_DIEM_CODES, perDiemFor, routeKinds } from "@/lib/per-diem";
 
 const codesOf = (r: ReturnType<typeof perDiemFor>) => r.matches.flatMap((m) => m.codes.map((c) => c.code));
 const suggestedOf = (r: ReturnType<typeof perDiemFor>) => r.matches.flatMap((m) => m.codes.filter((c) => c.suggested).map((c) => c.code));
@@ -130,6 +130,10 @@ describe("home infusion per diem S-codes", () => {
     // Same routes, no EPC: a name like "vancomycin" is not an input, so the result is the NOC fallback.
     const r = perDiemFor({ pharmClasses: [], routes: ["INTRAVENOUS"] });
     expect(r.matches.map((m) => m.therapy.id)).toEqual(["not-otherwise-classified"]);
+  });
+
+  it("names the Medicare home infusion services codes by payment category (subsequent, initial visit)", () => {
+    expect(MEDICARE_HIT_CATEGORIES.map((h) => h.codes)).toEqual([["G0068", "G0088"], ["G0069", "G0089"], ["G0070", "G0090"]]);
   });
 
   it("lists only S-codes in the home infusion and injectable range", () => {
