@@ -61,6 +61,8 @@ describe("read models expose provenance and honest gaps", () => {
     expect(rituxan.perDiem.matches[0]).toMatchObject({ therapy: { id: "chemotherapy" }, basis: "fda-epc", evidence: ["CD20-directed Cytolytic Antibody"] });
     // The fixture HCPCS file carries no S-codes, so the descriptor is reported missing rather than invented.
     expect(rituxan.perDiem.matches[0].codes.map((c) => [c.code, c.description])).toEqual([["S9329", null], ["S9330", null], ["S9331", null]]);
+    // Reimbursement fields are read from the CMS files too, and stay empty when the file has no row.
+    expect(rituxan.perDiem.matches[0].codes[0]).toMatchObject({ coverageCode: null, pricingIndicators: [], payment: null });
     const prolia = (await getDrugDetail("prolia-denosumab", h.db))!;
     expect(prolia.perDiem.status).toBe("unclassified");
     expect(prolia.perDiem.matches[0].codes.find((c) => c.suggested)?.code).toBe("S9542");

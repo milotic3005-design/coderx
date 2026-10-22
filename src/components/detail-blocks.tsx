@@ -2,9 +2,10 @@ import { Calculator, CircleAlert, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import type { BillingUnitInfo, CrosswalkEntry, DrugDetail, PaymentPeriod } from "@/lib/data/queries";
 import { formatDate, formatMoney, formatNumber, formatPeriod } from "@/lib/format";
-import { ACTION_CODES } from "@/lib/hcpcs";
+import { ACTION_CODES, COVERAGE_CODES, PRICING_INDICATORS } from "@/lib/hcpcs";
+import { CMS_HIT_RATES_URL, MEDICARE_HIT_CATEGORIES } from "@/lib/per-diem";
 import { DataStatusBadge } from "./badges";
-import { NoData, TableScroll, td, th } from "./layout-bits";
+import { Callout, KeyValueGrid, NoData, TableScroll, td, th } from "./layout-bits";
 
 /** Decorative trend line; the table next to it carries the same values for assistive tech. */
 export function Sparkline({ values, label }: { values: { period: string; value: number }[]; label: string }) {
@@ -371,5 +372,88 @@ export function PerDiemCodes({ perDiem }: { perDiem: DrugDetail["perDiem"] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+type PerDiemCode = DrugDetail["perDiem"]["matches"][number]["codes"][number];
+
+/** One line per distinct value; "all N codes" when every code shares it. */
+function byValue(codes: PerDiemCode[], value: (c: PerDiemCode) => string) {
+  const groups = new Map<string, string[]>();
+  for (const c of codes) groups.set(value(c), [...(groups.get(value(c)) ?? []), c.code]);
+  if (groups.size === 1) return `${[...groups.keys()][0]}${codes.length > 1 ? ` (all ${codes.length} codes)` : ""}`;
+  return (
+    <span className="flex flex-col">
+      {[...groups].map(([text, list]) => (
+        <span key={text}>
+          <span className="code-chip">{list.join(", ")}</span>: {text}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Payment terms for a drug's per diem S-codes, from the CMS HCPCS and payment limit files. */
+export function PerDiemReimbursement({ perDiem, latestPaymentPeriod }: { perDiem: DrugDetail["perDiem"]; latestPaymentPeriod: string | null }) {
+  const codes = [...new Map(perDiem.matches.flatMap((m) => m.codes).map((c) => [c.code, c])).values()];
+  if (!codes.length) return <NoData>No home infusion per diem applies to this drug (see HCPCS coding above).</NoData>;
+  const notInFile = "Not in the imported CMS HCPCS file";
+  const priced = codes.filter((c) => c.payment && c.payment.period === latestPaymentPeriod);
+  return (
+    <>
+      <KeyValueGrid
+        items={[
+          {
+            label: "Medicare",
+            value: byValue(codes, (c) => (c.description === null ? notInFile : c.coverageCode ? `${COVERAGE_CODES[c.coverageCode] ?? "Unknown"} — CMS coverage code ${c.coverageCode}` :"No coverage code in the CMS file")),
+          },
+          {
+            label: "Part B pricing indicator",
+            value: byValue(codes, (c) => (c.description === null ? notInFile : c.pricingIndicators.length ? c.pricingIndicators.map((p) => `${p} — ${PRICING_INDICATORS[p] ?? "Unknown"}`).join("; ") : "None in the CMS file")),
+          },
+          {
+            label: "National payment amount",
+            value: priced.length ? (
+              <span className="flex flex-col">
+                {priced.map((c) => (
+                  <span key={c.code}>
+                    <span className="code-chip">{c.code}</span>: {c.payment!.paymentLimit !== null ? formatMoney(c.payment!.paymentLimit) : c.payment!.paymentLimitText} per {c.payment!.dosageDescriptor ?? "unit"}
+                  </span>
+                ))}
+              </span>
+            ) : (
+              `None. No per diem code here is in the CMS Part B payment limit file${latestPaymentPeriod ? ` for ${formatPeriod(latestPaymentPeriod)}` : ""}; CMS sets no national per diem rate.`
+            ),
+          },
+          { label: "Billing unit", value: "1 unit = 1 day on service (the CMS descriptor ends “per diem”)" },
+          { label: "Who sets the rate", value: "Each commercial plan’s contract or state Medicaid fee schedule. Some payers reduce a second per diem billed for the same day." },
+          { label: "Billed separately", value: "The drug, with its own HCPCS code and units, and nursing visits — the CMS descriptor says “drugs and nursing visits coded separately”." },
+        ]}
+      />
+      <div className="mt-4">
+        <Callout tone="info" title="How Medicare pays for home infusion instead">
+          <p>
+            Medicare pays no per diem. Under its home infusion therapy services benefit, a qualified home infusion supplier is paid per infusion day, and only for drugs given through a Medicare-covered external infusion pump:
+          </p>
+          <ul className="mt-2 space-y-1">
+            {MEDICARE_HIT_CATEGORIES.map((h) => (
+              <li key={h.category}>
+                Category {h.category} — {h.label}:{" "}
+                <Link href={`/hcpcs/${h.codes[0]}`} className="code-chip">
+                  {h.codes[0]}
+                </Link>
+                , first visit{" "}
+                <Link href={`/hcpcs/${h.codes[1]}`} className="code-chip">
+                  {h.codes[1]}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2">
+            <ExternalSourceLink href={CMS_HIT_RATES_URL}>CMS home infusion therapy billing and rates</ExternalSourceLink>
+          </p>
+        </Callout>
+      </div>
+    </>
   );
 }

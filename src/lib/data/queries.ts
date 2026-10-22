@@ -401,7 +401,8 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
   const lookupRows = await db.select().from(t.hcpcsCodes).where(inArray(t.hcpcsCodes.code, [...codes, ...PER_DIEM_CODES]));
   const codeRows = lookupRows.filter((c) => codes.includes(c.code));
   const perDiemRows = new Map(lookupRows.filter((c) => PER_DIEM_CODES.includes(c.code)).map((c) => [c.code, c]));
-  const payments = await paymentHistory(db, codes, byId);
+  // Per diem codes ride along so the page can state from the CMS file itself whether any carries a Part B limit.
+  const payments = await paymentHistory(db, [...codes, ...PER_DIEM_CODES], byId);
   const perDiem = perDiemFor({
     pharmClasses: drug.pharmClasses,
     routes: drug.routes,
@@ -475,7 +476,14 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
         ...m,
         codes: m.codes.map((c) => {
           const row = perDiemRows.get(c.code);
-          return { ...c, description: row ? perDiemDescriptor(row.longDescription) : null, isActive: row ? isCodeActive(row.terminationDate, today()) : null };
+          return {
+            ...c,
+            description: row ? perDiemDescriptor(row.longDescription) : null,
+            isActive: row ? isCodeActive(row.terminationDate, today()) : null,
+            coverageCode: row?.coverageCode ?? null,
+            pricingIndicators: row?.pricingIndicators ?? [],
+            payment: payments.get(c.code)?.[0] ?? null,
+          };
         }),
       })),
     },
