@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { DbHandle } from "@/lib/db/client";
 import { getDrugDetail, getHcpcsDetail, getNdcDetail } from "@/lib/data/queries";
-import { quarterlyChanges } from "@/lib/data/tools";
+import { biosimilarGroups, quarterlyChanges } from "@/lib/data/tools";
 import { GET as searchGET } from "@/app/api/search/route";
 import { GET as suggestGET } from "@/app/api/suggest/route";
 import { GET as hcpcsGET } from "@/app/api/hcpcs/[code]/route";
@@ -100,6 +100,16 @@ describe("quarterly changes", () => {
     // One crosswalk quarter in the fixtures: nothing to compare, and nothing invented.
     expect(d.crosswalk).toMatchObject({ period: "2026-Q4", previous: null, added: [], removed: [] });
     expect((await quarterlyChanges("2026-Q3", h.db)).previous).toBeNull();
+  });
+});
+
+describe("biosimilar comparator", () => {
+  it("groups each brand under its own Purple Book reference even when brands share a BLA", async () => {
+    // Fresenius Kabi licenses Conexxence (reference Prolia) and Bomyntra (reference Xgeva) under BLA 761398.
+    const { groups } = await biosimilarGroups(h.db);
+    const members = (ref: string) => groups.find((g) => g.referenceName === ref)?.products.map((p) => `${p.role}:${p.displayName}`);
+    expect(members("Prolia")).toEqual(["reference:Prolia", "interchangeable:Conexxence"]);
+    expect(members("Xgeva")).toEqual(["reference:Xgeva", "interchangeable:Bomyntra"]);
   });
 });
 

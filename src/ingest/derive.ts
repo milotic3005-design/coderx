@@ -425,7 +425,8 @@ export async function deriveAll(tx: Tx, log: (msg: string) => void = () => {}): 
     products: ProductRow[];
     ndcs: string[];
     bla: string[];
-    refPairs: { proper: string; proprietary: string }[];
+    /** Purple Book reference product for each 351(k) row of this drug's BLAs; `name` is that row's own proprietary name. */
+    refPairs: { name: string; proper: string; proprietary: string }[];
   }
   const builds: DrugBuild[] = [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
@@ -473,7 +474,7 @@ export async function deriveAll(tx: Tx, log: (msg: string) => void = () => {}): 
         bla,
         refPairs: pbRows
           .filter((r) => r.licenseType?.startsWith("351(k)") && r.refProperName)
-          .map((r) => ({ proper: normalizeText(r.refProperName), proprietary: normalizeText(r.refProprietaryName) })),
+          .map((r) => ({ name: normalizeText(r.proprietaryName), proper: normalizeText(r.refProperName), proprietary: normalizeText(r.refProprietaryName) })),
         row: {
           slug: uniqueSlug(slugBase, usedDrugSlugs),
           displayName,
@@ -523,7 +524,9 @@ export async function deriveAll(tx: Tx, log: (msg: string) => void = () => {}): 
   const biosimilarLinks: { drugId: number; refId: number; evidence: Record<string, unknown> }[] = [];
   for (const [id, b] of drugBuildById) {
     if (!b.refPairs.length) continue;
-    const pair = b.refPairs[0];
+    // One BLA can license two brands with different references (Jubbonti → Prolia and
+    // Wyost → Xgeva share BLA 761362), so use the Purple Book row for this drug's own brand.
+    const pair = b.refPairs.find((p) => !!b.row.brandName && p.name === normalizeText(b.row.brandName)) ?? b.refPairs[0];
     const refBlaRows = purple.filter(
       (r) => r.licenseType === "351(a)" && normalizeText(r.properName) === pair.proper && (!pair.proprietary || normalizeText(r.proprietaryName) === pair.proprietary),
     );
