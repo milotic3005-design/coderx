@@ -17,6 +17,8 @@ export type SourceKey =
   | "fda_ndc_excluded"
   | "fda_purple_book"
   | "cms_mdrp_products"
+  | "cms_opps_addendum_a"
+  | "cms_opps_addendum_b"
   | "wa_hca_home_infusion";
 
 export const SOURCE_KEYS: SourceKey[] = [
@@ -30,6 +32,8 @@ export const SOURCE_KEYS: SourceKey[] = [
   "fda_ndc_excluded",
   "fda_purple_book",
   "cms_mdrp_products",
+  "cms_opps_addendum_a",
+  "cms_opps_addendum_b",
   "wa_hca_home_infusion",
 ];
 
@@ -163,6 +167,28 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     badge: "official-fda",
     licenseNote: "Public data. Records removed from the active directory (flags E, U, I, D).",
   },
+  cms_opps_addendum_a: {
+    key: "cms_opps_addendum_a",
+    organization: "CMS",
+    dataset: "Hospital Outpatient Prospective Payment System (OPPS) Addendum A (payment by APC), quarterly update",
+    shortName: "CMS OPPS Addendum A",
+    landingPageUrl: "https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient-pps/quarterly-addenda-updates",
+    cadence: "quarterly",
+    badge: "official-cms",
+    licenseNote:
+      "U.S. Government work, downloaded through CMS's AMA CPT license page (accepted by the CodeRx operator on 2026-10-26). Addendum A lists APCs with CMS group titles and rates; it contains no CPT rows.",
+  },
+  cms_opps_addendum_b: {
+    key: "cms_opps_addendum_b",
+    organization: "CMS",
+    dataset: "Hospital Outpatient Prospective Payment System (OPPS) Addendum B (payment by HCPCS code), quarterly update",
+    shortName: "CMS OPPS Addendum B",
+    landingPageUrl: "https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient-pps/quarterly-addenda-updates",
+    cadence: "quarterly",
+    badge: "official-cms",
+    licenseNote:
+      "U.S. Government work, downloaded through CMS's AMA CPT license page (accepted by the CodeRx operator on 2026-10-26). Only HCPCS Level II rows are stored; CPT rows (AMA copyright) and dental rows (ADA copyright) are counted and dropped.",
+  },
   wa_hca_home_infusion: {
     key: "wa_hca_home_infusion",
     organization: "Washington State HCA",
@@ -235,6 +261,22 @@ export const MANIFEST: ReleaseCandidate[] = [
 
   // Medicaid Drug Rebate Program product data (one file per quarter; each file repeats every quarter since 2022)
   { sourceKey: "cms_mdrp_products", period: "2026-Q2", url: "https://download.medicaid.gov/data/drugproducts-q2-2026.csv", publicationLabel: "2Q 2026 product data" },
+
+  // OPPS addenda (one CMS page per quarter; the Section 508 text file inside each zip is parsed)
+  {
+    sourceKey: "cms_opps_addendum_a",
+    period: "2026-Q4",
+    url: `${CMS}/files/zip/October-2026-OPPS-Addendum.zip`,
+    publicationLabel: "Addendum A - Updated 10/15/2026",
+    publicationDate: "2026-10-15",
+  },
+  {
+    sourceKey: "cms_opps_addendum_b",
+    period: "2026-Q4",
+    url: `${CMS}/files/zip/October-2026-OPPS-Addendum-B.zip`,
+    publicationLabel: "Addendum B - Updated 10/15/2026",
+    publicationDate: "2026-10-15",
+  },
 
   // Washington HCA fee schedules (period = effective date). Add a row when HCA posts a new effective date.
   // The 2026-07-01 file (SHA-256 4c56a327…) was checked by hand; the URL follows HCA's asset naming.

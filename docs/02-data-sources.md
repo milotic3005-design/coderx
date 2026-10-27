@@ -22,7 +22,7 @@ files that were current on that date.
 | 7 | `cms_mue_practitioner`, `cms_mue_outpatient`, `cms_mue_dme` | CMS | NCCI Medically Unlikely Edit tables (practitioner, facility outpatient hospital, DME supplier) | Quarterly | **Ingested** (current quarter; HCPCS Level II rows only) |
 | 8 | `cms_mdrp_products` | CMS | Drug Products in the Medicaid Drug Rebate Program | Quarterly | **Ingested** (newest quarter, indexed NDCs only) |
 | 9 | `wa_hca_home_infusion` | Washington State HCA | Apple Health (Medicaid) Home Infusion Therapy/Parenteral Nutrition Program fee schedule | As published | **Ingested** (effective-date releases; HCPCS Level II rows only) |
-| — | — | CMS | OPPS Addendum B | Quarterly | Evaluated, **not ingested** (AMA license click-through) |
+| 10 | `cms_opps_addendum_a`, `cms_opps_addendum_b` | CMS | Hospital OPPS Addendum A (payment by APC) and Addendum B (payment by HCPCS code), quarterly updates | Quarterly | **Ingested** (current quarter; Addendum B HCPCS Level II rows only; AMA license accepted by the operator on 2026-10-26) |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
 | — | — | NLM | DailyMed | Daily | Link-out only |
 
@@ -162,11 +162,25 @@ files that were current on that date.
 | Known limitations | Maximum allowable fees, not payments: HCA pays the lesser of the provider's usual charge and the schedule (WAC 182-553). The 2026 HCA billing guide pays home infusion through supply (A4221–A4232), pump (E0776–E0791, B9004/B9006), and parenteral nutrition (B4164–B5100, B4220–B4224) codes; none of the per diem S-codes (S9325–S9563) are on the schedule, so CodeRx reports them as not separately paid. Drugs are billed separately. |
 | Ingestion | Pinned in the manifest per effective date (no discovery yet); the daily refresh imports a newer pinned effective date. If HCA blocks cloud downloads, use the admin upload mode with the official `www.hca.wa.gov` URL. 2026-07-01: 59 HCPCS rows, 2 CPT rows dropped. |
 
+## 10. CMS OPPS Addendum A and Addendum B (hospital outpatient)
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | Centers for Medicare & Medicaid Services (CMS) |
+| Dataset | OPPS quarterly addenda: Addendum A (APCs, group titles, rates) and Addendum B (status indicator, APC, and rate per HCPCS code) |
+| Source URL | https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient-pps/quarterly-addenda-updates (one page per quarter, e.g. `…/october-2026-addendum` and `…/october-2026-addendum-b`) |
+| Example files | https://www.cms.gov/files/zip/October-2026-OPPS-Addendum.zip (text file SHA-256 `37916207…a417`), https://www.cms.gov/files/zip/October-2026-OPPS-Addendum-B.zip (text file SHA-256 `f99157bd…1e25`), both "Updated 10/15/2026" |
+| Format | ZIP with an XLSX and a Section 508 tab-delimited text file; the text file is parsed. A notes block precedes the header row. |
+| Update frequency | Quarterly (January, April, July, October); CMS reposts within a quarter ("Updated mm/dd/yyyy" label) |
+| Licensing / restrictions | CMS routes both downloads through its AMA CPT license page (`/apps/ama/license.asp?file=…`). The CodeRx operator accepted that license on 2026-10-26. CodeRx stores **no CPT content**: from Addendum B only HCPCS Level II rows are kept (CPT and CDT rows are counted and dropped, and no descriptors are stored); Addendum A holds APCs with CMS-authored group titles. |
+| Fields used | B: HCPCS code, SI, APC, payment rate, national/minimum/adjusted copayment, IRA coinsurance %, pass-through expiration, note. A: APC, group title, SI, relative weight, payment rate, copayments. The 340B remedy offset ratio and its status indicators are read from the files' notes block and kept in the release report. |
+| Known limitations | National unadjusted rates: the site-of-care tool applies the wage index the user enters to 60% of APC rates (42 CFR 419.43). No CPT-to-APC mapping is stored; users choose drug administration APC levels. Outliers, rural SCH adjustments, and the coinsurance cap are not modeled. |
+| Ingestion | Discovered from the quarterly addenda page (newest quarter page per addendum, zip path taken from the license link); manifest pins 2026-Q4. 2026-Q4: Addendum A 1,061 APCs; Addendum B 6,735 HCPCS Level II rows kept, 11,696 CPT and 847 CDT rows dropped. |
+
 ## Evaluated but not ingested
 
 | Source | Why not (yet) |
 | --- | --- |
-| **CMS OPPS Addendum B** (hospital outpatient payment rates and status indicators) | The download link routes through CMS's AMA CPT license click-through (`/apps/ama/license.asp?file=…October-2026-OPPS-Addendum-B.zip`). Accepting that license is a decision for the operator, and the file mixes CPT content that cannot be redistributed. CodeRx shows "No authoritative public data was located for this field" for OPPS rates and links to the CMS addenda page. The OPPS **NDC-HCPCS crosswalk** (#3) is ingested. |
 | **CMS NOC pricing file** | Published as a separate file through October 2025; the 2026 payment-limit packages contain no NOC pricing file. NOC drugs are priced by MACs. |
 | **openFDA NDC API** | Same content as the bulk directory; the app must not depend on slow real-time government APIs, so bulk files are used. |
 | **Drugs@FDA, DailyMed** | Useful for labeling; CodeRx links out to DailyMed by NDC instead of storing labels. |
@@ -178,7 +192,8 @@ files that were current on that date.
 1. CodeRx never infers a HCPCS code from a name, ingredient, or NDC similarity.
    NDC→HCPCS relationships come only from CMS crosswalk rows; drug→HCPCS links are
    derived from those NDC-level rows and labeled **Derived**.
-2. CPT and CDT content is never stored.
+2. CPT and CDT content is never stored (codes or descriptors); files that mix them
+   in, such as OPPS Addendum B, are filtered to HCPCS Level II rows at parse time.
 3. Every derived number (per-package payment, units, utilization) is labeled as a
    derived calculation and shows its formula.
 4. Missing values render as "No authoritative public data was located for this

@@ -247,6 +247,57 @@ export const ndcHcpcsCrosswalk = pgTable(
  * One row per code, service type, and release; the current release for the newest
  * period is served.
  */
+/**
+ * CMS OPPS Addendum B: hospital outpatient status indicator, APC, and national payment
+ * rate per HCPCS Level II code for a quarter (no CPT rows are stored).
+ */
+export const oppsRates = pgTable(
+  "opps_rates",
+  {
+    id: serial("id").primaryKey(),
+    hcpcsCode: text("hcpcs_code").notNull(),
+    period: text("period").notNull(),
+    statusIndicator: text("status_indicator"),
+    apc: text("apc"),
+    relativeWeight: numeric("relative_weight", { precision: 12, scale: 4 }),
+    paymentRate: numeric("payment_rate", { precision: 14, scale: 3 }),
+    nationalCopay: numeric("national_copay", { precision: 14, scale: 3 }),
+    minimumCopay: numeric("minimum_copay", { precision: 14, scale: 3 }),
+    iraCoinsurancePct: numeric("ira_coinsurance_pct", { precision: 7, scale: 3 }),
+    adjustedCopay: numeric("adjusted_copay", { precision: 14, scale: 3 }),
+    passThroughExpiration: text("pass_through_expiration"),
+    note: text("note"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("opps_rates_code_idx").on(t.hcpcsCode), index("opps_rates_release_idx").on(t.sourceReleaseId)],
+);
+
+/** CMS OPPS Addendum A: national payment rate per APC (CMS group titles) for a quarter. */
+export const oppsApcRates = pgTable(
+  "opps_apc_rates",
+  {
+    id: serial("id").primaryKey(),
+    apc: text("apc").notNull(),
+    period: text("period").notNull(),
+    title: text("title"),
+    statusIndicator: text("status_indicator"),
+    relativeWeight: numeric("relative_weight", { precision: 12, scale: 4 }),
+    paymentRate: numeric("payment_rate", { precision: 14, scale: 3 }),
+    nationalCopay: numeric("national_copay", { precision: 14, scale: 3 }),
+    minimumCopay: numeric("minimum_copay", { precision: 14, scale: 3 }),
+    iraCoinsurancePct: numeric("ira_coinsurance_pct", { precision: 7, scale: 3 }),
+    adjustedCopay: numeric("adjusted_copay", { precision: 14, scale: 3 }),
+    passThroughExpiration: text("pass_through_expiration"),
+    note: text("note"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("opps_apc_rates_apc_idx").on(t.apc), index("opps_apc_rates_release_idx").on(t.sourceReleaseId)],
+);
+
 /** One published state Medicaid fee schedule row (e.g. Washington HCA home infusion). */
 export const stateFeeSchedule = pgTable(
   "state_fee_schedule",

@@ -148,7 +148,8 @@ const LAYOUT: Record<string, string> = {
   "/tools/margin": "",
   "/tools/biosimilars": "",
   "/tools/changes": "",
-  "/tools/capacity": "xl:col-span-2",
+  "/tools/site-of-care": "",
+  "/tools/capacity": "md:col-span-2 xl:col-span-1",
 };
 
 /** The five tools as a bento grid: the calculator large, the director tools around it. */

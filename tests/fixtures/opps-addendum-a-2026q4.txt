@@ -1,0 +1,26 @@
+	Addendum A.- OPPS APCs for CY 2026																												
+	Inflation-adjusted 3-digit coinsurance percentage may not precisely reflect the copayment amount due to rounding calculations.																												
+	"For the subset of providers to which the 340B remedy offset applies, adjusted OPPS payment rates can be calculated by applying the ratio 0.9951 to payments and copayments associated with status indicators J1, J2, P, Q1, Q2, Q3, R, S, S1, T, U, V"																												
+APC	Group Title	SI	Relative Weight	Payment Rate	National Unadjusted Copayment	Minimum Unadjusted Copayment	IRA Coinsurance percentage	Adjusted Beneficiary Copayment	Drug and Device Pass-Through Expiration during Calendar Year	Note	* Indicates a Change																		
+0892	"Inj, denosumab-bnht, 1 mg"	G		$28.702	.	$5.75		$5.75		8% of reference add-on applied	*																		
+0902	"Injection,onabotulinumtoxinA"	K		$6.514	.	$1.31		$1.31			*																		
+0930	Pembrolizumab 1mg berahyalur	G		$32.307	.	$6.47		$6.47			*																		
+1490	Inj pembrolizumab	K		$62.253	.	$12.46		$12.46			*																		
+1745	Radium ra223 dichloride ther	K		$180.422	.	$36.09		$36.09			*																		
+1847	"Injection, inflectra"	K		$28.456	.	$5.70		$5.70		8% of reference add-on applied	*																		
+5012	Clinic Visits and Related Services	V	1.4879	$136.02	.	$27.21																							
+5691	Level 1 Drug Administration	S	0.5233	$47.84	.	$9.57																							
+5692	Level 2 Drug Administration	S	0.8047	$73.56	.	$14.72																							
+5693	Level 3 Drug Administration	S	2.3772	$217.31	.	$43.47																							
+5694	Level 4 Drug Administration	S	3.6915	$337.46	.	$67.50																							
+7043	Infliximab not biosimil 10mg	K		$29.856	.	$5.98		$5.98			*																		
+9036	"Injection, renflexis"	K		$25.649	.	$5.13		$5.13		8% of reference add-on applied	*																		
+9186	"Inj., rituximab, 10 mg"	K		$72.094	.	$14.42		$14.42			*																		
+9256	Dexamethasone intra implant	K		$202.424	.	$40.49		$40.49			*																		
+9272	"Inj, denosumab"	K		$29.856	.	$5.98	17.885%	$5.34		Inflation-adjusted coinsurance	*																		
+9308	Dexametha opth insert 0.1 mg	K1		$87.902	.	$17.59		$17.59			*																		
+9336	Inj truxima 10 mg	K		$35.988	.	$7.20		$7.20		8% of reference add-on applied	*																		
+9367	"Inj ruxience, 10 mg"	K		$5.792	.	$1.16		$1.16			*																		
+9381	"Inj. avsola, 10 mg"	K		$34.686	.	$6.94		$6.94			*																		
+9411	"Inj. riabni, 10 mg"	K		$21.083	.	$4.22		$4.22		8% of reference add-on applied	*																		
+9467	"Inj rituximab, hyaluronidase"	K		$36.265	.	$7.26		$7.26			*																		

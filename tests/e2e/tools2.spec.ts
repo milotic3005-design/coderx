@@ -67,3 +67,36 @@ test.describe("biosimilar switch simulator, capacity planner, RSS", () => {
     expect(xml).toContain("J9312 payment limit $73.278 → $72.094");
   });
 });
+
+test.describe("site of care: HOPD vs home infusion", () => {
+  test("prices Medicare HOPD from the OPPS addenda and compares commercial terms", async ({ page }) => {
+    await page.goto("/tools/site-of-care?code=J9312&units=50", { waitUntil: "networkidle" });
+    await expect(page.getByText("Paid separately (non-pass-through drug or biological)")).toBeVisible();
+    const table = page.getByRole("table", { name: "Expected revenue per month at each site, by payer" });
+    const medicare = table.getByRole("row", { name: /Medicare fee-for-service/ });
+    // 50 × $72.094 + (Level 4 $337.46 + Level 2 $73.56) × 0.9951, Medicare share less 2%.
+    await expect(medicare).toContainText("$3,949.49");
+    await expect(medicare).toContainText("Add the missing inputs");
+
+    await page.getByRole("checkbox", { name: /Part B covers this drug at home/ }).check();
+    await expect(medicare).toContainText("$3,547.02");
+    await expect(medicare).toContainText("HOPD by $402.47/mo");
+
+    await page.getByLabel("HOPD drug amount").fill("150");
+    await page.getByLabel("HOPD administration amount").fill("200");
+    await page.getByLabel("Home drug amount").fill("120");
+    const commercial = table.getByRole("row", { name: /Commercial/ });
+    await expect(commercial).toContainText("$6,225.06");
+    await expect(commercial).toContainText("$4,325.64");
+  });
+
+  test("adds an Apple Health supply from the HCA schedule", async ({ page }) => {
+    await page.goto("/tools/site-of-care?code=J9312&units=50", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "A4222" }).click();
+    await page.getByLabel(/HOPD: EAPG payment/).fill("1800");
+    await page.getByLabel(/Home: drug payment/).fill("68");
+    const row = page.getByRole("table", { name: "Expected revenue per month at each site, by payer" }).getByRole("row", { name: /Washington Apple Health/ });
+    await expect(row).toContainText("$3,447.35"); // 50 × $68 + A4222 at the HCA maximum of $47.35
+    await expect(row).toContainText("Home infusion by $1,647.35/mo");
+  });
+});

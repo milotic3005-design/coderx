@@ -85,7 +85,11 @@ export default function MethodologyPage() {
             <p>
               Medicare Part B payment limits are shown per HCPCS billing unit exactly as published (three decimals), with the effective quarter, the ASP data quarter CMS cites, co-insurance percentage, and CMS notes. The “methodology” label is read only from the file’s own columns and notes (for example, vaccine AWP percentage or a CMS note about the biosimilar add-on). When CMS re-posts a quarter with different values, the earlier value is shown as a revision.
             </p>
-            <p className="mt-3">Not included: hospital outpatient (OPPS) rates from Addendum B (distributed under the AMA CPT license), commercial payer rates, AWP, WAC, and 340B pricing.</p>
+            <p className="mt-3">
+              Hospital outpatient (OPPS) rates come from CMS Addendum A (payment by APC) and Addendum B (status indicator and rate per HCPCS code) for the current quarter. CMS distributes both under its AMA CPT license page; CodeRx keeps only HCPCS Level II rows and APCs with CMS group titles, never CPT codes or descriptors. They feed the{" "}
+              <Link href="/tools/site-of-care">site-of-care tool</Link>, which applies the hospital wage index you enter to 60% of each APC rate.
+            </p>
+            <p className="mt-3">Not included: commercial payer rates, AWP, WAC, and 340B pricing.</p>
           </Section>
 
           <Section id="units" number="06" title="Billing units and the calculator">

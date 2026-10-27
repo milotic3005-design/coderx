@@ -2,13 +2,14 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
-import { discoverMdrp, mdrpUrl, parseAspLandingPage, parseHcpcsLandingPage, parseMueLandingPage, parsePurpleBookDownloads, recentQuarters } from "@/ingest/discover";
+import { discoverMdrp, mdrpUrl, parseAspLandingPage, parseOppsLandingPage, parseOppsQuarterPage, parseHcpcsLandingPage, parseMueLandingPage, parsePurpleBookDownloads, recentQuarters } from "@/ingest/discover";
 import { csvFields, parseMdrpStream } from "@/ingest/parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "@/ingest/parsers/cms-mue";
 import { crosswalkTypeFromFileName, parseCrosswalkCsv } from "@/ingest/parsers/cms-crosswalk";
 import { deriveMethodology, parseNotPayableCsv, parsePaymentLimitCsv } from "@/ingest/parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, splitPharmClasses } from "@/ingest/parsers/fda";
 import { parseHcpcsFixedWidth, parseNocCodeRows } from "@/ingest/parsers/hcpcs";
+import { parseOppsAddendumA, parseOppsAddendumB } from "@/ingest/parsers/cms-opps";
 import { effectiveDateOf, parseStateFeeSchedule } from "@/ingest/parsers/state-fee-schedule";
 import { decodeText } from "@/ingest/text-decode";
 import { parseEffectiveRange, parseLongDate, parseUsDate, parseYmd, periodFromMonthYear, quarterBounds } from "@/ingest/values";
@@ -307,5 +308,57 @@ describe("publisher landing-page discovery", () => {
       publicationLabel: "Effective October 1, 2026; Posted September 1, 2026",
       publicationDate: "2026-09-01",
     });
+  });
+});
+
+describe("CMS OPPS addenda (real October 2026 excerpts)", () => {
+  const text = fixture;
+  it("Addendum B: HCPCS Level II status indicators and rates, the remedy offset note, no CPT rows", () => {
+    const b = parseOppsAddendumB(text("opps-addendum-b-2026q4.txt") + "96413\tChemo iv infusion 1 hr\tS\t5694\t3.6915\t$337.46\t.\t$67.50\r\nD0120\tPeriodic oral eval\tB\r\n");
+    expect(b.calendarYear).toBe("CY 2026");
+    expect(b.rows).toHaveLength(24);
+    expect(b.excludedCpt).toBe(1);
+    expect(b.excludedDental).toBe(1);
+    expect(b.rows.some((r) => /^\d/.test(r.hcpcsCode))).toBe(false);
+    expect(b.rows.find((r) => r.hcpcsCode === "J0897")).toEqual({
+      hcpcsCode: "J0897",
+      apc: "9272",
+      statusIndicator: "K",
+      relativeWeight: null,
+      paymentRate: "29.856",
+      nationalCopay: null,
+      minimumCopay: "5.98",
+      iraCoinsurancePct: "17.885",
+      adjustedCopay: "5.34",
+      passThroughExpiration: null,
+      note: "Inflation-adjusted coinsurance",
+    });
+    expect(b.rows.find((r) => r.hcpcsCode === "J1100")).toMatchObject({ statusIndicator: "N", paymentRate: null });
+    expect(b.remedyOffset).toMatchObject({ ratio: 0.9951, statusIndicators: ["J1", "J2", "P", "Q1", "Q2", "Q3", "R", "S", "S1", "T", "U", "V"] });
+  });
+  it("Addendum A: APC rates with CMS group titles", () => {
+    const a = parseOppsAddendumA(text("opps-addendum-a-2026q4.txt"));
+    expect(a.rows.find((r) => r.apc === "5694")).toMatchObject({ title: "Level 4 Drug Administration", statusIndicator: "S", relativeWeight: "3.6915", paymentRate: "337.46", minimumCopay: "67.50" });
+    expect(a.rows.filter((r) => /Drug Administration$/.test(r.title ?? "")).map((r) => r.apc)).toEqual(["5691", "5692", "5693", "5694"]);
+    expect(a.remedyOffset?.ratio).toBe(0.9951);
+  });
+});
+
+describe("OPPS addenda discovery", () => {
+  const landing = `<a href="/medicare/payment/prospective-payment-systems/hospital-outpatient-pps/quarterly-addenda-updates/july-2026-addendum"><a href="/medicare/payment/prospective-payment-systems/hospital-outpatient-pps/quarterly-addenda-updates/october-2026-addendum-b">B</a><a href="/medicare/payment/prospective-payment-systems/hospital-outpatient-pps/quarterly-addenda-updates/october-2026-addendum">A</a><a href="/medicare/payment/prospective-payment-systems/hospital-outpatient-pps/quarterly-addenda-updates/april-2026-addendum-q">Q</a>`;
+  it("lists each addendum's quarter pages newest first", () => {
+    expect(parseOppsLandingPage(landing, "cms_opps_addendum_a").map((p) => p.period)).toEqual(["2026-Q4", "2026-Q3"]);
+    expect(parseOppsLandingPage(landing, "cms_opps_addendum_b").map((p) => p.period)).toEqual(["2026-Q4"]);
+  });
+  it("takes the zip path out of CMS's AMA license link", () => {
+    const page = `<li><a href=' https://www.cms.gov/apps/ama/license.asp?file=/files/zip/October-2026-OPPS-Addendum-B.zip'>Addendum B - Updated 10/15/2026</a></li>`;
+    expect(parseOppsQuarterPage(page, "2026-Q4", "cms_opps_addendum_b")).toEqual({
+      sourceKey: "cms_opps_addendum_b",
+      period: "2026-Q4",
+      url: "https://www.cms.gov/files/zip/October-2026-OPPS-Addendum-B.zip",
+      publicationLabel: "Addendum B - Updated 10/15/2026",
+      publicationDate: "2026-10-15",
+    });
+    expect(parseOppsQuarterPage(page, "2026-Q4", "cms_opps_addendum_a")).toBeNull();
   });
 });

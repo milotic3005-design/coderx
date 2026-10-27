@@ -5,7 +5,7 @@
  * A native modal <dialog> (focus trap and Escape built in) with a WAI-ARIA combobox
  * and listbox inside. Suggestions come from the same /api/suggest endpoint as search.
  */
-import { Armchair, ArrowRight, Calculator, ClipboardCheck, Command, CornerDownLeft, Database, FileSearch, GitCompareArrows, History, LoaderCircle, Moon, Scale, ScanLine, Search, Sun, Wrench } from "lucide-react";
+import { Armchair, ArrowRight, Calculator, ClipboardCheck, Command, CornerDownLeft, Database, FileSearch, GitCompareArrows, History, Hospital, LoaderCircle, Moon, Scale, ScanLine, Search, Sun, Wrench } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -39,6 +39,7 @@ const NAV_ITEMS: Omit<Item, "id" | "group">[] = [
   { title: "Vial barcode scanner", subtitle: "Scan a vial or carton: NDC, code, units, lot, expiry", href: "/tools/scan", icon: icon(ScanLine), keywords: "scan barcode camera vial gs1 datamatrix lot expiry" },
   { title: "Chargemaster & formulary audit", subtitle: "Check a list of codes and NDCs", href: "/tools/audit", icon: icon(ClipboardCheck), keywords: "cdm audit crosswalk ndc list" },
   { title: "Margin analyzer", subtitle: "Your cost vs. Medicare payment", href: "/tools/margin", icon: icon(Scale), keywords: "cost margin underwater asp" },
+  { title: "Site of care: HOPD vs home", subtitle: "Where a therapy is paid more, by payer", href: "/tools/site-of-care", icon: icon(Hospital), keywords: "site of care hopd hospital outpatient home infusion opps apc eapg apple health commercial" },
   { title: "Biosimilar comparator", subtitle: "Reference products and biosimilars", href: "/tools/biosimilars", icon: icon(GitCompareArrows), keywords: "biosimilar reference purple book" },
   { title: "What changed this quarter", subtitle: "Payment-limit movers, new and terminated codes", href: "/tools/changes", icon: icon(History), keywords: "changes quarter new terminated watchlist rss feed" },
   { title: "Chair capacity planner", subtitle: "Utilization, chairs needed, day packing", href: "/tools/capacity", icon: icon(Armchair), keywords: "chairs capacity schedule utilization operations" },

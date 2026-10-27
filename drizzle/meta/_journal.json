@@ -43,6 +43,13 @@
       "when": 1792705887740,
       "tag": "0005_state_fee_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793069049981,
+      "tag": "0006_opps_addenda",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { Armchair, Calculator, ClipboardCheck, GitCompareArrows, History, Scale, ScanLine } from "lucide-react";
+import { Armchair, Calculator, ClipboardCheck, GitCompareArrows, History, Hospital, Scale, ScanLine } from "lucide-react";
 
 /** The Tools section, in the order shown on /tools and in the footer. */
 export const TOOLS = [
@@ -29,6 +29,13 @@ export const TOOLS = [
     title: "Margin analyzer",
     who: "Directors and finance",
     body: "Compare your own acquisition cost with the Medicare Part B payment (ASP-based limit, net of sequestration) per billing unit and per package, and find drugs that are underwater. Your costs never leave your browser.",
+  },
+  {
+    href: "/tools/site-of-care",
+    icon: Hospital,
+    title: "Site of care: HOPD vs home",
+    who: "Infusion and pharmacy directors",
+    body: "Monthly revenue for one therapy in your hospital outpatient department versus your home infusion pharmacy (no Medicare HIT certification), for Medicare, Washington Apple Health, and your commercial contracts — from CMS OPPS rates, the HCA schedule, and terms you enter.",
   },
   {
     href: "/tools/biosimilars",

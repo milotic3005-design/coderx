@@ -433,3 +433,86 @@ export async function quarterlyChanges(period: string | null, dbArg?: Database) 
 }
 
 export type QuarterlyChanges = Awaited<ReturnType<typeof quarterlyChanges>>;
+
+/* ------------------------------------------------------------------ */
+/* Site of care: HOPD vs home infusion                                 */
+/* ------------------------------------------------------------------ */
+
+const num = (v: string | null | undefined) => (v == null || v === "" ? null : Number(v));
+
+/** Official inputs for the site-of-care comparison of one drug code. */
+export async function siteOfCareData(code: string, dbArg?: Database) {
+  const db = dbArg ?? (await getDb());
+  const { latest } = await loadReleases(db);
+  const payRel = latest.get("cms_payment_limits") ?? null;
+  const oppsA = latest.get("cms_opps_addendum_a") ?? null;
+  const oppsB = latest.get("cms_opps_addendum_b") ?? null;
+  const hcaRel = latest.get("wa_hca_home_infusion") ?? null;
+  const [codeRows, payRows, oppsRows, apcRows, hcaRows] = await Promise.all([
+    db.select({ code: t.hcpcsCodes.code, longDescription: t.hcpcsCodes.longDescription, isDrug: t.hcpcsCodes.isDrug, terminationDate: t.hcpcsCodes.terminationDate }).from(t.hcpcsCodes).where(eq(t.hcpcsCodes.code, code)),
+    payRel?.periodLabel
+      ? db
+          .select({ p: t.paymentLimits })
+          .from(t.paymentLimits)
+          .innerJoin(t.sourceReleases, and(eq(t.sourceReleases.id, t.paymentLimits.sourceReleaseId), eq(t.sourceReleases.isCurrent, true)))
+          .where(and(eq(t.paymentLimits.hcpcsCode, code), eq(t.paymentLimits.period, payRel.periodLabel)))
+      : [],
+    oppsB ? db.select().from(t.oppsRates).where(and(eq(t.oppsRates.hcpcsCode, code), eq(t.oppsRates.sourceReleaseId, oppsB.id))) : [],
+    oppsA
+      ? db
+          .select()
+          .from(t.oppsApcRates)
+          .where(and(eq(t.oppsApcRates.sourceReleaseId, oppsA.id), sql`(${t.oppsApcRates.title} ~* 'drug administration$' OR ${t.oppsApcRates.apc} = '5012')`))
+          .orderBy(asc(t.oppsApcRates.apc))
+      : [],
+    hcaRel
+      ? db
+          .select({ row: t.stateFeeSchedule, shortDescription: t.hcpcsCodes.shortDescription })
+          .from(t.stateFeeSchedule)
+          .leftJoin(t.hcpcsCodes, eq(t.hcpcsCodes.code, t.stateFeeSchedule.hcpcsCode))
+          .where(eq(t.stateFeeSchedule.sourceReleaseId, hcaRel.id))
+          .orderBy(asc(t.stateFeeSchedule.hcpcsCode), asc(t.stateFeeSchedule.modifier))
+      : [],
+  ]);
+  const row = codeRows[0] ?? null;
+  const p = payRows[0]?.p ?? null;
+  const o = oppsRows[0] ?? null;
+  const details = (oppsA?.report as { details?: { remedyOffset?: { ratio: number; statusIndicators: string[]; text: string } | null } } | null)?.details;
+  return {
+    code,
+    found: !!row,
+    longDescription: row?.longDescription ?? null,
+    isDrug: row?.isDrug ?? false,
+    isActive: row ? isCodeActive(row.terminationDate, today()) : false,
+    asp: p ? { period: p.period, limit: num(p.paymentLimit), dosage: p.dosageDescriptor, coinsurancePct: num(p.coinsurancePct) } : null,
+    opps: o
+      ? {
+          period: o.period,
+          statusIndicator: o.statusIndicator,
+          apc: o.apc,
+          paymentRate: num(o.paymentRate),
+          copayPerUnit: num(o.adjustedCopay) ?? num(o.nationalCopay) ?? num(o.minimumCopay),
+          iraCoinsurancePct: num(o.iraCoinsurancePct),
+          note: o.note,
+          passThroughExpiration: o.passThroughExpiration,
+        }
+      : null,
+    apcs: apcRows
+      .filter((a) => a.paymentRate != null)
+      .map((a) => ({ apc: a.apc, title: a.title, statusIndicator: a.statusIndicator, paymentRate: Number(a.paymentRate), copay: num(a.nationalCopay) ?? num(a.minimumCopay) })),
+    apcPeriod: oppsA?.periodLabel ?? null,
+    remedyOffset: details?.remedyOffset ?? null,
+    hca: hcaRel
+      ? {
+          effectiveDate: hcaRel.effectiveStart ?? hcaRel.periodLabel,
+          rows: hcaRows.map(({ row: r, shortDescription }) => ({ code: r.hcpcsCode, modifier: r.modifier, label: shortDescription, statusIndicator: r.statusIndicator, fees: r.fees, priorAuth: r.priorAuth })),
+        }
+      : null,
+    provenance: (["cms_opps_addendum_b", "cms_opps_addendum_a", "cms_payment_limits", "wa_hca_home_infusion", "cms_hcpcs"] as const)
+      .map((k) => latest.get(k))
+      .filter((r): r is ReleaseRow => !!r)
+      .map((r) => toProvenance(r)),
+  };
+}
+
+export type SiteOfCareData = Awaited<ReturnType<typeof siteOfCareData>>;

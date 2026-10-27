@@ -136,6 +136,52 @@ export function parseMueLandingPage(html: string): ReleaseCandidate[] {
   return [...out.values()];
 }
 
+const MONTH_QUARTER: Record<string, number> = { january: 1, april: 2, july: 3, october: 4 };
+
+type OppsKey = "cms_opps_addendum_a" | "cms_opps_addendum_b";
+/** Quarter page slug ("october-2026-addendum" for A, "…-addendum-b" for B) and zip name per addendum. */
+const OPPS_PAGES: Record<OppsKey, { page: RegExp; zip: RegExp }> = {
+  cms_opps_addendum_a: { page: /\/quarterly-addenda-updates\/(january|april|july|october)-(\d{4})-(?:opps-)?addendum$/i, zip: /\/files\/zip\/[^/]*-addendum\.zip$/i },
+  cms_opps_addendum_b: { page: /\/quarterly-addenda-updates\/(january|april|july|october)-(\d{4})-addendum-b$/i, zip: /\/files\/zip\/[^/]*addendum[-_]?b[^/]*\.zip$/i },
+};
+
+/** Quarter pages for one addendum listed on the OPPS quarterly addenda page, newest first. */
+export function parseOppsLandingPage(html: string, key: OppsKey): { period: string; pageUrl: string }[] {
+  // Plain href scan: the page nests anchors, which defeats link-text extraction.
+  const out = new Map<string, string>();
+  for (const [, href] of html.matchAll(/href\s*=\s*["']\s*([^"'#?]+?)\s*["']/gi)) {
+    const url = new URL(href, "https://www.cms.gov");
+    const m = url.pathname.match(OPPS_PAGES[key].page);
+    if (m && isOfficial(url.toString(), ["www.cms.gov"])) out.set(`${m[2]}-Q${MONTH_QUARTER[m[1].toLowerCase()]}`, url.toString());
+  }
+  return [...out].map(([period, pageUrl]) => ({ period, pageUrl })).sort((a, b) => b.period.localeCompare(a.period));
+}
+
+/**
+ * The addendum zip on one quarter page, with its posting label ("Addendum B - Updated
+ * 10/15/2026"). CMS routes the link through its AMA license page
+ * (/apps/ama/license.asp?file=/files/zip/…); the file path is taken from it.
+ */
+export function parseOppsQuarterPage(html: string, period: string, key: OppsKey): ReleaseCandidate | null {
+  for (const link of extractLinks(html, "https://www.cms.gov")) {
+    if (!isOfficial(link.href, ["www.cms.gov"])) continue;
+    const u = new URL(link.href);
+    const path = u.pathname.endsWith("/license.asp") ? (u.searchParams.get("file") ?? "") : u.pathname;
+    if (!OPPS_PAGES[key].zip.test(path)) continue;
+    return { sourceKey: key, period, url: new URL(path, "https://www.cms.gov").toString(), publicationLabel: link.text || null, publicationDate: latestUsDate(link.text) };
+  }
+  return null;
+}
+
+/** Newest OPPS addendum: the landing page lists one page per quarter; the zip link is on that page. */
+export async function discoverOpps(key: OppsKey, landingHtml: string, fetch = fetchPage): Promise<ReleaseCandidate[]> {
+  for (const page of parseOppsLandingPage(landingHtml, key).slice(0, 2)) {
+    const candidate = parseOppsQuarterPage(await fetch(page.pageUrl), page.period, key);
+    if (candidate) return [candidate];
+  }
+  return [];
+}
+
 export function mdrpUrl(period: string): string {
   const [year, q] = period.split("-Q");
   return `https://download.medicaid.gov/data/drugproducts-q${q}-${year}.csv`;
@@ -191,8 +237,17 @@ export async function discoverReleases(): Promise<{ candidates: ReleaseCandidate
     .catch((error) => {
       errors.push(`Medicaid product data: ${error instanceof Error ? error.message : String(error)}`);
     });
+  const opps = fetchPage(SOURCES.cms_opps_addendum_b.landingPageUrl)
+    .then((html) => Promise.all([discoverOpps("cms_opps_addendum_a", html), discoverOpps("cms_opps_addendum_b", html)]))
+    .then((found) => {
+      candidates.push(...found.flat());
+    })
+    .catch((error) => {
+      errors.push(`OPPS Addendum B: ${error instanceof Error ? error.message : String(error)}`);
+    });
   await Promise.all([
     mdrp,
+    opps,
     ...tasks.map(async ([url, parse]) => {
       try {
         candidates.push(...parse(await fetchPage(url)));

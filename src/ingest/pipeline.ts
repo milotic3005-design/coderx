@@ -12,6 +12,7 @@ import { download, streamDownload, streamFromBytes, type DownloadOptions, type D
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
 import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
+import { parseOppsAddendumA, parseOppsAddendumB } from "./parsers/cms-opps";
 import { parseNotPayableCsv, parsePaymentLimitCsv } from "./parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, type FdaPackage, type FdaProduct } from "./parsers/fda";
 import { parseHcpcsFixedWidth, parseNocCodeRows, type Rejected } from "./parsers/hcpcs";
@@ -552,6 +553,71 @@ function parsePurpleBookRelease(file: Downloaded): Parsed {
   };
 }
 
+function parseOppsApcRelease(file: Downloaded, period: string): Parsed {
+  const entries = unzipVerified(file.bytes, (n) => /addendum[ _-]?a\b.*\.txt$/i.test(baseName(n)));
+  const txt = entries[0];
+  if (!txt) throw new ValidationError("Addendum A archive: the Section 508 text file was not found.");
+  const decoded = decodeText(txt.data);
+  const parsed = parseOppsAddendumA(decoded.text);
+  assertPlausible(parsed.rows.length >= 300, `Addendum A has only ${parsed.rows.length} APCs; expected at least 300.`);
+  assertPlausible(parsed.rows.some((r) => /drug administration/i.test(r.title ?? "")), "Addendum A has no drug administration APCs.");
+  const bounds = quarterBounds(period);
+  return {
+    fileName: baseName(txt.name),
+    encoding: decoded.encoding,
+    effectiveStart: bounds.start,
+    effectiveEnd: bounds.end,
+    recordCount: parsed.rows.length,
+    rejected: parsed.rejected,
+    warnings: parsed.remedyOffset ? [] : ["No 340B remedy offset note found in the file header."],
+    details: { calendarYear: parsed.calendarYear, remedyOffset: parsed.remedyOffset },
+    load: async (tx, releaseId) => {
+      await tx.delete(t.oppsApcRates).where(eq(t.oppsApcRates.period, period));
+      await insertBatches(
+        tx,
+        t.oppsApcRates,
+        parsed.rows.map((r) => ({ ...r, period, sourceReleaseId: releaseId })),
+        14,
+      );
+      return { rows: parsed.rows.length };
+    },
+  };
+}
+
+function parseOppsRelease(file: Downloaded, period: string): Parsed {
+  const entries = unzipVerified(file.bytes, (n) => /addendum[ _-]?b.*\.txt$/i.test(baseName(n)));
+  const txt = entries[0];
+  if (!txt) throw new ValidationError("Addendum B archive: the Section 508 text file was not found.");
+  const decoded = decodeText(txt.data);
+  const parsed = parseOppsAddendumB(decoded.text);
+  assertPlausible(parsed.rows.length >= 3000, `Addendum B has only ${parsed.rows.length} HCPCS Level II rows; expected at least 3,000.`);
+  assertPlausible(parsed.rows.some((r) => r.statusIndicator === "K" && r.paymentRate), "Addendum B has no separately paid drugs (status indicator K).");
+  const bounds = quarterBounds(period);
+  const warnings: string[] = [];
+  if (!parsed.remedyOffset) warnings.push("No 340B remedy offset note found in the file header.");
+  return {
+    fileName: baseName(txt.name),
+    encoding: decoded.encoding,
+    effectiveStart: bounds.start,
+    effectiveEnd: bounds.end,
+    recordCount: parsed.rows.length,
+    rejected: parsed.rejected,
+    excluded: { cptRows: parsed.excludedCpt, dentalRows: parsed.excludedDental },
+    warnings,
+    details: { calendarYear: parsed.calendarYear, remedyOffset: parsed.remedyOffset },
+    load: async (tx, releaseId) => {
+      await tx.delete(t.oppsRates).where(eq(t.oppsRates.period, period));
+      await insertBatches(
+        tx,
+        t.oppsRates,
+        parsed.rows.map((r) => ({ ...r, period, sourceReleaseId: releaseId })),
+        14,
+      );
+      return { rows: parsed.rows.length };
+    },
+  };
+}
+
 function parseStateFeeRelease(file: Downloaded, period: string, sourceKey: keyof typeof STATE_FEE_SOURCES): Parsed {
   const { state, program } = STATE_FEE_SOURCES[sourceKey];
   const parsed = parseStateFeeSchedule(readFirstSheet(file.bytes));
@@ -699,6 +765,12 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
       case "wa_hca_home_infusion":
         parsed = parseStateFeeRelease(file, period, candidate.sourceKey);
         break;
+      case "cms_opps_addendum_a":
+        parsed = parseOppsApcRelease(file, period);
+        break;
+      case "cms_opps_addendum_b":
+        parsed = parseOppsRelease(file, period);
+        break;
       default:
         if (!isMueSource(candidate.sourceKey)) throw new Error(`Unknown source ${String(candidate.sourceKey)}`);
         parsed = parseMueRelease(file, period, candidate.sourceKey);
@@ -789,4 +861,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "wa_hca_home_infusion"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion"];

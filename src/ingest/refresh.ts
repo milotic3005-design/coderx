@@ -31,7 +31,7 @@ export interface RefreshResult {
   durationMs: number;
 }
 
-const QUARTERLY: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "cms_mdrp_products"];
+const QUARTERLY: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "cms_mdrp_products", "cms_opps_addendum_a", "cms_opps_addendum_b"];
 
 async function currentReleases(db: Database, sourceKey: SourceKey) {
   return db
