@@ -56,7 +56,11 @@ interface SourcesResponse {
 async function cmsLimits(): Promise<{ period: string; byCode: Map<string, { limit: number | null; dosage: string | null }> }> {
   let candidate = manifestFor("cms_payment_limits").at(-1)!;
   try {
-    const found = parseAspLandingPage(await fetchPage(SOURCES.cms_payment_limits.landingPageUrl)).sort((a, b) => (a.period ?? "").localeCompare(b.period ?? "")).at(-1);
+    // The ASP page also lists the NDC–HCPCS crosswalks; keep payment limit files only.
+    const found = parseAspLandingPage(await fetchPage(SOURCES.cms_payment_limits.landingPageUrl))
+      .filter((c) => c.sourceKey === "cms_payment_limits")
+      .sort((a, b) => (a.period ?? "").localeCompare(b.period ?? ""))
+      .at(-1);
     if (found) candidate = found;
   } catch {
     // CMS page unreachable: the pinned manifest file is used.
