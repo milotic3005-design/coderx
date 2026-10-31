@@ -88,7 +88,7 @@ describe("hospital rates per CMS billing unit", () => {
 });
 
 describe("per-line amounts", () => {
-  it("keeps amounts over 10x the CMS limit per unit out of the per-unit figures", () => {
+  it("keeps amounts above the gross charge (or 25x the CMS limit without one) out of the per-unit figures", () => {
     const row = { hospitalKey: "auburn", setting: "outpatient", billingClass: "facility", methodology: "fee schedule", drugQuantity: 10, drugUnit: "ME", percentContracts: 0, algorithmContracts: 0, grossMin: null, grossMax: null };
     // Real J9312 amounts at Auburn: Apple Health managed care lines of $3,103–$3,351, commercial $93–$455.
     const s = summarizeRates(
@@ -102,5 +102,19 @@ describe("per-line amounts", () => {
     expect(s.find((x) => x.planType === "medicaid_managed_care")).toMatchObject({ perUnit: [], lineAmounts: [3103.24, 3351.5] });
     expect(s.find((x) => x.planType === "commercial")).toMatchObject({ perUnit: [93.22, 455.38], lineAmounts: [] });
     expect(lineAmountsByPlanType(s)).toEqual([{ planType: "medicaid_managed_care", contracts: 2, min: 3103.24, median: 3227.37, max: 3351.5 }]);
+  });
+  it("keeps high percent-of-charges rates that stay under the hospital's gross charge", () => {
+    // Real Mary Bridge J9312 rows: commercial $863.42 against a $1,060.71 gross charge; Apple Health $3,413.26.
+    const row = { hospitalKey: "mary-bridge", setting: "outpatient", billingClass: "facility", drugQuantity: 10, drugUnit: "ME", percentContracts: 0, algorithmContracts: 0, grossMin: 780.46, grossMax: 1060.71 };
+    const s = summarizeRates(
+      [
+        { ...row, planType: "commercial", methodology: "percent of total billed charges", amounts: [863.42] },
+        { ...row, planType: "medicaid_managed_care", methodology: "fee schedule", amounts: [3413.26] },
+      ],
+      parseCmsDosage("10 MG"),
+      72.094,
+    );
+    expect(s.find((x) => x.planType === "commercial")).toMatchObject({ perUnit: [863.42], lineAmounts: [] });
+    expect(s.find((x) => x.planType === "medicaid_managed_care")).toMatchObject({ perUnit: [], lineAmounts: [3413.26] });
   });
 });

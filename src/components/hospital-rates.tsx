@@ -57,7 +57,7 @@ export function HospitalRatesTable({ code, rates, billingUnit, unitText, payment
         <ul className="space-y-1 text-sm text-ink-muted">
           {lines.map((l) => (
             <li key={l.planType}>
-              <span className="font-semibold text-ink">{PLAN_TYPE_LABELS[l.planType]}:</span> {l.contracts} contract amount{l.contracts === 1 ? "" : "s"} over {LINE_AMOUNT_MULTIPLE}× the CMS limit per unit ({usd(l.min)}–{usd(l.max)}, median {usd(l.median)}) — too large for a per-unit rate; likely a payment per claim line, not shown above.
+              <span className="font-semibold text-ink">{PLAN_TYPE_LABELS[l.planType]}:</span> {l.contracts} contract amount{l.contracts === 1 ? "" : "s"} above the hospital&apos;s own gross charge ({usd(l.min)}–{usd(l.max)}, median {usd(l.median)}) — too large for a per-unit rate; likely a payment per claim line, not shown above.
             </li>
           ))}
         </ul>
@@ -101,7 +101,7 @@ export function HospitalRatesTable({ code, rates, billingUnit, unitText, payment
       ) : null}
       <p className="text-xs text-ink-muted">
         From each hospital&apos;s federally required price transparency file ({rates.hospitals.map((h) => `${h.name}: ${formatDate(h.lastUpdatedOn)}`).join("; ")}). Outpatient facility rates priced by fee schedule or percent of billed charges, converted to the CMS billing unit when the file&apos;s drug measure allows it. Payer and plan names are not
-        shown; plan type is derived from the plan name in each file. &ldquo;Other contracts&rdquo; are case rates, percent- or algorithm-only terms, measures that do not convert, and amounts over {LINE_AMOUNT_MULTIPLE}× the CMS limit per unit.
+        shown; plan type is derived from the plan name in each file. &ldquo;Other contracts&rdquo; are case rates, percent- or algorithm-only terms, measures that do not convert, and amounts above the hospital&apos;s gross charge for the same quantity (or {LINE_AMOUNT_MULTIPLE}× the CMS limit when no gross charge is listed).
       </p>
     </div>
   );
