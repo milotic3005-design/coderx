@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { anonymize, parseHospitalMrfStream, planTypeOf } from "@/ingest/parsers/hospital-mrf";
 import { parseCmsDosage } from "@/lib/billing";
-import { median, pooledByPlanType, summarizeRates, toBillingUnitFactor } from "@/lib/hospital-rates";
+import { lineAmountsByPlanType, median, pooledByPlanType, summarizeRates, toBillingUnitFactor } from "@/lib/hospital-rates";
 import { FIXTURE_DIR } from "../helpers/fixtures";
 
 // Real rows from MultiCare Yakima Memorial's price transparency file (CMS template v3.0.0).
@@ -37,6 +37,17 @@ describe("hospital price transparency file parser", () => {
     expect(fee.amounts).toContain(174.78);
     expect(fee.amounts).toEqual([...fee.amounts].sort((a, b) => a - b));
     expect(groups.some((g) => g.code === "J9312" && g.planType === "medicaid_managed_care" && g.methodology === "case rate")).toBe(true);
+  });
+
+  it("keeps one amount per payer-plan contract, using the median of its chargemaster lines", () => {
+    const base = { code: "J9312", setting: "outpatient", billingClass: "facility", methodology: "percent of total billed charges", percentage: null, algorithm: null, drugQuantity: 10, drugUnit: "ME", modifiers: "", ndcs: [], descriptions: [], grossMin: null, grossMax: null, cashMin: null, cashMax: null, rows: 1 };
+    const [g] = anonymize([
+      { ...base, payer: "A", plan: "PPO", dollar: 200 },
+      { ...base, payer: "A", plan: "PPO", dollar: 220 },
+      { ...base, payer: "A", plan: "PPO", dollar: 260 },
+      { ...base, payer: "B", plan: "HMO", dollar: 300 },
+    ]);
+    expect(g.amounts).toEqual([220, 300]);
   });
 
   it("classifies plans from the names in the file", () => {
@@ -73,5 +84,23 @@ describe("hospital rates per CMS billing unit", () => {
     expect(medicaid.otherContracts).toBeGreaterThan(0);
     const pooled = pooledByPlanType(j9312, 72.094);
     expect(pooled.map((p) => p.planType)).toEqual(["commercial", "medicare_advantage"]);
+  });
+});
+
+describe("per-line amounts", () => {
+  it("keeps amounts over 10x the CMS limit per unit out of the per-unit figures", () => {
+    const row = { hospitalKey: "auburn", setting: "outpatient", billingClass: "facility", methodology: "fee schedule", drugQuantity: 10, drugUnit: "ME", percentContracts: 0, algorithmContracts: 0, grossMin: null, grossMax: null };
+    // Real J9312 amounts at Auburn: Apple Health managed care lines of $3,103–$3,351, commercial $93–$455.
+    const s = summarizeRates(
+      [
+        { ...row, planType: "medicaid_managed_care", amounts: [3103.24, 3351.5] },
+        { ...row, planType: "commercial", amounts: [93.22, 455.38] },
+      ],
+      parseCmsDosage("10 MG"),
+      72.094,
+    );
+    expect(s.find((x) => x.planType === "medicaid_managed_care")).toMatchObject({ perUnit: [], lineAmounts: [3103.24, 3351.5] });
+    expect(s.find((x) => x.planType === "commercial")).toMatchObject({ perUnit: [93.22, 455.38], lineAmounts: [] });
+    expect(lineAmountsByPlanType(s)).toEqual([{ planType: "medicaid_managed_care", contracts: 2, min: 3103.24, median: 3227.37, max: 3351.5 }]);
   });
 });

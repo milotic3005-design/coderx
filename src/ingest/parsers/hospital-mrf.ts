@@ -62,6 +62,11 @@ const num = (v: string | undefined) => {
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 };
+const medianOf = (values: number[]) => {
+  const s = [...values].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
 const minOf = (a: number | null, b: number | null) => (a == null ? b : b == null ? a : Math.min(a, b));
 const maxOf = (a: number | null, b: number | null) => (a == null ? b : b == null ? a : Math.max(a, b));
 
@@ -196,24 +201,24 @@ export interface HospitalRateGroup {
   cashMax: number | null;
 }
 
+/**
+ * One amount per payer-plan contract in each group. A contract priced as a percent of
+ * charges yields a different dollar amount for every chargemaster line (each line has its
+ * own gross charge), so a contract with several amounts is represented by their median.
+ */
 export function anonymize(contracts: HospitalDrugContract[]): HospitalRateGroup[] {
-  const groups = new Map<string, HospitalRateGroup & { seen: Set<string>; pct: Set<string>; alg: Set<string> }>();
+  const groups = new Map<string, HospitalRateGroup & { byContract: Map<string, number[]>; pct: Set<string>; alg: Set<string> }>();
   for (const c of contracts) {
     const planType = planTypeOf(c.payer, c.plan);
     const key = JSON.stringify([c.code, planType, c.setting, c.billingClass, c.methodology, c.drugQuantity, c.drugUnit]);
     let g = groups.get(key);
     if (!g) {
-      g = { code: c.code, planType, setting: c.setting, billingClass: c.billingClass, methodology: c.methodology, drugQuantity: c.drugQuantity, drugUnit: c.drugUnit, amounts: [], percentContracts: 0, algorithmContracts: 0, grossMin: null, grossMax: null, cashMin: null, cashMax: null, seen: new Set(), pct: new Set(), alg: new Set() };
+      g = { code: c.code, planType, setting: c.setting, billingClass: c.billingClass, methodology: c.methodology, drugQuantity: c.drugQuantity, drugUnit: c.drugUnit, amounts: [], percentContracts: 0, algorithmContracts: 0, grossMin: null, grossMax: null, cashMin: null, cashMax: null, byContract: new Map(), pct: new Set(), alg: new Set() };
       groups.set(key, g);
     }
     const contract = `${c.payer}\u0000${c.plan}`;
-    if (c.dollar != null) {
-      const k = `${contract}\u0000${c.dollar}`;
-      if (!g.seen.has(k)) {
-        g.seen.add(k);
-        g.amounts.push(c.dollar);
-      }
-    } else if (c.percentage != null) g.pct.add(contract);
+    if (c.dollar != null) g.byContract.set(contract, [...(g.byContract.get(contract) ?? []), c.dollar]);
+    else if (c.percentage != null) g.pct.add(contract);
     else if (c.algorithm) g.alg.add(contract);
     g.grossMin = minOf(g.grossMin, c.grossMin);
     g.grossMax = maxOf(g.grossMax, c.grossMax);
@@ -228,7 +233,7 @@ export function anonymize(contracts: HospitalDrugContract[]): HospitalRateGroup[
     methodology: g.methodology,
     drugQuantity: g.drugQuantity,
     drugUnit: g.drugUnit,
-    amounts: g.amounts.sort((a, b) => a - b),
+    amounts: [...g.byContract.values()].map((v) => Math.round(medianOf(v) * 100) / 100).sort((a, b) => a - b),
     percentContracts: g.pct.size,
     algorithmContracts: g.alg.size,
     grossMin: g.grossMin,

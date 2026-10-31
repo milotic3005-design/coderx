@@ -2,10 +2,13 @@
  * MultiCare price benchmark refresh, run on the operator's Mac (the files are 1–1.4 GB each).
  * Monthly via scripts/price-benchmark-launchd.sh; see docs/05-operations.md.
  *
- *   CODERX_ADMIN_TOKEN=… npm run refresh:price-benchmark -- --base-url https://<domain> [--dry-run] [--force] [--only yakima-memorial,valley] [--out <dir>]
+ *   CODERX_ADMIN_TOKEN=… npm run refresh:price-benchmark -- --base-url https://<domain> [--dry-run] [--force] [--refetch] [--only yakima-memorial,valley] [--out <dir>]
+ *
+ *   --force    upload again even when the site already has the file (e.g. after a change in anonymization)
+ *   --refetch  download again even when the file's Last-Modified matches the local cache
  *
  * For each MultiCare hospital file (src/ingest/hospitals.ts):
- * 1. HEAD the file; when its Last-Modified matches the local cache (and not --force), reuse the cache.
+ * 1. HEAD the file; when its Last-Modified matches the local cache (and not --refetch), reuse the cache.
  * 2. Otherwise stream it, keeping only HCPCS drug rows (src/ingest/parsers/hospital-mrf.ts), and cache
  *    the contracts (payer and plan names included) under <out>/cache/.
  * 3. Upload the anonymized groups (no payer or plan names) to POST /api/admin/hospital-rates, unless the
@@ -53,7 +56,9 @@ interface SourcesResponse {
 }
 
 /** CMS payment limit and billing unit per code, from the newest Part B payment limit file. */
-async function cmsLimits(): Promise<{ period: string; byCode: Map<string, { limit: number | null; dosage: string | null }> }> {
+type CmsLimits = { period: string; byCode: Map<string, { limit: number | null; dosage: string | null; shortDescription: string | null }> };
+
+async function cmsLimits(): Promise<CmsLimits> {
   let candidate = manifestFor("cms_payment_limits").at(-1)!;
   try {
     // The ASP page also lists the NDC–HCPCS crosswalks; keep payment limit files only.
@@ -69,13 +74,32 @@ async function cmsLimits(): Promise<{ period: string; byCode: Map<string, { limi
   const entry = unzipVerified(file.bytes, (n) => n.toLowerCase().endsWith(".csv")).find((e) => /(payment limit file|asp pricing file)/i.test(baseName(e.name)) && !/not payable/i.test(e.name));
   if (!entry) throw new Error(`No payment limit CSV in ${candidate.url}`);
   const rows = parsePaymentLimitCsv(decodeText(entry.data).text).rows;
-  return { period: candidate.period ?? "", byCode: new Map(rows.map((r) => [r.hcpcsCode, { limit: r.paymentLimit == null ? null : Number(r.paymentLimit), dosage: r.dosageDescriptor }])) };
+  return { period: candidate.period ?? "", byCode: new Map(rows.map((r) => [r.hcpcsCode, { limit: r.paymentLimit == null ? null : Number(r.paymentLimit), dosage: r.dosageDescriptor, shortDescription: r.shortDescription }])) };
 }
 
-async function loadHospital(h: HospitalFile, cacheDir: string, force: boolean): Promise<Cached> {
+/** CodeRx unit → CMS template drug_type_of_measurement. */
+const TEMPLATE_UNIT: Record<string, string> = { mg: "ME", g: "GR", ml: "ML", iu: "F2", each: "EA" };
+const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+
+/**
+ * A row with no drug quantity whose description is CMS's own short descriptor for the code
+ * ("Inj., rituximab, 10 mg") prices the HCPCS code itself: give it the CMS billing unit.
+ */
+function withHcpcsUnits(contracts: HospitalDrugContract[], cms: CmsLimits): HospitalDrugContract[] {
+  return contracts.map((c) => {
+    if (c.drugQuantity != null || c.drugUnit) return c;
+    const row = cms.byCode.get(c.code);
+    const dosage = parseCmsDosage(row?.dosage ?? null);
+    const unit = dosage ? TEMPLATE_UNIT[dosage.unit] : undefined;
+    if (!row?.shortDescription || !dosage || !unit || !c.descriptions.some((d) => norm(d) === norm(row.shortDescription!))) return c;
+    return { ...c, drugQuantity: dosage.amount, drugUnit: unit };
+  });
+}
+
+async function loadHospital(h: HospitalFile, cacheDir: string, refetch: boolean): Promise<Cached> {
   const cachePath = join(cacheDir, `${h.key}.json`);
   const head = await headInfo(h.url);
-  if (!force && existsSync(cachePath)) {
+  if (!refetch && existsSync(cachePath)) {
     const cached = JSON.parse(readFileSync(cachePath, "utf8")) as Cached;
     if (cached.lastModified && cached.lastModified === head.lastModified && cached.hospital.url === h.url) {
       log(`${h.key}: unchanged since ${cached.lastModified} (cached)`);
@@ -101,8 +125,8 @@ async function loadHospital(h: HospitalFile, cacheDir: string, force: boolean): 
   return cached;
 }
 
-async function upload(base: string, token: string, c: Cached, force: boolean) {
-  const groups = anonymize(c.contracts);
+async function upload(base: string, token: string, c: Cached, force: boolean, cms: CmsLimits) {
+  const groups = anonymize(withHcpcsUnits(c.contracts, cms));
   const body = JSON.stringify({ hospitalKey: c.hospital.key, file: { url: c.hospital.url, sha256: c.sha256, bytes: c.bytes, lastModified: c.lastModified }, meta: c.meta, stats: c.stats, groups, force });
   if (body.length > UPLOAD_MAX_BYTES) throw new Error(`${c.hospital.key}: upload is ${body.length} bytes, over the ${UPLOAD_MAX_BYTES}-byte limit.`);
   const res = await fetch(`${base}/api/admin/hospital-rates`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "User-Agent": USER_AGENT }, body });
@@ -117,13 +141,13 @@ const csvCell = (v: unknown) => {
 };
 const esc = (s: string) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
 
-function writeReport(out: string, hospitals: Cached[], cms: Awaited<ReturnType<typeof cmsLimits>>) {
+function writeReport(out: string, hospitals: Cached[], cms: CmsLimits) {
   const header = ["hospital", "hcpcs_code", "payer", "plan", "plan_type", "setting", "billing_class", "methodology", "negotiated_dollar", "negotiated_percentage", "negotiated_algorithm", "drug_quantity", "drug_unit", "per_cms_billing_unit", "cms_billing_unit", "cms_payment_limit", "pct_of_cms_limit", "gross_min", "gross_max", "cash_min", "cash_max", "ndcs", "chargemaster_descriptions", "file_last_updated"];
   const lines = [header.join(",")];
   // code → payer|plan → per-unit amounts and hospitals (outpatient facility, per-unit methodologies).
   const byCode = new Map<string, Map<string, { payer: string; plan: string; planType: string; perUnit: number[]; hospitals: Set<string> }>>();
   for (const h of hospitals) {
-    for (const c of h.contracts) {
+    for (const c of withHcpcsUnits(h.contracts, cms)) {
       const cmsRow = cms.byCode.get(c.code);
       const factor = toBillingUnitFactor(c.drugQuantity, c.drugUnit, parseCmsDosage(cmsRow?.dosage ?? null));
       const perUnit = c.dollar != null && factor != null ? Math.round(c.dollar * factor * 100) / 100 : null;
@@ -160,7 +184,7 @@ function writeReport(out: string, hospitals: Cached[], cms: Awaited<ReturnType<t
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MultiCare drug rates (private)</title>
 <style>body{font:15px/1.45 system-ui,sans-serif;margin:24px;color:#1b1b1b;background:#fff}h1{font-size:22px;margin:0 0 4px}p{color:#555;margin:4px 0 16px}input{font:inherit;padding:8px 10px;width:12rem;text-transform:uppercase}table{border-collapse:collapse;margin-top:16px;width:100%}th,td{border-bottom:1px solid #ddd;padding:6px 8px;text-align:left;font-variant-numeric:tabular-nums}th{background:#f4f4f4;font-size:13px}td.n{text-align:right}</style></head><body>
 <h1>MultiCare negotiated drug rates — private report</h1>
-<p>Built ${esc(new Date().toISOString().slice(0, 10))} from ${hospitals.length} hospital files (${esc(hospitals.map((h) => `${h.hospital.name}: ${h.meta.lastUpdatedOn ?? "?"}`).join("; "))}). Outpatient facility contracts priced by fee schedule or percent of billed charges, per CMS billing unit; CMS payment limits from ${esc(cms.period)}. Contains payer names: keep this file private. Full detail: multicare-drug-rates.csv.</p>
+<p>Built ${esc(new Date().toISOString().slice(0, 10))} from ${hospitals.length} hospital files (${esc(hospitals.map((h) => `${h.hospital.name}: ${h.meta.lastUpdatedOn ?? "?"}`).join("; "))}). Outpatient facility contracts priced by fee schedule or percent of billed charges, per CMS billing unit; CMS payment limits from ${esc(cms.period)}. Rows with no drug quantity whose description is CMS's short descriptor are treated as priced per CMS billing unit. A median far above the CMS limit (over 10×) is usually a payment per claim line (e.g. Apple Health managed care drug lines), not a per-unit rate. Contains payer names: keep this file private. Full detail: multicare-drug-rates.csv.</p>
 <label>HCPCS code <input id="q" placeholder="J9312" autofocus></label><div id="out"></div>
 <script>const D=${JSON.stringify(data).replace(/</g, "\\u003c")};const e=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);const money=n=>n==null?"—":"$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 function show(){const c=document.getElementById("q").value.trim().toUpperCase();const d=D[c];const o=document.getElementById("out");if(!d){o.innerHTML=c?"<p>No outpatient per-unit contracts for "+c.replace(/[^A-Z0-9]/g,"")+".</p>":"";return}
@@ -175,6 +199,7 @@ async function main() {
   if (!/^https?:\/\//.test(base)) throw new Error("Set --base-url or CODERX_BASE_URL to the deployment origin.");
   const dryRun = has("--dry-run");
   const force = has("--force");
+  const refetch = has("--refetch");
   const only = arg("--only")?.split(",").map((s) => s.trim());
   const out = arg("--out") ?? join(homedir(), "Documents", "CodeRx Price Benchmark");
   const cacheDir = join(out, "cache");
@@ -193,11 +218,11 @@ async function main() {
   let failures = 0;
   for (const h of MULTICARE_HOSPITALS.filter((x) => !only || only.includes(x.key))) {
     try {
-      const c = await loadHospital(h, cacheDir, force);
+      const c = await loadHospital(h, cacheDir, refetch);
       done.push(c);
       if (onSite.has(`${h.key}|${c.sha256}`) && !force) log(`${h.key}: already on the site (SHA-256 ${c.sha256.slice(0, 12)}…)`);
-      else if (dryRun) log(`${h.key}: dry run — would upload ${anonymize(c.contracts).length} anonymized groups`);
-      else await upload(base, token!, c, force);
+      else if (dryRun) log(`${h.key}: dry run — would upload ${anonymize(withHcpcsUnits(c.contracts, cms)).length} anonymized groups`);
+      else await upload(base, token!, c, force, cms);
     } catch (error) {
       failures++;
       log(`${h.key}: FAILED — ${error instanceof Error ? error.message : String(error)}`);

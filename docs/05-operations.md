@@ -77,7 +77,7 @@ MultiCare's price transparency files are 1–1.4 GB each, too large for a Vercel
 ```bash
 scripts/price-benchmark-launchd.sh install     # monthly: the 3rd at 06:00 local time
 scripts/price-benchmark-launchd.sh status
-scripts/price-benchmark-launchd.sh run         # run now (add --dry-run, --force, or --only yakima-memorial,valley)
+scripts/price-benchmark-launchd.sh run         # run now (add --dry-run, --force to re-upload, --refetch to re-download, or --only yakima-memorial,valley)
 scripts/price-benchmark-launchd.sh uninstall
 ```
 
