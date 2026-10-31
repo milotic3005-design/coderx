@@ -1,4 +1,4 @@
-import { Calculator, ClipboardCheck, GitCompareArrows, History, Hospital, Scale, ScanLine } from "lucide-react";
+import { Calculator, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, Scale, ScanLine } from "lucide-react";
 
 /** The Tools section, in the order shown on /tools and in the footer. */
 export const TOOLS = [
@@ -50,5 +50,12 @@ export const TOOLS = [
     title: "What changed this quarter",
     who: "Everyone who maintains a chargemaster",
     body: "Payment-limit movers, new and terminated drug codes, codes added to or dropped from the payment file, and NDCs added to or removed from the CMS crosswalk — with a personal watchlist and an RSS feed.",
+  },
+  {
+    href: "/tools/intake",
+    icon: ClipboardList,
+    title: "Referral intake card",
+    who: "Intake and prior-authorization staff",
+    body: "One printable page per drug code: billing unit, MUEs, NDCs with claim unit qualifiers, the Medicare hospital and home payment path, Washington Apple Health prior authorization, and related biologics. No patient fields.",
   },
 ] as const;

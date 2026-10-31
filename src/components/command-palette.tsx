@@ -5,7 +5,7 @@
  * A native modal <dialog> (focus trap and Escape built in) with a WAI-ARIA combobox
  * and listbox inside. Suggestions come from the same /api/suggest endpoint as search.
  */
-import { ArrowRight, Calculator, ClipboardCheck, Command, CornerDownLeft, Database, FileSearch, GitCompareArrows, History, Hospital, LoaderCircle, Moon, Scale, ScanLine, Search, Sun, Wrench } from "lucide-react";
+import { ArrowRight, Calculator, ClipboardCheck, ClipboardList, Command, CornerDownLeft, Database, FileSearch, GitCompareArrows, History, Hospital, LoaderCircle, Moon, Scale, ScanLine, Search, Sun, Wrench } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -42,6 +42,7 @@ const NAV_ITEMS: Omit<Item, "id" | "group">[] = [
   { title: "Site of care: HOPD vs home", subtitle: "Where a therapy is paid more, by payer", href: "/tools/site-of-care", icon: icon(Hospital), keywords: "site of care hopd hospital outpatient home infusion opps apc eapg apple health commercial" },
   { title: "Biosimilar comparator", subtitle: "Reference products and biosimilars", href: "/tools/biosimilars", icon: icon(GitCompareArrows), keywords: "biosimilar reference purple book" },
   { title: "What changed this quarter", subtitle: "Payment-limit movers, new and terminated codes", href: "/tools/changes", icon: icon(History), keywords: "changes quarter new terminated watchlist rss feed" },
+  { title: "Referral intake card", subtitle: "Printable billing and PA summary for a drug code", href: "/tools/intake", icon: icon(ClipboardList), keywords: "intake referral prior authorization pa epa card print apple health" },
   { title: "All tools", href: "/tools", icon: icon(Wrench), keywords: "tools" },
   { title: "Search all records", href: "/search", icon: icon(FileSearch), keywords: "search" },
   { title: "Data sources & releases", href: "/sources", icon: icon(Database), keywords: "sources cms fda releases" },

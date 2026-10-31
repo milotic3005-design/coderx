@@ -99,3 +99,18 @@ test("the retired capacity planner URL redirects to the tools page", async ({ pa
   expect(page.url()).toMatch(/\/tools$/);
   expect(res?.status()).toBe(200);
 });
+
+test.describe("referral intake card", () => {
+  test("summarizes billing, payer requirements, and NDC qualifiers for a code", async ({ page }) => {
+    await page.goto("/tools/intake?code=J9312", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Intake card: J9312");
+    const ndcs = page.getByRole("table", { name: /NDCs mapped to J9312/ });
+    await expect(ndcs.getByRole("row", { name: /50242-0051-21/ })).toContainText("single-dose");
+    await expect(ndcs.getByRole("row", { name: /50242-0051-21/ })).toContainText("ML");
+    await expect(page.getByText("Paid separately (non-pass-through drug or biological)")).toBeVisible();
+    await expect(page.getByText("$72.09 maximum allowable")).toBeVisible();
+    await expect(page.getByText(/Apple Health \(professional claims\): PA required/)).toBeVisible();
+    await expect(page.getByText(/JW for discarded drug, JZ when none/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Print card" })).toBeVisible();
+  });
+});
