@@ -66,6 +66,8 @@ curl -sS -X POST "https://<domain>/api/admin/import" \
 
 Generate tokens with `openssl rand -base64 48`. Store `DATABASE_URL`, `CODERX_ADMIN_TOKEN`, and `CRON_SECRET` as **sensitive** Vercel environment variables. The Purple Book job reads `CODERX_ADMIN_TOKEN` from `.env.production.local` on the operator's Mac (below). No secret is read by client code; only `NEXT_PUBLIC_SITE_URL` is public.
 
+`CODERX_BENCHMARK_PASSWORD` (sensitive; production and preview) protects the MultiCare price benchmark: `/tools/price-benchmark`, the code-page section, and the site-of-care commercial hint render only for a browser holding the `coderx_benchmark` cookie, which `POST /api/benchmark-access` sets (httpOnly, 30 days) after a constant-time password check, rate-limited to 5 attempts per minute per IP. The cookie is an HMAC derived from the password, so changing the variable (and redeploying) signs everyone out. With the variable unset the benchmark stays locked. `/api/hcpcs/{code}` never returns the benchmark rows. The production E2E run reads the password from `.env.production.local`.
+
 ## MultiCare price benchmark (operator's Mac, monthly)
 
 MultiCare's price transparency files are 1–1.4 GB each, too large for a Vercel function, and by the operator's decision only anonymized aggregates are published. `scripts/refresh-price-benchmark.ts` (`npm run refresh:price-benchmark`) runs on the operator's Mac:

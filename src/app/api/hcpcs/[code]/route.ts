@@ -10,7 +10,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
     if (!parsed.success) return fail("INVALID_PARAMETER", "Invalid HCPCS code.", { request, details: issues(parsed.error) });
     const detail = await cachedHcpcsDetail(parsed.data);
     if (!detail) return fail("NOT_FOUND", `${parsed.data} is not in the CMS HCPCS Level II files imported by CodeRx.`, { request });
-    const { provenance, ...data } = detail;
+    // MultiCare benchmark rows are password protected on the site and never served by the API.
+    const { provenance, hospitalRates, ...data } = detail;
+    void hospitalRates;
     return ok(data, { provenance, match: { code: parsed.data } }, { request });
   });
 }

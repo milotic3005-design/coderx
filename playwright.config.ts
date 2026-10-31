@@ -17,6 +17,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}/api/health`,
     timeout: 300_000,
     reuseExistingServer: !process.env.CI,
-    env: { CODERX_PGLITE_DIR: ".data/e2e-pglite", DATABASE_URL: "", CODERX_DISABLE_DATA_CACHE: "1", NEXT_TELEMETRY_DISABLED: "1" },
+    // A test-only benchmark password (the production one lives in Vercel and .env.production.local).
+    env: { CODERX_PGLITE_DIR: ".data/e2e-pglite", DATABASE_URL: "", CODERX_DISABLE_DATA_CACHE: "1", NEXT_TELEMETRY_DISABLED: "1", CODERX_BENCHMARK_PASSWORD: "local-e2e-benchmark" },
   },
 });

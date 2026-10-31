@@ -55,6 +55,8 @@ export const LIMITERS = {
   /** Batch lookups (up to 500 lines per request). */
   audit: new FixedWindowLimiter(30, 60_000),
   admin: new FixedWindowLimiter(10, 60_000),
+  /** Benchmark password attempts. */
+  access: new FixedWindowLimiter(5, 60_000),
 };
 
 export function limiterFor(pathname: string): keyof typeof LIMITERS | null {
@@ -63,5 +65,6 @@ export function limiterFor(pathname: string): keyof typeof LIMITERS | null {
   if (pathname.startsWith("/api/audit")) return "audit";
   if (pathname.startsWith("/api/search")) return "search";
   if (pathname.startsWith("/api/admin") || pathname.startsWith("/api/cron")) return "admin";
+  if (pathname.startsWith("/api/benchmark-access")) return "access";
   return "read";
 }

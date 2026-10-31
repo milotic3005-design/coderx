@@ -5,6 +5,7 @@ import { ProvenanceFooter } from "@/components/provenance";
 import { SiteOfCareTool } from "@/components/tools/site-of-care-tool";
 import { cachedSiteOfCare } from "@/lib/data/cached";
 import { formatMoney, formatPeriod } from "@/lib/format";
+import { benchmarkUnlocked } from "@/lib/benchmark-access";
 import { normalizeHcpcs } from "@/lib/hcpcs";
 import { SI_MEANING } from "@/lib/opps";
 
@@ -35,7 +36,9 @@ export default async function SiteOfCarePage({ searchParams }: { searchParams: S
   const sp = await searchParams;
   const raw = param(sp.code);
   const code = raw ? normalizeHcpcs(raw) : null;
-  const data = code ? await cachedSiteOfCare(code) : null;
+  const cached = code ? await cachedSiteOfCare(code) : null;
+  // MultiCare benchmark figures are password protected; never send them to a locked browser.
+  const data = cached && !(await benchmarkUnlocked()) ? { ...cached, commercialBenchmark: null } : cached;
 
   return (
     <>

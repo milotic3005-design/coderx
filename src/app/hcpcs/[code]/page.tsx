@@ -9,6 +9,7 @@ import { BillingUnitCard, CodeHistoryTable, CrosswalkTable, LimitationsList, Pay
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
 import { GlanceStrip, type GlanceItem } from "@/components/glance";
+import { BenchmarkUnlockForm } from "@/components/benchmark-lock";
 import { HospitalRatesTable } from "@/components/hospital-rates";
 import { StickyRecordBar } from "@/components/sticky-record-bar";
 import { CoverageLinks, MueTable } from "@/components/tool-blocks";
@@ -17,6 +18,7 @@ import { formatDate, formatMoney, formatPeriod } from "@/lib/format";
 import { COVERAGE_CODES, NOC_CONTEXT, normalizeHcpcs, PRICING_INDICATORS } from "@/lib/hcpcs";
 import { SI_MEANING } from "@/lib/opps";
 import { SITE } from "@/lib/site";
+import { benchmarkUnlocked } from "@/lib/benchmark-access";
 import { STATE_FEE_SOURCES } from "@/ingest/sources";
 
 type Params = Promise<{ code: string }>;
@@ -43,6 +45,7 @@ export default async function HcpcsPage({ params }: { params: Params }) {
   if (!code) notFound();
   if (code !== raw) permanentRedirect(`/hcpcs/${code}`);
   const d = await cachedHcpcsDetail(code);
+  const unlocked = await benchmarkUnlocked();
   if (!d) notFound();
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
@@ -334,7 +337,12 @@ export default async function HcpcsPage({ params }: { params: Params }) {
                 <p className="mt-2 text-xs text-ink-muted">{STATE_FEE_SOURCES.wa_hca_professional_drugs.note}</p>
               </div>
             </div>
-            {d.hospitalRates.rows.length ? (
+            {d.hospitalRates.rows.length && !unlocked ? (
+              <div className="mt-6 max-w-xl">
+                <BenchmarkUnlockForm next={`/hcpcs/${code}#reimbursement`} compact />
+              </div>
+            ) : null}
+            {d.hospitalRates.rows.length && unlocked ? (
               <div className="mt-6">
                 <h3 className="mb-3 text-sm font-semibold text-ink">MultiCare negotiated rates (hospital price transparency files)</h3>
                 <HospitalRatesTable code={code} rates={d.hospitalRates} billingUnit={d.billingUnit.parsed} unitText={d.billingUnit.text} paymentLimit={isCurrentPayment && latest?.paymentLimit != null ? Number(latest.paymentLimit) : null} detail={false} />
@@ -345,7 +353,7 @@ export default async function HcpcsPage({ params }: { params: Params }) {
                 </p>
               </div>
             ) : null}
-            <ProvenanceFooter sources={[d.releases.payment, d.releases.opps, d.releases.appleHealthDrugs, ...d.hospitalRates.hospitals.filter((h) => d.hospitalRates.rows.some((r) => r.hospitalKey === h.key)).map((h) => h.release)]} />
+            <ProvenanceFooter sources={[d.releases.payment, d.releases.opps, d.releases.appleHealthDrugs, ...(unlocked ? d.hospitalRates.hospitals.filter((h) => d.hospitalRates.rows.some((r) => r.hospitalKey === h.key)).map((h) => h.release) : [])]} />
           </Section>
 
           <Section

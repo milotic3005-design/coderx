@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BenchmarkLockButton, BenchmarkUnlockForm } from "@/components/benchmark-lock";
 import { HospitalRatesTable } from "@/components/hospital-rates";
 import { Breadcrumbs, Callout, Disclaimer, PageHeader, Section } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
 import { cachedHcpcsDetail } from "@/lib/data/cached";
 import { formatMoney, formatPeriod } from "@/lib/format";
+import { benchmarkUnlocked } from "@/lib/benchmark-access";
 import { normalizeHcpcs } from "@/lib/hcpcs";
 import { SITE } from "@/lib/site";
 
@@ -21,6 +23,19 @@ export default async function PriceBenchmarkPage({ searchParams }: { searchParam
   const sp = await searchParams;
   const raw = typeof sp.code === "string" ? sp.code : "";
   const code = raw ? normalizeHcpcs(raw) : null;
+  const unlocked = await benchmarkUnlocked();
+  const here = `/tools/price-benchmark${code ? `?code=${code}` : ""}`;
+  if (!unlocked) {
+    return (
+      <>
+        <PageHeader eyebrow={<Breadcrumbs items={[{ href: "/tools", label: "Tools" }, { label: "MultiCare price benchmark" }]} />} title="MultiCare price benchmark" />
+        <div className="mb-10 max-w-xl">
+          <BenchmarkUnlockForm next={here} denied={sp.access === "denied"} />
+        </div>
+        <Disclaimer />
+      </>
+    );
+  }
   const d = code ? await cachedHcpcsDetail(code) : null;
   const latest = d?.payments[0] && d.payments[0].period === d.latestPaymentPeriod ? d.payments[0] : null;
   const limit = latest?.paymentLimit != null ? Number(latest.paymentLimit) : null;
@@ -41,6 +56,9 @@ export default async function PriceBenchmarkPage({ searchParams }: { searchParam
           Show rates
         </button>
       </form>
+      <div className="-mt-3 mb-6">
+        <BenchmarkLockButton next={here} />
+      </div>
       {!d ? (
         <>
           {raw ? (

@@ -115,20 +115,60 @@ test.describe("referral intake card", () => {
   });
 });
 
+// Local runs use the test server's password; production runs read the real one from the environment.
+const BENCHMARK_PASSWORD = process.env.CODERX_BENCHMARK_PASSWORD ?? "local-e2e-benchmark";
+
+async function unlockBenchmark(page: import("@playwright/test").Page, path = "/tools/price-benchmark?code=J9312") {
+  await page.goto(path, { waitUntil: "networkidle" });
+  const form = page.getByRole("form", { name: "Unlock the MultiCare price benchmark" });
+  await form.getByLabel("Password").fill(BENCHMARK_PASSWORD);
+  await form.getByRole("button", { name: "Unlock" }).click();
+  await page.waitForLoadState("networkidle");
+}
+
 test.describe("MultiCare price benchmark", () => {
-  test("shows anonymized negotiated rates per billing unit by plan type", async ({ page }) => {
+  test("is locked without the password, and a wrong password is refused", async ({ page, request }) => {
     await page.goto("/tools/price-benchmark?code=J9312", { waitUntil: "networkidle" });
+    await expect(page.getByRole("form", { name: "Unlock the MultiCare price benchmark" })).toBeVisible();
+    await expect(page.getByRole("table")).toHaveCount(0);
+    const form = page.getByRole("form", { name: "Unlock the MultiCare price benchmark" });
+    await form.getByLabel("Password").fill("not-the-password");
+    await form.getByRole("button", { name: "Unlock" }).click();
+    await expect(page.getByRole("form", { name: "Unlock the MultiCare price benchmark" }).getByRole("alert")).toHaveText("That password is not correct.");
+    expect(new URL(page.url()).searchParams.get("access")).toBe("denied");
+    await expect(page.getByRole("table")).toHaveCount(0);
+    // Locked pages and the public API carry none of the benchmark data.
+    await page.goto("/hcpcs/J9312", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: "MultiCare negotiated rates (hospital price transparency files)" })).toHaveCount(0);
+    await page.goto("/tools/site-of-care?code=J9312&units=50", { waitUntil: "networkidle" });
+    await expect(page.getByText(/MultiCare.s published commercial outpatient rates/)).toHaveCount(0);
+    const api = await (await request.get("/api/hcpcs/J9312")).json();
+    expect(api.data.hospitalRates).toBeUndefined();
+    expect(JSON.stringify(api)).not.toContain("yakima-memorial");
+  });
+
+  test("shows anonymized negotiated rates per billing unit by plan type once unlocked", async ({ page }) => {
+    await unlockBenchmark(page);
     const pooled = page.getByRole("table", { name: /MultiCare outpatient negotiated rates for J9312 per 10 MG, all hospitals, by plan type/ });
     await expect(pooled.getByRole("row", { name: /Commercial/ })).toBeVisible();
     await expect(pooled.getByRole("row", { name: /Medicare Advantage/ })).toBeVisible();
     await expect(page.getByRole("table", { name: /by MultiCare hospital and plan type/ })).toContainText("MultiCare Yakima Memorial Hospital");
     await expect(page.locator("main")).not.toContainText("Regence");
-  });
-
-  test("code pages and the site-of-care tool show the benchmark", async ({ page }) => {
+    // The cookie unlocks the code page section and the site-of-care hint too.
     await page.goto("/hcpcs/J9312", { waitUntil: "networkidle" });
     await expect(page.getByRole("heading", { name: "MultiCare negotiated rates (hospital price transparency files)" })).toBeVisible();
     await page.goto("/tools/site-of-care?code=J9312&units=50", { waitUntil: "networkidle" });
     await expect(page.getByText(/MultiCare.s published commercial outpatient rates for J9312: median \d+% of the CMS payment limit/)).toBeVisible();
+    // Lock again.
+    await page.goto("/tools/price-benchmark?code=J9312", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Lock" }).click();
+    await expect(page.getByRole("form", { name: "Unlock the MultiCare price benchmark" })).toBeVisible();
+  });
+
+  test("the unlocked benchmark has no serious accessibility violations", async ({ page }) => {
+    const AxeBuilder = (await import("@axe-core/playwright")).default;
+    await unlockBenchmark(page);
+    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+    expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
   });
 });
