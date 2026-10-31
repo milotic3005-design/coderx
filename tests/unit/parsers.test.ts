@@ -92,8 +92,27 @@ describe("state Medicaid fee schedule parser (real Washington HCA file)", () => 
     expect(parsed.rows.filter((r) => r.hcpcsCode === "E2102").map((r) => r.modifier)).toEqual(["NU", "RR", "UE"]);
     expect(parsed.rows.some((r) => r.hcpcsCode.startsWith("S"))).toBe(false);
   });
-  it("refuses a sheet without the Code and Modifier header", () => {
+  it("refuses a sheet without the Code and Maximum Allowable Fee header", () => {
     expect(() => parseStateFeeSchedule([["Health Care Authority"], ["Code", "Fee"]])).toThrow(/header row/);
+  });
+});
+
+describe("Washington HCA professional administered drug fee schedule (real file)", () => {
+  const parsed = parseStateFeeSchedule(readFirstSheet(new Uint8Array(readFileSync(join(FIXTURE_DIR, "wa-hca-professional-drugs-20261001.xlsx")))));
+  const row = (code: string, modifier: string | null = null) => parsed.rows.find((r) => r.hcpcsCode === code && r.modifier === modifier);
+  it("reads the title, the single fee column, and PA flags", () => {
+    expect(parsed.program).toBe("Professional Administered Drug Fee Schedule");
+    expect(parsed.effectiveDate).toBe("2026-10-01");
+    expect(parsed.rows).toHaveLength(1168);
+    expect(parsed.excludedCpt).toBe(106);
+    expect(row("J9312")).toMatchObject({ statusIndicator: "R", priorAuth: "PA", fees: [{ area: "Statewide", amount: "72.09", text: "72.09" }] });
+    expect(row("J1569")).toMatchObject({ priorAuth: null, fees: [{ area: "Statewide", amount: "49.5", text: "49.5" }] });
+    expect(row("J0174")?.fees[0]).toEqual({ area: "Statewide", amount: null, text: "AAC" });
+  });
+  it("splits a modifier written into the code cell and reports duplicate rows", () => {
+    expect(row("J3490", "HG")?.fees[0].amount).toBe("15.22");
+    expect(row("J3490", "TG")?.fees[0].amount).toBe("59.75");
+    expect(parsed.rejected.map((r) => r.reason)).toContain("Duplicate code and modifier J1050");
   });
 });
 
@@ -316,7 +335,8 @@ describe("CMS OPPS addenda (real October 2026 excerpts)", () => {
   it("Addendum B: HCPCS Level II status indicators and rates, the remedy offset note, no CPT rows", () => {
     const b = parseOppsAddendumB(text("opps-addendum-b-2026q4.txt") + "96413\tChemo iv infusion 1 hr\tS\t5694\t3.6915\t$337.46\t.\t$67.50\r\nD0120\tPeriodic oral eval\tB\r\n");
     expect(b.calendarYear).toBe("CY 2026");
-    expect(b.rows).toHaveLength(24);
+    expect(b.rows).toHaveLength(31);
+    expect(b.inpatientDeductible).toBe(1736);
     expect(b.excludedCpt).toBe(1);
     expect(b.excludedDental).toBe(1);
     expect(b.rows.some((r) => /^\d/.test(r.hcpcsCode))).toBe(false);
@@ -336,9 +356,28 @@ describe("CMS OPPS addenda (real October 2026 excerpts)", () => {
     expect(b.rows.find((r) => r.hcpcsCode === "J1100")).toMatchObject({ statusIndicator: "N", paymentRate: null });
     expect(b.remedyOffset).toMatchObject({ ratio: 0.9951, statusIndicators: ["J1", "J2", "P", "Q1", "Q2", "Q3", "R", "S", "S1", "T", "U", "V"] });
   });
+  it("Addendum B, July 2026 (comma-delimited 508 copy, drug rates rounded to cents)", () => {
+    const b = parseOppsAddendumB(text("opps-addendum-b-2026q3.csv"));
+    expect(b.rows).toHaveLength(31);
+    expect(b.rows.find((r) => r.hcpcsCode === "J0402")).toMatchObject({ statusIndicator: "G", passThroughExpiration: "*" });
+    expect(b.rows.find((r) => r.hcpcsCode === "J9312")).toMatchObject({ statusIndicator: "K", paymentRate: "73.28" });
+    expect(b.remedyOffset?.ratio).toBe(0.9951);
+  });
+  it("Addendum B from spreadsheet rows: full-precision floats and fractional IRA coinsurance", () => {
+    // Cells as the July 2026 XLSX stores them (readFirstSheet output).
+    const rows = [
+      ["", "Addendum B.-- OPPS Payment by HCPCS Code for CY 2026"],
+      ["HCPCS Code", "Short Descriptor", "SI", "APC", "Relative Weight", "Payment Rate", "National Unadjusted Copayment", " Minimum Unadjusted Copayment", "IRA Coinsurance Percentage", "Adjusted Beneficiary Copayment", "Drug and Device Pass-Through Expiration during Calendar Year", "Note", "* Indicates a Change"],
+      ["J0897", "Denosumab injection", "K", "9272", "", "30.100999999999999", ".", "6.0299999999999994", "0.17326", "5.22", "", "Inflation-adjusted coinsurance", "*"],
+      ["J9312", "Inj., rituximab, 10 mg", "K", "9186", "", "73.278000000000006", ".", "14.66", "", "14.66", "", "", "*"],
+    ];
+    const b = parseOppsAddendumB(rows);
+    expect(b.rows.find((r) => r.hcpcsCode === "J0897")).toMatchObject({ paymentRate: "30.101", minimumCopay: "6.03", iraCoinsurancePct: "17.326", adjustedCopay: "5.22" });
+    expect(b.rows.find((r) => r.hcpcsCode === "J9312")?.paymentRate).toBe("73.278");
+  });
   it("Addendum A: APC rates with CMS group titles", () => {
     const a = parseOppsAddendumA(text("opps-addendum-a-2026q4.txt"));
-    expect(a.rows.find((r) => r.apc === "5694")).toMatchObject({ title: "Level 4 Drug Administration", statusIndicator: "S", relativeWeight: "3.6915", paymentRate: "337.46", minimumCopay: "67.50" });
+    expect(a.rows.find((r) => r.apc === "5694")).toMatchObject({ title: "Level 4 Drug Administration", statusIndicator: "S", relativeWeight: "3.6915", paymentRate: "337.46", minimumCopay: "67.5" });
     expect(a.rows.filter((r) => /Drug Administration$/.test(r.title ?? "")).map((r) => r.apc)).toEqual(["5691", "5692", "5693", "5694"]);
     expect(a.remedyOffset?.ratio).toBe(0.9951);
   });
@@ -360,5 +399,7 @@ describe("OPPS addenda discovery", () => {
       publicationDate: "2026-10-15",
     });
     expect(parseOppsQuarterPage(page, "2026-Q4", "cms_opps_addendum_a")).toBeNull();
+    const july = `<a href='https://www.cms.gov/apps/ama/license.asp?file=/files/zip/july-2026-opps-addendum.zip'>July 2026 OPPS Addendum A - Updated July 21, 2026</a>`;
+    expect(parseOppsQuarterPage(july, "2026-Q3", "cms_opps_addendum_a")).toMatchObject({ url: "https://www.cms.gov/files/zip/july-2026-opps-addendum.zip", publicationDate: "2026-07-21" });
   });
 });

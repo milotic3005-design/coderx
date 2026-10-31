@@ -347,7 +347,7 @@ export interface LimitChange {
 export async function quarterlyChanges(period: string | null, dbArg?: Database) {
   const db = dbArg ?? (await getDb());
   // Two round trips: the quarter lists, then every per-quarter query at once.
-  const [{ latest }, periodRows, xwPeriodRows] = await Promise.all([
+  const [{ latest }, periodRows, xwPeriodRows, oppsPeriodRows] = await Promise.all([
     loadReleases(db),
     db
       .selectDistinct({ period: t.paymentLimits.period })
@@ -355,11 +355,17 @@ export async function quarterlyChanges(period: string | null, dbArg?: Database) 
       .innerJoin(t.sourceReleases, and(eq(t.sourceReleases.id, t.paymentLimits.sourceReleaseId), eq(t.sourceReleases.isCurrent, true)))
       .orderBy(desc(t.paymentLimits.period)),
     db.selectDistinct({ period: t.ndcHcpcsCrosswalk.period }).from(t.ndcHcpcsCrosswalk).where(eq(t.ndcHcpcsCrosswalk.crosswalkType, "ASP")).orderBy(desc(t.ndcHcpcsCrosswalk.period)),
+    db
+      .selectDistinct({ period: t.oppsRates.period })
+      .from(t.oppsRates)
+      .innerJoin(t.sourceReleases, and(eq(t.sourceReleases.id, t.oppsRates.sourceReleaseId), eq(t.sourceReleases.isCurrent, true)))
+      .orderBy(desc(t.oppsRates.period)),
   ]);
   const periods = periodRows.map((r) => r.period);
   const current = period && periods.includes(period) ? period : periods[0] ?? null;
   const previous = current ? (periods.find((p) => p < current) ?? null) : null;
-  if (!current) return { period: null, previous: null, periods, limitChanges: [], added: [], removed: [], newCodes: [], terminatedCodes: [], crosswalk: { added: [], removed: [], period: null, previous: null }, provenance: [] };
+  if (!current)
+    return { period: null, previous: null, periods, limitChanges: [], added: [], removed: [], newCodes: [], terminatedCodes: [], crosswalk: { added: [], removed: [], period: null, previous: null }, opps: null, provenance: [] };
 
   // NDC–HCPCS crosswalk changes between the two newest crosswalk quarters.
   const xwPeriods = xwPeriodRows.map((r) => r.period);
@@ -378,8 +384,20 @@ export async function quarterlyChanges(period: string | null, dbArg?: Database) 
       .selectDistinct({ ndc11: t.ndcHcpcsCrosswalk.ndc11, hcpcsCode: t.ndcHcpcsCrosswalk.hcpcsCode, labeler: t.ndcHcpcsCrosswalk.labelerName, drugName: t.ndcHcpcsCrosswalk.drugName })
       .from(t.ndcHcpcsCrosswalk)
       .where(and(eq(t.ndcHcpcsCrosswalk.period, p), eq(t.ndcHcpcsCrosswalk.crosswalkType, "ASP"), sql`${t.ndcHcpcsCrosswalk.ndc11} IS NOT NULL`));
+  // OPPS Addendum B for the same quarter and the latest earlier one (drug codes only).
+  const oppsPeriods = oppsPeriodRows.map((r) => r.period);
+  const oppsNow = oppsPeriods.includes(current) ? current : null;
+  const oppsPrev = oppsNow ? (oppsPeriods.find((p) => p < oppsNow) ?? null) : null;
+  const oppsFor = async (p: string) =>
+    db
+      .select({ code: t.oppsRates.hcpcsCode, si: t.oppsRates.statusIndicator, rate: t.oppsRates.paymentRate, passThrough: t.oppsRates.passThroughExpiration, longDescription: t.hcpcsCodes.longDescription })
+      .from(t.oppsRates)
+      .innerJoin(t.sourceReleases, and(eq(t.sourceReleases.id, t.oppsRates.sourceReleaseId), eq(t.sourceReleases.isCurrent, true)))
+      .innerJoin(t.hcpcsCodes, and(eq(t.hcpcsCodes.code, t.oppsRates.hcpcsCode), eq(t.hcpcsCodes.isDrug, true)))
+      .where(eq(t.oppsRates.period, p))
+      .orderBy(asc(t.oppsRates.hcpcsCode));
   const none = Promise.resolve([]);
-  const [now, before, hist, xwA, xwB] = await Promise.all([
+  const [now, before, hist, xwA, xwB, oppsA, oppsB] = await Promise.all([
     limitsFor(current),
     previous ? limitsFor(previous) : none,
     // HCPCS file changes for the same quarter (drug codes only).
@@ -391,6 +409,8 @@ export async function quarterlyChanges(period: string | null, dbArg?: Database) 
       .orderBy(asc(t.hcpcsCodeHistory.code)),
     xwNow && xwPrev ? xwRowsFor(xwNow) : none,
     xwNow && xwPrev ? xwRowsFor(xwPrev) : none,
+    oppsNow ? oppsFor(oppsNow) : none,
+    oppsPrev ? oppsFor(oppsPrev) : none,
   ]);
   const beforeMap = new Map(before.map((b) => [b.code, b]));
   const nowMap = new Map(now.map((b) => [b.code, b]));
@@ -414,7 +434,22 @@ export async function quarterlyChanges(period: string | null, dbArg?: Database) 
   const xwAdded = xwA.filter((r) => !bKeys.has(key(r))).map(shape);
   const xwRemoved = xwB.filter((r) => !aKeys.has(key(r))).map(shape);
 
-  const provenance = (["cms_payment_limits", "cms_hcpcs", "cms_ndc_hcpcs"] as const)
+  const oppsBefore = new Map(oppsB.map((r) => [r.code, r]));
+  const opps: OppsChanges | null = oppsNow
+    ? {
+        period: oppsNow,
+        previous: oppsPrev,
+        statusChanges: oppsPrev
+          ? oppsA
+              .filter((r) => oppsBefore.has(r.code) && oppsBefore.get(r.code)!.si !== r.si)
+              .map((r) => ({ code: r.code, longDescription: r.longDescription, before: oppsBefore.get(r.code)!.si, after: r.si, rate: r.rate == null ? null : Number(r.rate) }))
+          : [],
+        added: oppsPrev ? oppsA.filter((r) => !oppsBefore.has(r.code)).map((r) => ({ code: r.code, longDescription: r.longDescription, si: r.si, rate: r.rate == null ? null : Number(r.rate) })) : [],
+        passThroughExpiring: oppsA.filter((r) => r.si === "G" && r.passThrough).map((r) => ({ code: r.code, longDescription: r.longDescription, rate: r.rate == null ? null : Number(r.rate) })),
+      }
+    : null;
+
+  const provenance = (["cms_payment_limits", "cms_hcpcs", "cms_ndc_hcpcs", ...(opps ? (["cms_opps_addendum_b"] as const) : [])] as const)
     .map((k) => latest.get(k))
     .filter((r): r is ReleaseRow => !!r)
     .map((r) => toProvenance(r));
@@ -428,8 +463,20 @@ export async function quarterlyChanges(period: string | null, dbArg?: Database) 
     newCodes: hist.filter((h) => h.changeType === "added"),
     terminatedCodes: hist.filter((h) => h.changeType === "terminated"),
     crosswalk: { added: xwAdded, removed: xwRemoved, period: xwNow, previous: xwPrev },
+    opps,
     provenance,
   };
+}
+
+export interface OppsChanges {
+  period: string;
+  previous: string | null;
+  /** Drug codes whose OPPS status indicator changed (e.g. G → K when pass-through ends, K → N when packaged). */
+  statusChanges: { code: string; longDescription: string | null; before: string | null; after: string | null; rate: number | null }[];
+  /** Drug codes in this quarter's Addendum B that were not in the previous one. */
+  added: { code: string; longDescription: string | null; si: string | null; rate: number | null }[];
+  /** Pass-through drugs (status G) that CMS flags as expiring during the calendar year. */
+  passThroughExpiring: { code: string; longDescription: string | null; rate: number | null }[];
 }
 
 export type QuarterlyChanges = Awaited<ReturnType<typeof quarterlyChanges>>;
@@ -477,7 +524,9 @@ export async function siteOfCareData(code: string, dbArg?: Database) {
   const row = codeRows[0] ?? null;
   const p = payRows[0]?.p ?? null;
   const o = oppsRows[0] ?? null;
-  const details = (oppsA?.report as { details?: { remedyOffset?: { ratio: number; statusIndicators: string[]; text: string } | null } } | null)?.details;
+  type OppsDetails = { details?: { remedyOffset?: { ratio: number; statusIndicators: string[]; text: string } | null; inpatientDeductible?: number | null } } | null;
+  const details = (oppsA?.report as OppsDetails)?.details;
+  const detailsB = (oppsB?.report as OppsDetails)?.details;
   return {
     code,
     found: !!row,
@@ -502,6 +551,7 @@ export async function siteOfCareData(code: string, dbArg?: Database) {
       .map((a) => ({ apc: a.apc, title: a.title, statusIndicator: a.statusIndicator, paymentRate: Number(a.paymentRate), copay: num(a.nationalCopay) ?? num(a.minimumCopay) })),
     apcPeriod: oppsA?.periodLabel ?? null,
     remedyOffset: details?.remedyOffset ?? null,
+    inpatientDeductible: detailsB?.inpatientDeductible ?? details?.inpatientDeductible ?? null,
     hca: hcaRel
       ? {
           effectiveDate: hcaRel.effectiveStart ?? hcaRel.periodLabel,

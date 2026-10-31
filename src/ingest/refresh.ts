@@ -109,8 +109,18 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
     const newest = manifestFor(key).at(-1);
     if (!newest) continue;
     const [cur] = await currentReleases(db, key);
-    if (options.force || !cur || (newest.period ?? "") > (cur.periodLabel ?? "")) queue.push(newest);
-    else skipped.push({ sourceKey: key, reason: `${cur.periodLabel} is current` });
+    if (options.force || !cur || (newest.period ?? "") > (cur.periodLabel ?? "")) {
+      queue.push(newest);
+      continue;
+    }
+    // HCA re-posts a schedule at the same URL ("Updated October 29, 2026"); an unchanged file is skipped by checksum.
+    try {
+      const remote = parseHttpDate((await headInfo(newest.url)).lastModified);
+      if (remote && remote > cur.importedAt.slice(0, 10)) queue.push({ ...newest, publicationLabel: `${newest.publicationLabel ?? newest.period}; file modified ${remote}`, publicationDate: remote });
+      else skipped.push({ sourceKey: key, reason: `${cur.periodLabel} is current` });
+    } catch (error) {
+      skipped.push({ sourceKey: key, reason: `${cur.periodLabel} is current (HEAD check failed: ${error instanceof Error ? error.message : String(error)})` });
+    }
   }
 
   const order = IMPORT_ORDER;

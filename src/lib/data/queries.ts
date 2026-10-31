@@ -249,12 +249,32 @@ function billingUnit(code: { longDescription: string; isDrug: boolean }, payment
 /* HCPCS                                                               */
 /* ------------------------------------------------------------------ */
 
+/** Current OPPS Addendum B row (newest quarter) for each code. */
+export async function oppsFor(db: Database, codes: string[], latest: Map<string, ReleaseRow>) {
+  const rel = latest.get("cms_opps_addendum_b");
+  if (!rel || !codes.length) return new Map<string, typeof t.oppsRates.$inferSelect>();
+  const rows = await db.select().from(t.oppsRates).where(and(eq(t.oppsRates.sourceReleaseId, rel.id), inArray(t.oppsRates.hcpcsCode, codes)));
+  return new Map(rows.map((r) => [r.hcpcsCode, r]));
+}
+
+/** Washington Apple Health professional administered drug fee schedule rows for these codes. */
+export async function stateDrugFeesFor(db: Database, codes: string[], latest: Map<string, ReleaseRow>) {
+  const rel = latest.get("wa_hca_professional_drugs");
+  if (!rel || !codes.length) return { release: null, rows: [] as (typeof t.stateFeeSchedule.$inferSelect)[] };
+  const rows = await db
+    .select()
+    .from(t.stateFeeSchedule)
+    .where(and(eq(t.stateFeeSchedule.sourceReleaseId, rel.id), inArray(t.stateFeeSchedule.hcpcsCode, codes)))
+    .orderBy(asc(t.stateFeeSchedule.hcpcsCode), asc(t.stateFeeSchedule.modifier));
+  return { release: rel, rows };
+}
+
 export async function getHcpcsDetail(code: string, dbArg?: Database) {
   const db = dbArg ?? (await getDb());
   const [row] = await db.select().from(t.hcpcsCodes).where(eq(t.hcpcsCodes.code, code));
   if (!row) return null;
   const { byId, latest } = await loadReleases(db);
-  const [history, payments, notPayable, crossRefs, linkedDrugs] = await Promise.all([
+  const [history, payments, notPayable, crossRefs, linkedDrugs, opps, appleHealth] = await Promise.all([
     db.select().from(t.hcpcsCodeHistory).where(eq(t.hcpcsCodeHistory.code, code)).orderBy(desc(t.hcpcsCodeHistory.period)),
     paymentHistory(db, [code], byId),
     db
@@ -284,6 +304,8 @@ export async function getHcpcsDetail(code: string, dbArg?: Database) {
       .innerJoin(t.drugs, eq(t.drugs.id, t.codeRelationships.drugId))
       .where(and(eq(t.codeRelationships.kind, "DRUG_HCPCS"), eq(t.codeRelationships.hcpcsCode, code)))
       .orderBy(desc(t.codeRelationships.isCurrent), asc(t.drugs.displayName)),
+    oppsFor(db, [code], latest),
+    stateDrugFeesFor(db, [code], latest),
   ]);
   const latestCrosswalk = latest.get("cms_ndc_hcpcs")?.periodLabel ?? null;
   const [crosswalk, mue] = await Promise.all([crosswalkEntries(db, { codes: [code] }, latestCrosswalk), mueFor(db, [code], latest)]);
@@ -350,7 +372,15 @@ export async function getHcpcsDetail(code: string, dbArg?: Database) {
       .filter((d) => !linkedIds.includes(d.id))
       .map((d) => ({ ...d, relation: refIds.includes(d.id) ? ("reference" as const) : ("biosimilar" as const) })),
     purpleBookRelease: latest.get("fda_purple_book") ? toProvenance(latest.get("fda_purple_book")!) : null,
-    releases: { hcpcs: hcpcsRelease ? toProvenance(hcpcsRelease) : null, payment: codePayments[0] ? toProvenance(byId.get(codePayments[0].releaseId)!) : null, crosswalk: xwRelease ? toProvenance(xwRelease) : null },
+    opps: opps.get(code) ?? null,
+    appleHealthDrugFees: appleHealth.rows,
+    releases: {
+      hcpcs: hcpcsRelease ? toProvenance(hcpcsRelease) : null,
+      payment: codePayments[0] ? toProvenance(byId.get(codePayments[0].releaseId)!) : null,
+      crosswalk: xwRelease ? toProvenance(xwRelease) : null,
+      opps: latest.get("cms_opps_addendum_b") ? toProvenance(latest.get("cms_opps_addendum_b")!) : null,
+      appleHealthDrugs: appleHealth.release ? toProvenance(appleHealth.release) : null,
+    },
     provenance,
   };
 }
@@ -367,6 +397,7 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
   if (!drug) return null;
   const { byId, latest } = await loadReleases(db);
   const stateReleases = (Object.keys(STATE_FEE_SOURCES) as StateFeeSourceKey[]).flatMap((key) => {
+    if (STATE_FEE_SOURCES[key].kind !== "home_infusion") return [];
     const rel = latest.get(key);
     return rel ? [{ key, rel }] : [];
   });

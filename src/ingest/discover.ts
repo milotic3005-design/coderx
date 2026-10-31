@@ -168,18 +168,25 @@ export function parseOppsQuarterPage(html: string, period: string, key: OppsKey)
     const u = new URL(link.href);
     const path = u.pathname.endsWith("/license.asp") ? (u.searchParams.get("file") ?? "") : u.pathname;
     if (!OPPS_PAGES[key].zip.test(path)) continue;
-    return { sourceKey: key, period, url: new URL(path, "https://www.cms.gov").toString(), publicationLabel: link.text || null, publicationDate: latestUsDate(link.text) };
+    const longDate = link.text.match(/[A-Z][a-z]+ \d{1,2}, \d{4}/)?.[0];
+    return { sourceKey: key, period, url: new URL(path, "https://www.cms.gov").toString(), publicationLabel: link.text || null, publicationDate: latestUsDate(link.text) ?? (longDate ? parseLongDate(longDate) : null) };
   }
   return null;
 }
 
-/** Newest OPPS addendum: the landing page lists one page per quarter; the zip link is on that page. */
+/**
+ * The two newest quarters of an OPPS addendum (the second one lets the quarterly change
+ * report compare status indicators). The landing page lists one page per quarter; the
+ * zip link is on that page.
+ */
 export async function discoverOpps(key: OppsKey, landingHtml: string, fetch = fetchPage): Promise<ReleaseCandidate[]> {
-  for (const page of parseOppsLandingPage(landingHtml, key).slice(0, 2)) {
+  const out: ReleaseCandidate[] = [];
+  for (const page of parseOppsLandingPage(landingHtml, key).slice(0, 3)) {
     const candidate = parseOppsQuarterPage(await fetch(page.pageUrl), page.period, key);
-    if (candidate) return [candidate];
+    if (candidate) out.push(candidate);
+    if (out.length === 2) break;
   }
-  return [];
+  return out;
 }
 
 export function mdrpUrl(period: string): string {

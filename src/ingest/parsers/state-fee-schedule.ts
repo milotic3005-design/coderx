@@ -1,9 +1,10 @@
 /**
- * Parser for state Medicaid fee schedules published as spreadsheets, starting with
- * the Washington HCA "Home Infusion Therapy/Parenteral Nutrition Program" schedule:
- * a title block ("Effective July 1, 2026"), then a header row with Code, Modifier,
- * one "Maximum Allowable Fee <area>" column per payment area, PA/EPA, and Comments.
- * CPT rows (AMA-copyrighted) are counted and dropped.
+ * Parser for state Medicaid fee schedules published as spreadsheets: the Washington HCA
+ * "Home Infusion Therapy/Parenteral Nutrition Program" schedule (Code, Modifier, one
+ * "Maximum Allowable Fee <area>" column per payment area, PA/EPA, Comments) and the
+ * "Professional Administered Drug Fee Schedule" (Code, one "Maximum Allowable Fee"
+ * column, "PA Required", Comments; no modifier column). Both open with a title block
+ * ("Effective July 1, 2026"). CPT rows (AMA-copyrighted) are counted and dropped.
  */
 import { HCPCS_LEVEL2_RE, isCptLike } from "@/lib/hcpcs";
 import type { Rejected } from "./hcpcs";
@@ -62,10 +63,10 @@ const norm = (s: string | undefined) => (s ?? "").replace(/\s+/g, " ").trim().to
 export function parseStateFeeSchedule(rows: string[][]): StateFeeSchedule {
   const titleRows = rows.slice(0, 10).map((r) => r.filter(Boolean).join(" "));
   const effectiveDate = titleRows.map(effectiveDateOf).find(Boolean) ?? null;
-  const program = titleRows.find((t) => /program/i.test(t) && !/effective/i.test(t))?.trim() ?? null;
+  const program = titleRows.find((t) => /program|fee schedule/i.test(t) && !/effective|updated|authority|note/i.test(t))?.trim() ?? null;
 
-  const headerIdx = rows.findIndex((r) => r.some((c) => norm(c) === "code") && r.some((c) => norm(c) === "modifier"));
-  if (headerIdx < 0) throw new Error("Fee schedule: header row with 'Code' and 'Modifier' not found.");
+  const headerIdx = rows.findIndex((r) => r.some((c) => norm(c) === "code") && r.some((c) => /^maximum allowable fee/.test(norm(c))));
+  if (headerIdx < 0) throw new Error("Fee schedule: header row with 'Code' and 'Maximum Allowable Fee' not found.");
   const header = rows[headerIdx];
   const find = (test: (h: string) => boolean) => header.findIndex((h) => test(norm(h)));
   const c = {
@@ -85,7 +86,8 @@ export function parseStateFeeSchedule(rows: string[][]): StateFeeSchedule {
 
   rows.slice(headerIdx + 1).forEach((row, i) => {
     const lineNo = headerIdx + 2 + i;
-    const code = (row[c.code] ?? "").trim().toUpperCase();
+    // A few rows carry the modifier in the code cell ("J3490-HG").
+    const [code, inlineModifier] = (row[c.code] ?? "").trim().toUpperCase().split(/\s*-\s*(?=[A-Z0-9]{2}$)/);
     if (!code) return;
     if (isCptLike(code)) {
       excludedCpt++;
@@ -95,7 +97,7 @@ export function parseStateFeeSchedule(rows: string[][]): StateFeeSchedule {
       rejected.push({ line: lineNo, reason: `Not a HCPCS Level II code: '${code.slice(0, 20)}'`, sample: row.slice(0, 4).join(",") });
       return;
     }
-    const modifier = (row[c.modifier] ?? "").trim().toUpperCase() || null;
+    const modifier = (c.modifier >= 0 ? (row[c.modifier] ?? "").trim().toUpperCase() : "") || inlineModifier || null;
     const key = `${code}|${modifier ?? ""}`;
     if (seen.has(key)) {
       rejected.push({ line: lineNo, reason: `Duplicate code and modifier ${code}${modifier ? `-${modifier}` : ""}`, sample: row.slice(0, 4).join(",") });

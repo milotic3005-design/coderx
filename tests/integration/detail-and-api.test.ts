@@ -41,6 +41,14 @@ describe("read models expose provenance and honest gaps", () => {
     for (const p of d.provenance) expect(p).toMatchObject({ organization: "CMS", status: "official-cms" });
   });
 
+  it("HCPCS detail: Medicare OPPS status and the Apple Health professional drug fee with its PA flag", async () => {
+    const d = (await getHcpcsDetail("J9312", h.db))!;
+    expect(d.opps).toMatchObject({ period: "2026-Q4", statusIndicator: "K", apc: "9186", paymentRate: "72.094" });
+    expect(d.appleHealthDrugFees).toHaveLength(1);
+    expect(d.appleHealthDrugFees[0]).toMatchObject({ hcpcsCode: "J9312", priorAuth: "PA", fees: [{ area: "Statewide", amount: "72.09", text: "72.09" }] });
+    expect(d.releases.appleHealthDrugs).toMatchObject({ sourceKey: "wa_hca_professional_drugs", status: "official-state" });
+  });
+
   it("13. missing source data is represented as absent, never substituted", async () => {
     const d = (await getHcpcsDetail("J3490", h.db))!;
     expect(d.code.isNoc).toBe(true);
@@ -100,6 +108,16 @@ describe("quarterly changes", () => {
     // One crosswalk quarter in the fixtures: nothing to compare, and nothing invented.
     expect(d.crosswalk).toMatchObject({ period: "2026-Q4", previous: null, added: [], removed: [] });
     expect((await quarterlyChanges("2026-Q3", h.db)).previous).toBeNull();
+  });
+  it("lists drug codes whose OPPS status indicator changed since the previous Addendum B", async () => {
+    const { opps } = await quarterlyChanges(null, h.db);
+    expect(opps).toMatchObject({ period: "2026-Q4", previous: "2026-Q3" });
+    const changes = Object.fromEntries(opps!.statusChanges.map((c) => [c.code, `${c.before}→${c.after}`]));
+    // Real July → October 2026 changes: pass-through ended (G→K, G→N), a drug that became payable, one that stopped.
+    expect(changes).toMatchObject({ J0402: "G→K", J0184: "G→N", Q5154: "E2→K", J9302: "K→E1" });
+    expect(changes.J9312).toBeUndefined();
+    // Lecanemab: pass-through drug CMS flags as expiring during CY 2026.
+    expect(opps!.passThroughExpiring.map((c) => c.code)).toContain("J0174");
   });
 });
 

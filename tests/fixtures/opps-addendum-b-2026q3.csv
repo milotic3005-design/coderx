@@ -1,0 +1,38 @@
+,Addendum B.-- OPPS Payment by HCPCS Code for CY 2026,,,,,,,,,,,
+,CPT codes and descriptions only are copyright 2025 American Medical Association.ÿ All Rights Reserved.ÿ Applicable FARS/DFARS Apply. Dental codes (D codes) are copyright 2025 American Dental Association.ÿ All Rights Reserved.,,,,,,,,,,,
+,"The existence or absence of a HCPCS code does not mean that an item or service is covered or non-covered. As a reminder, the fact that a drug, device, procedure, or service is assigned a HCPCS code and a payment rate under the OPPS does not imply coverage by the Medicare program, but indicates only how the product, procedure, or service may be paid if covered by the program. Medicare Administrative Contractors (MACs) determine whether a drug, device, procedure, or other service meets all program requirements for coverage. For example, MACs determine that it is reasonable and necessary to treat the beneficiary?s condition and whether it is excluded from payment.",,,,,,,,,,,
+,Inflation-adjusted 3-digit coinsurance percentage may not precisely reflect the copayment amount due to rounding calculations.,,,,,,,,,,,
+,"For the subset of providers to which the 340B remedy offset applies, adjusted OPPS payment rates can be calculated by applying the ratio 0.9951 to payments and copayments associated with status indicators J1, J2, P, Q1, Q2, Q3, R, S, S1, T, U, V",,,,,,,,,,,
+,"**In accordance with section 1927(a)(1) of the Social Security Act, for payment to be available under Medicare Part B for covered outpatient drugs of a manufacturer, the manufacturer must have entered into and have in effect a Medicaid National Drug Rebate Agreement (NDRA). This file provides a list of HCPCS codes for drugs for which payment is not available under Medicare Part B because manufacturers do not currently have a Medicaid NDRA in effect. If manufacturers satisfy the statutory requirement, Medicare Part B payment will be resumed.ÿ CMS may, at its discretion, continue to alert manufacturers to any non-compliance we become aware of through notice and comment rulemaking, direct communication to manufacturers, or other means. However, we expect manufacturers that want Medicare Part B payment for their covered outpatient drugs to promptly enter into an NDRA when their product enters the market and maintain that NDRA to continue to receive Part B payment. This list is not intended to be a comprehensive list of all HCPCS codes for which Part B payment is impacted by requirements under section 1927(a)(1) of the Social Security Act.",,,,,,,,,,,
+HCPCS Code,Short Descriptor,SI,APC,Relative Weight,Payment Rate,National Unadjusted Copayment, Minimum Unadjusted Copayment,IRA Coinsurance Percentage,Adjusted Beneficiary Copayment,Drug and Device Pass-Through Expiration during Calendar Year,Note,* Indicates a Change
+A9270,Non-covered item or service,E1,,,,,,,,,,
+A9543,"Y90 ibritumomab, rx",K,1643,,"$56,824.55 ",.,"$11,364.91 ",,"$1,736.00 ",,"Copayments capped at inpatient deductible of $1,736.00.",
+A9601,Flortaucipir inj 1 millicuri,G,0709,,$371.00 ,,$74.20 ,,$74.20 ,*,,
+A9606,Radium ra223 dichloride ther,K,1745,,$181.55 ,.,$36.31 ,,$36.31 ,,,*
+G0463,Hospital outpt clinic visit,J2,5012,1.4879,$136.02 ,.,$27.21 ,,,,,
+J0184,"Inj, amisulpride, 1 mg",G,9247,,$9.57 ,,$0.00 ,,$0.00 ,*,,*
+J0402,"Inj, abilify asimtufii, 1 mg",G,9246,,$6.19 ,.,$1.24 ,,$1.24 ,*,,*
+J0585,"Injection,onabotulinumtoxina",K,0902,,$6.51 ,.,$1.31 ,,$1.31 ,,,*
+J0897,Denosumab injection,K,9272,,$30.10 ,.,$6.03 ,17.33%,$5.22 ,,Inflation-adjusted coinsurance,*
+J1096,Dexametha opth insert 0.1 mg,K1,9308,,$90.02 ,.,$18.01 ,,$18.01 ,,,*
+J1100,Dexamethasone sodium phos,N,,,,,,,,,,
+J1745,Infliximab not biosimil 10mg,K,7043,,$31.48 ,.,$6.30 ,,$6.30 ,,,*
+J7030,Normal saline solution infus,N,,,,,,,,,,
+J7050,Normal saline solution infus,N,,,,,,,,,,
+J7312,Dexamethasone intra implant,K,9256,,$203.66 ,.,$40.74 ,,$40.74 ,,,*
+J8540,Oral dexamethasone,N,,,,,,,,,,
+J8541,"Oral, hemady, 0.25 mg",N,,,,,,,,,,
+J9271,Inj pembrolizumab,K,1490,,$60.65 ,.,$12.13 ,,$12.13 ,,,*
+J9277,Pembrolizumab 1mg berahyalur,G,0930,,$31.94 ,,$6.39 ,,$6.39 ,,,*
+J9302,Ofatumumab injection,K,9260,,$62.23 ,.,$12.45 ,,$12.45 ,,,
+J9311,"Inj rituximab, hyaluronidase",K,9467,,$36.39 ,.,$7.28 ,,$7.28 ,,,*
+J9312,"Inj., rituximab, 10 mg",K,9186,,$73.28 ,.,$14.66 ,,$14.66 ,,,*
+Q5103,"Injection, inflectra",K,1847,,$27.71 ,.,$5.55 ,,$5.55 ,,8% of reference add-on applied,*
+Q5104,"Injection, renflexis",K,9036,,$26.62 ,.,$5.33 ,,$5.33 ,,8% of reference add-on applied,*
+Q5115,Inj truxima 10 mg,K,9336,,$34.56 ,.,$6.92 ,,$6.92 ,,8% of reference add-on applied,*
+Q5119,"Inj ruxience, 10 mg",K,9367,,$16.16 ,.,$3.24 ,,$3.24 ,,8% of reference add-on applied,*
+Q5121,"Inj. avsola, 10 mg",K,9381,,$30.83 ,.,$6.17 ,,$6.17 ,,8% of reference add-on applied,*
+Q5123,"Inj. riabni, 10 mg",K,9411,,$18.53 ,.,$3.71 ,,$3.71 ,,8% of reference add-on applied,*
+Q5154,"Inj, omlyclo, 5 mg",E2,,,,,,,,,,
+Q5158,"Inj, denosumab-bnht, 1 mg",G,0892,,$28.82 ,.,$5.77 ,,$5.77 ,,8% of reference add-on applied,*
+J0174,"Lecanemab-irmb, for iv inj",G,9157,,$1.34 ,.,$0.27 ,,$0.27 ,*,,*

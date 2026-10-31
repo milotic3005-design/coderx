@@ -6,6 +6,7 @@ import { Watchlist, type WatchEvent } from "@/components/tools/watchlist";
 import { cachedQuarterlyChanges } from "@/lib/data/cached";
 import type { LimitChange } from "@/lib/data/tools";
 import { formatDate, formatMoney, formatPeriod } from "@/lib/format";
+import { statusChangeEffect } from "@/lib/opps";
 
 export const metadata: Metadata = {
   title: "What changed this quarter",
@@ -102,6 +103,8 @@ export default async function ChangesPage({ searchParams }: { searchParams: SP }
     ...d.newCodes.map((c) => ({ code: c.code, text: "New HCPCS code this quarter" })),
     ...d.terminatedCodes.map((c) => ({ code: c.code, text: `Terminated (${formatDate(c.terminationDate)})` })),
     ...[...xwByCode].map(([code, n]) => ({ code, text: `CMS crosswalk: ${n.added} NDC(s) added, ${n.removed} removed` })),
+    ...(d.opps?.statusChanges ?? []).map((c) => ({ code: c.code, text: `Hospital outpatient status ${c.before ?? "—"} → ${c.after ?? "—"}: ${statusChangeEffect(c.before, c.after)}` })),
+    ...(d.opps?.passThroughExpiring ?? []).map((c) => ({ code: c.code, text: "OPPS pass-through status expires this calendar year" })),
   ];
 
   return (
@@ -210,6 +213,74 @@ export default async function ChangesPage({ searchParams }: { searchParams: SP }
               </tbody>
             </table>
           </TableScroll>
+        ) : (
+          <NoData />
+        )}
+      </Section>
+      <Section
+        id="opps"
+        number="07"
+        title="Hospital outpatient (OPPS) status changes"
+        description={
+          d.opps?.previous
+            ? `Drug codes whose OPPS status indicator changed between the ${formatPeriod(d.opps.previous)} and ${formatPeriod(d.opps.period)} Addendum B — the difference between being paid separately and being packaged into the administration payment.`
+            : "Status indicators from CMS OPPS Addendum B. A comparison needs an earlier quarter's Addendum B."
+        }
+      >
+        {d.opps ? (
+          <div className="space-y-6">
+            {d.opps.previous ? (
+              d.opps.statusChanges.length ? (
+                <TableScroll label="OPPS status changes">
+                  <table className="w-full min-w-[36rem] border-collapse">
+                    <caption className="sr-only">Drug codes whose OPPS status indicator changed</caption>
+                    <thead>
+                      <tr>
+                        {["HCPCS", "Description", "Status", "What it means", "Rate now"].map((h) => (
+                          <th key={h} scope="col" className={th}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {d.opps.statusChanges.map((c) => (
+                        <tr key={c.code}>
+                          <td className={td}>
+                            <Link href={`/hcpcs/${c.code}`} className="code-chip font-semibold text-brand hover:underline">
+                              {c.code}
+                            </Link>
+                          </td>
+                          <td className={`${td} text-ink-muted`}>{c.longDescription ?? "—"}</td>
+                          <td className={`${td} code-chip whitespace-nowrap`}>
+                            {c.before ?? "—"} → {c.after ?? "—"}
+                          </td>
+                          <td className={td}>{statusChangeEffect(c.before, c.after)}</td>
+                          <td className={`${td} code-chip`}>{c.rate != null ? formatMoney(c.rate) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableScroll>
+              ) : (
+                <NoData>No drug code changed OPPS status this quarter.</NoData>
+              )
+            ) : (
+              <NoData>Only one Addendum B quarter is imported, so there is nothing to compare yet.</NoData>
+            )}
+            {d.opps.passThroughExpiring.length ? (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-ink">Pass-through status expiring during the calendar year ({d.opps.passThroughExpiring.length})</h3>
+                <CodeList items={d.opps.passThroughExpiring.map((c) => ({ code: c.code, longDescription: c.longDescription, date: null }))} empty="None." date="" />
+              </div>
+            ) : null}
+            {d.opps.added.length ? (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-ink">Drug codes new to Addendum B ({d.opps.added.length})</h3>
+                <CodeList items={d.opps.added.map((c) => ({ code: c.code, longDescription: `${c.longDescription ?? ""} (status ${c.si ?? "—"})`, date: null }))} empty="None." date="" />
+              </div>
+            ) : null}
+          </div>
         ) : (
           <NoData />
         )}

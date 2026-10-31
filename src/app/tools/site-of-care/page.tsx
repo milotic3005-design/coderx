@@ -6,6 +6,7 @@ import { SiteOfCareTool } from "@/components/tools/site-of-care-tool";
 import { cachedSiteOfCare } from "@/lib/data/cached";
 import { formatMoney, formatPeriod } from "@/lib/format";
 import { normalizeHcpcs } from "@/lib/hcpcs";
+import { SI_MEANING } from "@/lib/opps";
 
 export const metadata: Metadata = {
   title: "Site of care: HOPD vs home infusion",
@@ -16,17 +17,6 @@ export const metadata: Metadata = {
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
-/** CMS status indicator meanings (OPPS Addendum D1), for the codes a drug commonly carries. */
-const SI_MEANING: Record<string, string> = {
-  K: "Paid separately (non-pass-through drug or biological)",
-  G: "Paid separately (pass-through drug or biological)",
-  N: "Packaged: no separate payment",
-  A: "Paid under a fee schedule other than the OPPS",
-  B: "Not recognized by the OPPS on an outpatient hospital bill",
-  E1: "Not covered by Medicare",
-  E2: "Not paid: no pricing information or claims data",
-  M: "Not billable to the MAC by hospitals",
-};
 
 const EXAMPLES = [
   { code: "J1569", label: "Immune globulin (Gammagard Liquid)" },
@@ -138,7 +128,7 @@ export default async function SiteOfCarePage({ searchParams }: { searchParams: S
                 <span className="font-semibold text-ink">Apple Health:</span> HCA pays hospital outpatient claims by EAPG, which needs 3M&apos;s licensed grouper and your hospital&apos;s conversion factor, so you enter that payment. Home supplies and pumps use the HCA home infusion fee schedule{data.hca?.effectiveDate ? ` effective ${data.hca.effectiveDate}` : ""}.
               </li>
               <li>
-                <span className="font-semibold text-ink">Not modeled:</span> outlier payments, the rural sole community hospital adjustment, the cap on a single line&apos;s coinsurance, Medicare Advantage, and patient bad debt.
+                <span className="font-semibold text-ink">Not modeled:</span> outlier payments, the rural sole community hospital adjustment, Medicare Advantage, and patient bad debt. Medicare HOPD coinsurance per line is capped at the inpatient deductible CMS states in Addendum B{data.inpatientDeductible ? ` (${formatMoney(data.inpatientDeductible, 2)})` : ""}.
               </li>
             </ul>
           </Section>

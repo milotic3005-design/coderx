@@ -257,6 +257,7 @@ export function SiteOfCareTool({ data, initialUnits, initialPerMonth }: { data: 
             wageIndex: val(s.wageIndex) ?? 1,
             applyRemedyOffset: s.remedy,
             remedyOffset: data.remedyOffset,
+            copayCap: data.inpatientDeductible,
           },
           medicare: { homePartB: s.mcrHomePartB, homeDmePerMonth: val(s.mcrDme), homePartDPerUnit: val(s.mcrPartD) },
           appleHealth: {

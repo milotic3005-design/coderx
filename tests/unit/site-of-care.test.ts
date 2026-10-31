@@ -11,7 +11,7 @@ function base(): SiteOfCareInput {
     drug: { code: "J9312", aspLimit: 72.094, aspCoinsurancePct: 20, opps: { statusIndicator: "K", paymentRate: 72.094, copayPerUnit: 14.42 } },
     unitsPerAdmin: 50,
     adminsPerMonth: 1,
-    hopd: { apcLines: [{ apc: L4, count: 1 }, { apc: L2, count: 2 }], wageIndex: 1, applyRemedyOffset: true, remedyOffset: OFFSET },
+    hopd: { apcLines: [{ apc: L4, count: 1 }, { apc: L2, count: 2 }], wageIndex: 1, applyRemedyOffset: true, remedyOffset: OFFSET, copayCap: 1736 },
     medicare: { homePartB: false, homeDmePerMonth: null, homePartDPerUnit: null },
     appleHealth: { hopdVisit: null, hopdDrugPerUnit: null, homeDrugPerUnit: null, homeDispensingFee: null, fillsPerMonth: 1, hcaItems: [], nursingPerVisit: null, nursingVisitsPerAdmin: 1 },
     commercial: { hopdDrug: null, hopdAdmin: null, homeDrug: null, perDiem: null, perDiemDaysPerMonth: 1, nursingPerVisit: null, nursingVisitsPerAdmin: 1, homeOtherPerMonth: null },
@@ -39,6 +39,14 @@ describe("site of care: Medicare HOPD", () => {
     i.hopd.wageIndex = 1.2;
     i.hopd.applyRemedyOffset = false;
     expect(by(i).medicare.hopd.lines[1].amount).toBe(r2(337.46 * 1.12));
+  });
+  it("caps a visit's drug coinsurance at the inpatient deductible", () => {
+    const i = base();
+    i.unitsPerAdmin = 200; // 200 × $14.42 = $2,884 coinsurance before the cap
+    i.adminsPerMonth = 2;
+    const m = by(i).medicare.hopd;
+    expect(m.lines[0]).toMatchObject({ amount: r2(72.094 * 400), patientShare: 1736 * 2 });
+    expect(m.notes.join(" ")).toMatch(/capped at the inpatient deductible \(\$1,736\.00\)/);
   });
   it("pays nothing separately for a packaged (status N) drug", () => {
     const i = base();

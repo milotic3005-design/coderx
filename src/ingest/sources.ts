@@ -19,7 +19,8 @@ export type SourceKey =
   | "cms_mdrp_products"
   | "cms_opps_addendum_a"
   | "cms_opps_addendum_b"
-  | "wa_hca_home_infusion";
+  | "wa_hca_home_infusion"
+  | "wa_hca_professional_drugs";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -35,6 +36,7 @@ export const SOURCE_KEYS: SourceKey[] = [
   "cms_opps_addendum_a",
   "cms_opps_addendum_b",
   "wa_hca_home_infusion",
+  "wa_hca_professional_drugs",
 ];
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
@@ -47,15 +49,29 @@ export type MueSourceKey = keyof typeof MUE_SOURCES;
 export type MueServiceType = (typeof MUE_SOURCES)[MueSourceKey]["serviceType"];
 export const isMueSource = (key: string): key is MueSourceKey => key in MUE_SOURCES;
 
-/** State Medicaid fee schedules: the state, payer, and program each one describes. */
+/**
+ * State Medicaid fee schedules: the state, payer, and program each one describes.
+ * kind "home_infusion" schedules feed the drug pages' per diem block; kind "drugs"
+ * schedules price individual drug codes.
+ */
 export const STATE_FEE_SOURCES = {
   wa_hca_home_infusion: {
+    kind: "home_infusion",
     state: "WA",
     payer: "Washington Apple Health (Medicaid)",
     publisher: "HCA",
     program: "Home Infusion Therapy/Parenteral Nutrition Program",
     /** Legend and payment rule, from HCA's fee schedule legend and WAC 182-553. */
     note: "BR = by report (invoice required); DP = covered under another program (see comments); N/A = no separate rate for that area. HCA pays the lesser of the provider’s usual charge and the maximum allowable fee (WAC 182-553).",
+  },
+  wa_hca_professional_drugs: {
+    kind: "drugs",
+    state: "WA",
+    payer: "Washington Apple Health (Medicaid)",
+    publisher: "HCA",
+    program: "Professional Administered Drug Fee Schedule",
+    /** Legend from the schedule itself; the outpatient hospital rule from HCA's OPPS billing guide. */
+    note: "AAC = actual acquisition cost, based on NDC or invoice; BR = by report; NC = not covered; DC = not covered, see a different code; DP = covered under another program (see comments); PA = prior authorization; EPA = expedited prior authorization (see the billing guide); CPA = contractor prior authorization (Qualis). For professional claims; hospital-administered drugs are paid under HCA's outpatient (OPPS/EAPG) rules.",
   },
 } as const;
 export type StateFeeSourceKey = keyof typeof STATE_FEE_SOURCES;
@@ -189,6 +205,16 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     licenseNote:
       "U.S. Government work, downloaded through CMS's AMA CPT license page (accepted by the CodeRx operator on 2026-10-26). Only HCPCS Level II rows are stored; CPT rows (AMA copyright) and dental rows (ADA copyright) are counted and dropped.",
   },
+  wa_hca_professional_drugs: {
+    key: "wa_hca_professional_drugs",
+    organization: "Washington State HCA",
+    dataset: "Apple Health (Medicaid) Professional Administered Drug Fee Schedule",
+    shortName: "Washington HCA professional administered drug fee schedule",
+    landingPageUrl: "https://www.hca.wa.gov/billers-providers-partners/prior-authorization-claims-and-billing/provider-billing-guides-and-fee-schedules",
+    cadence: "as published",
+    badge: "official-state",
+    licenseNote: "Washington State government publication. Maximum allowable fees and prior-authorization flags for drugs billed on professional claims. Only HCPCS Level II rows are stored.",
+  },
   wa_hca_home_infusion: {
     key: "wa_hca_home_infusion",
     organization: "Washington State HCA",
@@ -262,7 +288,21 @@ export const MANIFEST: ReleaseCandidate[] = [
   // Medicaid Drug Rebate Program product data (one file per quarter; each file repeats every quarter since 2022)
   { sourceKey: "cms_mdrp_products", period: "2026-Q2", url: "https://download.medicaid.gov/data/drugproducts-q2-2026.csv", publicationLabel: "2Q 2026 product data" },
 
-  // OPPS addenda (one CMS page per quarter; the Section 508 text file inside each zip is parsed)
+  // OPPS addenda (one CMS page per quarter; the XLSX inside each zip is parsed). Two quarters are kept for the change report.
+  {
+    sourceKey: "cms_opps_addendum_a",
+    period: "2026-Q3",
+    url: `${CMS}/files/zip/july-2026-opps-addendum.zip`,
+    publicationLabel: "July 2026 OPPS Addendum A - Updated July 21, 2026",
+    publicationDate: "2026-07-21",
+  },
+  {
+    sourceKey: "cms_opps_addendum_b",
+    period: "2026-Q3",
+    url: `${CMS}/files/zip/july-2026-opps-addendum-b.zip`,
+    publicationLabel: "July 2026 OPPS Addendum B - Updated July 21, 2026",
+    publicationDate: "2026-07-21",
+  },
   {
     sourceKey: "cms_opps_addendum_a",
     period: "2026-Q4",
@@ -286,6 +326,14 @@ export const MANIFEST: ReleaseCandidate[] = [
     url: "https://www.hca.wa.gov/assets/billers-and-providers/home-infusion-parenteral-nutrition-20260701.xlsx",
     publicationLabel: "July 1, 2026",
     publicationDate: "2026-07-01",
+  },
+
+  {
+    sourceKey: "wa_hca_professional_drugs",
+    period: "2026-10-01",
+    url: "https://www.hca.wa.gov/assets/billers-and-providers/professional-administered-drugs-20261001.xlsx",
+    publicationLabel: "Effective October 1, 2026; Updated October 29, 2026",
+    publicationDate: "2026-10-29",
   },
 
   // FDA (period assigned from the file's Last-Modified date at download time)

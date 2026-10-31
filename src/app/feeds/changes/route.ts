@@ -1,6 +1,7 @@
 import { cachedQuarterlyChanges } from "@/lib/data/cached";
 import { formatMoney, formatPeriod } from "@/lib/format";
 import { normalizeHcpcs } from "@/lib/hcpcs";
+import { statusChangeEffect } from "@/lib/opps";
 import { rss, type FeedItem } from "@/lib/rss";
 import { SITE } from "@/lib/site";
 import { quarterBounds } from "@/ingest/values";
@@ -47,6 +48,17 @@ export async function GET(request: Request) {
       if (watch.size && !watch.has(c.code)) continue;
       items.push({ title: `Terminated: ${c.code} (${c.longDescription})`, link: `${SITE.url}/hcpcs/${c.code}`, guid: `coderx-term-${q.period}-${c.code}`, pubDate: date, category: "Terminated code", description: `CMS lists a termination date of ${c.terminationDate ?? "unknown"} for ${c.code}.` });
     }
+    for (const c of q.opps?.statusChanges ?? []) {
+      if (watch.size && !watch.has(c.code)) continue;
+      items.push({
+        title: `${c.code} hospital outpatient status ${c.before ?? "—"} → ${c.after ?? "—"}: ${statusChangeEffect(c.before, c.after)}`,
+        link: `${SITE.url}/tools/changes?period=${q.period}#opps`,
+        guid: `coderx-opps-${q.period}-${c.code}`,
+        pubDate: date,
+        category: "OPPS status",
+        description: `${c.longDescription ?? c.code}: CMS OPPS Addendum B status indicator ${c.before ?? "—"} in ${q.opps?.previous ? formatPeriod(q.opps.previous) : "the previous quarter"} → ${c.after ?? "—"} in ${formatPeriod(q.period)}.`,
+      });
+    }
     for (const c of watch.size ? drug.filter((x) => watch.has(x.code)) : drug.slice(0, 10)) {
       items.push({
         title: `${c.code} payment limit ${formatMoney(c.before)} → ${formatMoney(c.after)} (${pct(c.changePct)})`,
@@ -62,7 +74,7 @@ export async function GET(request: Request) {
   const body = rss({
     title: codes.length ? `${SITE.name}: changes for ${codes.slice(0, 5).join(", ")}${codes.length > 5 ? "…" : ""}` : `${SITE.name}: quarterly drug coding and payment changes`,
     link: `${SITE.url}/tools/changes`,
-    description: "Quarterly Medicare Part B payment-limit changes and new or terminated drug HCPCS codes, from CMS files.",
+    description: "Quarterly Medicare Part B payment-limit changes, hospital outpatient (OPPS) status changes, and new or terminated drug HCPCS codes, from CMS files.",
     selfUrl: `${SITE.url}/feeds/changes${codes.length ? `?codes=${codes.join(",")}` : ""}`,
     items,
   });

@@ -553,24 +553,36 @@ function parsePurpleBookRelease(file: Downloaded): Parsed {
   };
 }
 
+/**
+ * The addendum table from a quarterly zip: the XLSX when present (full precision), else
+ * the Section 508 text/CSV copy (some quarters round drug rates to cents there).
+ */
+function oppsTable(file: Downloaded, letter: "A" | "B"): { name: string; input: string | string[][]; encoding?: string } {
+  const re = new RegExp(`addendum[ _-]?${letter}\\b.*\\.(xlsx|txt|csv)$`, "i");
+  const entries = unzipVerified(file.bytes, (n) => re.test(baseName(n)));
+  const xlsx = entries.find((e) => /\.xlsx$/i.test(e.name));
+  if (xlsx) return { name: baseName(xlsx.name), input: readFirstSheet(xlsx.data) };
+  const text = entries[0];
+  if (!text) throw new ValidationError(`Addendum ${letter} archive: no XLSX or Section 508 table found.`);
+  const decoded = decodeText(text.data);
+  return { name: baseName(text.name), input: decoded.text, encoding: decoded.encoding };
+}
+
 function parseOppsApcRelease(file: Downloaded, period: string): Parsed {
-  const entries = unzipVerified(file.bytes, (n) => /addendum[ _-]?a\b.*\.txt$/i.test(baseName(n)));
-  const txt = entries[0];
-  if (!txt) throw new ValidationError("Addendum A archive: the Section 508 text file was not found.");
-  const decoded = decodeText(txt.data);
-  const parsed = parseOppsAddendumA(decoded.text);
+  const table = oppsTable(file, "A");
+  const parsed = parseOppsAddendumA(table.input);
   assertPlausible(parsed.rows.length >= 300, `Addendum A has only ${parsed.rows.length} APCs; expected at least 300.`);
   assertPlausible(parsed.rows.some((r) => /drug administration/i.test(r.title ?? "")), "Addendum A has no drug administration APCs.");
   const bounds = quarterBounds(period);
   return {
-    fileName: baseName(txt.name),
-    encoding: decoded.encoding,
+    fileName: table.name,
+    encoding: table.encoding,
     effectiveStart: bounds.start,
     effectiveEnd: bounds.end,
     recordCount: parsed.rows.length,
     rejected: parsed.rejected,
     warnings: parsed.remedyOffset ? [] : ["No 340B remedy offset note found in the file header."],
-    details: { calendarYear: parsed.calendarYear, remedyOffset: parsed.remedyOffset },
+    details: { calendarYear: parsed.calendarYear, remedyOffset: parsed.remedyOffset, inpatientDeductible: parsed.inpatientDeductible },
     load: async (tx, releaseId) => {
       await tx.delete(t.oppsApcRates).where(eq(t.oppsApcRates.period, period));
       await insertBatches(
@@ -585,26 +597,23 @@ function parseOppsApcRelease(file: Downloaded, period: string): Parsed {
 }
 
 function parseOppsRelease(file: Downloaded, period: string): Parsed {
-  const entries = unzipVerified(file.bytes, (n) => /addendum[ _-]?b.*\.txt$/i.test(baseName(n)));
-  const txt = entries[0];
-  if (!txt) throw new ValidationError("Addendum B archive: the Section 508 text file was not found.");
-  const decoded = decodeText(txt.data);
-  const parsed = parseOppsAddendumB(decoded.text);
+  const table = oppsTable(file, "B");
+  const parsed = parseOppsAddendumB(table.input);
   assertPlausible(parsed.rows.length >= 3000, `Addendum B has only ${parsed.rows.length} HCPCS Level II rows; expected at least 3,000.`);
   assertPlausible(parsed.rows.some((r) => r.statusIndicator === "K" && r.paymentRate), "Addendum B has no separately paid drugs (status indicator K).");
   const bounds = quarterBounds(period);
   const warnings: string[] = [];
   if (!parsed.remedyOffset) warnings.push("No 340B remedy offset note found in the file header.");
   return {
-    fileName: baseName(txt.name),
-    encoding: decoded.encoding,
+    fileName: table.name,
+    encoding: table.encoding,
     effectiveStart: bounds.start,
     effectiveEnd: bounds.end,
     recordCount: parsed.rows.length,
     rejected: parsed.rejected,
     excluded: { cptRows: parsed.excludedCpt, dentalRows: parsed.excludedDental },
     warnings,
-    details: { calendarYear: parsed.calendarYear, remedyOffset: parsed.remedyOffset },
+    details: { calendarYear: parsed.calendarYear, remedyOffset: parsed.remedyOffset, inpatientDeductible: parsed.inpatientDeductible },
     load: async (tx, releaseId) => {
       await tx.delete(t.oppsRates).where(eq(t.oppsRates.period, period));
       await insertBatches(
@@ -763,6 +772,7 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
         parsed = streamed!;
         break;
       case "wa_hca_home_infusion":
+      case "wa_hca_professional_drugs":
         parsed = parseStateFeeRelease(file, period, candidate.sourceKey);
         break;
       case "cms_opps_addendum_a":
@@ -861,4 +871,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs"];

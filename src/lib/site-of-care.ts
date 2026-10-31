@@ -71,6 +71,8 @@ export interface SiteOfCareInput {
     wageIndex: number;
     applyRemedyOffset: boolean;
     remedyOffset: RemedyOffset | null;
+    /** CMS caps a line's coinsurance at the inpatient deductible (stated in Addendum B notes). */
+    copayCap: number | null;
   };
   medicare: {
     /** Part B pays the drug at home (DME infusion pump drug, or IVIG for PIDD) and the pharmacy bills as a DMEPOS supplier. */
@@ -186,7 +188,10 @@ function medicareHopd(input: SiteOfCareInput, units: number): { result: SiteResu
     notes.push("No authoritative public data was located for this field.");
   } else if ((si === "K" || si === "G") && drug.opps.paymentRate != null) {
     const allowed = drug.opps.paymentRate * units;
-    const copay = (drug.opps.copayPerUnit ?? drug.opps.paymentRate * 0.2) * units;
+    const perVisit = (drug.opps.copayPerUnit ?? drug.opps.paymentRate * 0.2) * input.unitsPerAdmin;
+    const capped = hopd.copayCap != null && perVisit > hopd.copayCap;
+    if (capped) notes.push(`The drug's coinsurance is capped at the inpatient deductible (${money(hopd.copayCap!)}) per visit, as CMS states in Addendum B.`);
+    const copay = (capped ? hopd.copayCap! : perVisit) * adminsPerMonth;
     lines.push({
       label: `Drug ${drug.code} (status ${si}, separately paid)`,
       amount: allowed,
@@ -215,7 +220,7 @@ function medicareHopd(input: SiteOfCareInput, units: number): { result: SiteResu
     lines.push({
       label: `APC ${apc.apc} ${apc.title ?? ""}`.trim(),
       amount: allowed,
-      patientShare: (apc.copay ?? apc.paymentRate * 0.2) * factor * offset * n,
+      patientShare: Math.min((apc.copay ?? apc.paymentRate * 0.2) * factor * offset, hopd.copayCap ?? Infinity) * n,
       sequestered: true,
       source: "cms_opps_addendum_a",
       formula: `${money(apc.paymentRate)} × wage factor ${factor.toFixed(4)}${offset !== 1 ? ` × remedy offset ${offset}` : ""} × ${times(n)}`,

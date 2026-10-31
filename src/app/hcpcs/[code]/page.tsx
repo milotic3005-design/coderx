@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ActiveBadge, DataStatusBadge, FamilyBadge, NocBadge, NonMedicareBadge } from "@/components/badges";
 import { CopyButton, RecordView } from "@/components/client-bits";
-import { BillingUnitCard, CodeHistoryTable, CrosswalkTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, Sparkline } from "@/components/detail-blocks";
+import { BillingUnitCard, CodeHistoryTable, CrosswalkTable, LimitationsList, PaymentHistoryTable, Sparkline } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
 import { GlanceStrip, type GlanceItem } from "@/components/glance";
@@ -14,7 +14,9 @@ import { CoverageLinks, MueTable } from "@/components/tool-blocks";
 import { cachedHcpcsDetail } from "@/lib/data/cached";
 import { formatDate, formatMoney, formatPeriod } from "@/lib/format";
 import { COVERAGE_CODES, NOC_CONTEXT, normalizeHcpcs, PRICING_INDICATORS } from "@/lib/hcpcs";
+import { SI_MEANING } from "@/lib/opps";
 import { SITE } from "@/lib/site";
+import { STATE_FEE_SOURCES } from "@/ingest/sources";
 
 type Params = Promise<{ code: string }>;
 
@@ -286,14 +288,52 @@ export default async function HcpcsPage({ params }: { params: Params }) {
             )}
             <h3 className="mb-3 text-sm font-semibold text-ink">Quarterly history</h3>
             <PaymentHistoryTable payments={d.payments} caption={`Medicare Part B payment limits for ${code} by quarter`} />
-            <div className="mt-6 rounded-xl border hairline bg-surface p-5 text-sm">
-              <p className="font-semibold text-ink">Hospital outpatient (OPPS) payment</p>
-              <p className="mt-1 text-ink-muted">
-                {SITE.noData} OPPS rates are published in CMS Addendum B, which is distributed under the AMA CPT license and is not ingested by CodeRx.{" "}
-                <ExternalSourceLink href="https://www.cms.gov/medicare/payment/prospective-payment-systems/hospital-outpatient-pps/quarterly-addenda-updates">CMS quarterly addenda</ExternalSourceLink>
-              </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border hairline bg-surface p-5 text-sm">
+                <p className="font-semibold text-ink">Medicare hospital outpatient (OPPS){d.opps ? ` · ${formatPeriod(d.opps.period)}` : ""}</p>
+                {d.opps ? (
+                  <>
+                    <p className="mt-1 text-ink">
+                      <span className="code-chip font-semibold">{d.opps.statusIndicator ?? "—"}</span> {SI_MEANING[d.opps.statusIndicator ?? ""] ?? "See CMS Addendum D1"}
+                    </p>
+                    {d.opps.paymentRate != null ? (
+                      <p className="mt-1 text-ink-muted">
+                        <span className="code-chip text-ink">{formatMoney(d.opps.paymentRate)}</span> per unit · APC {d.opps.apc}
+                        {d.opps.adjustedCopay ?? d.opps.minimumCopay ? ` · copayment ${formatMoney(d.opps.adjustedCopay ?? d.opps.minimumCopay)} per unit` : ""}
+                      </p>
+                    ) : null}
+                    {d.opps.note ? <p className="mt-1 text-ink-muted">CMS note: “{d.opps.note}”</p> : null}
+                    <p className="mt-2">
+                      <Link href={`/tools/site-of-care?code=${code}`} className="font-semibold text-brand hover:underline">
+                        Compare HOPD and home infusion for {code}
+                      </Link>
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-1 text-ink-muted">{SITE.noData}</p>
+                )}
+              </div>
+              <div className="rounded-xl border hairline bg-surface p-5 text-sm">
+                <p className="font-semibold text-ink">Washington Apple Health · professional claims</p>
+                {d.appleHealthDrugFees.length ? (
+                  <ul className="mt-1 space-y-1.5">
+                    {d.appleHealthDrugFees.map((f) => (
+                      <li key={`${f.hcpcsCode}-${f.modifier ?? ""}`} className="text-ink">
+                        {f.modifier ? <span className="code-chip text-ink-muted">{f.modifier} </span> : null}
+                        <span className="code-chip font-semibold">{f.fees[0]?.amount != null ? formatMoney(f.fees[0].amount, 2) : (f.fees[0]?.text ?? "—")}</span>
+                        <span className="text-ink-muted"> maximum allowable</span>
+                        {f.priorAuth ? <span className="ml-2 rounded-full bg-accent-tint px-2 py-0.5 text-xs font-semibold text-accent">{f.priorAuth}</span> : null}
+                        {f.comments ? <span className="block text-xs text-ink-muted">{f.comments}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-ink-muted">Not on HCA&apos;s professional administered drug fee schedule.</p>
+                )}
+                <p className="mt-2 text-xs text-ink-muted">{STATE_FEE_SOURCES.wa_hca_professional_drugs.note}</p>
+              </div>
             </div>
-            <ProvenanceFooter sources={[d.releases.payment]} />
+            <ProvenanceFooter sources={[d.releases.payment, d.releases.opps, d.releases.appleHealthDrugs]} />
           </Section>
 
           <Section
