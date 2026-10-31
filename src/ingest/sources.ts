@@ -20,7 +20,8 @@ export type SourceKey =
   | "cms_opps_addendum_a"
   | "cms_opps_addendum_b"
   | "wa_hca_home_infusion"
-  | "wa_hca_professional_drugs";
+  | "wa_hca_professional_drugs"
+  | "hpt_multicare";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -37,6 +38,7 @@ export const SOURCE_KEYS: SourceKey[] = [
   "cms_opps_addendum_b",
   "wa_hca_home_infusion",
   "wa_hca_professional_drugs",
+  "hpt_multicare",
 ];
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
@@ -78,13 +80,13 @@ export type StateFeeSourceKey = keyof typeof STATE_FEE_SOURCES;
 
 export interface SourceDefinition {
   key: SourceKey;
-  organization: "CMS" | "FDA" | "Washington State HCA";
+  organization: "CMS" | "FDA" | "Washington State HCA" | "MultiCare Health System";
   dataset: string;
   shortName: string;
   landingPageUrl: string;
   cadence: "quarterly" | "daily" | "monthly" | "as published";
   /** Badge used for data from this source. */
-  badge: "official-cms" | "official-fda" | "official-state";
+  badge: "official-cms" | "official-fda" | "official-state" | "hospital-published";
   licenseNote: string;
 }
 
@@ -214,6 +216,17 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     cadence: "as published",
     badge: "official-state",
     licenseNote: "Washington State government publication. Maximum allowable fees and prior-authorization flags for drugs billed on professional claims. Only HCPCS Level II rows are stored.",
+  },
+  hpt_multicare: {
+    key: "hpt_multicare",
+    organization: "MultiCare Health System",
+    dataset: "Hospital standard charges (price transparency, 45 CFR 180.50) — MultiCare hospitals in Washington",
+    shortName: "MultiCare hospital price transparency files",
+    landingPageUrl: "https://www.multicare.org/patient-resources/billing/transparency/",
+    cadence: "monthly",
+    badge: "hospital-published",
+    licenseNote:
+      "Federally required public files. Processed on the operator's computer; CodeRx stores only anonymized drug rates (HCPCS drug codes; no payer or plan names, no CPT rows, no chargemaster descriptions) with each file's URL, date, and SHA-256.",
   },
   wa_hca_home_infusion: {
     key: "wa_hca_home_infusion",

@@ -1,4 +1,4 @@
-import { Calculator, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, Scale, ScanLine } from "lucide-react";
+import { Calculator, ChartColumn, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, Scale, ScanLine } from "lucide-react";
 
 /** The Tools section, in the order shown on /tools and in the footer. */
 export const TOOLS = [
@@ -36,6 +36,13 @@ export const TOOLS = [
     title: "Site of care: HOPD vs home",
     who: "Infusion and pharmacy directors",
     body: "Monthly revenue for one therapy in your hospital outpatient department versus your home infusion pharmacy (no Medicare HIT certification), for Medicare, Washington Apple Health, and your commercial contracts — from CMS OPPS rates, the HCA schedule, and terms you enter.",
+  },
+  {
+    href: "/tools/price-benchmark",
+    icon: ChartColumn,
+    title: "MultiCare price benchmark",
+    who: "Contracting and finance",
+    body: "What MultiCare's Washington hospitals have negotiated for a drug, per CMS billing unit and as a percent of the Medicare payment limit, by plan type — from their federally required price transparency files. No payer names.",
   },
   {
     href: "/tools/biosimilars",

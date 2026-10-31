@@ -129,6 +129,7 @@ export default function MethodologyPage() {
               <li><DataStatusBadge status="official-cms" /> Value published by CMS, shown as published.</li>
               <li><DataStatusBadge status="official-fda" /> Value published by FDA, shown as published.</li>
               <li><DataStatusBadge status="official-state" /> Value published by a state Medicaid agency (Washington HCA), shown as published.</li>
+              <li><DataStatusBadge status="hospital-published" /> From a hospital&apos;s federally required price transparency file (45 CFR 180.50), shown as anonymized ranges without payer or plan names.</li>
               <li><DataStatusBadge status="derived" /> Calculated by CodeRx from official values; the formula is shown.</li>
               <li><DataStatusBadge status="manual" /> Relationship approved by a named reviewer with cited evidence.</li>
               <li><DataStatusBadge status="historical" /> No longer in the most recent source file.</li>

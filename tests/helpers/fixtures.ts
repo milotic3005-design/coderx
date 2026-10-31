@@ -111,3 +111,25 @@ export const FIXTURE_RELEASES: ReleaseCandidate[] = [
 ];
 
 export { strToU8 };
+
+/**
+ * The anonymized upload the Mac script would send for the Yakima Memorial excerpt
+ * (tests/fixtures/hpt-multicare-yakima-excerpt.csv), parsed with the production parser.
+ */
+export async function hospitalRatesFixtureUpload() {
+  const { anonymize, parseHospitalMrfStream } = await import("@/ingest/parsers/hospital-mrf");
+  const { MULTICARE_HOSPITALS } = await import("@/ingest/hospitals");
+  const bytes = read("hpt-multicare-yakima-excerpt.csv");
+  const parsed = await parseHospitalMrfStream((async function* () {
+    yield bytes;
+  })());
+  const yakima = MULTICARE_HOSPITALS.find((h) => h.key === "yakima-memorial")!;
+  return {
+    hospitalKey: yakima.key,
+    file: { url: yakima.url, sha256: sha256(bytes), bytes: bytes.length, lastModified: "Thu, 27 Aug 2026 21:18:42 GMT" },
+    meta: parsed.meta,
+    stats: { rowsRead: parsed.rowsRead, drugRows: parsed.drugRows, contracts: parsed.contracts.length },
+    groups: anonymize(parsed.contracts),
+    force: false,
+  };
+}

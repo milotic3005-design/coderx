@@ -50,6 +50,13 @@
       "when": 1793069049981,
       "tag": "0006_opps_addenda",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793450606845,
+      "tag": "0007_hospital_drug_rates",
+      "breakpoints": true
     }
   ]
 }

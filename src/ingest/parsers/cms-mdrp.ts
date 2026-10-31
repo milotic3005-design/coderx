@@ -57,7 +57,8 @@ export function csvFields(line: string): string[] {
 }
 
 /** Logical CSV records from a byte stream; a record may span lines inside quotes. */
-async function* records(chunks: AsyncIterable<Uint8Array>): AsyncGenerator<string> {
+/** CSV records from a byte stream, keeping quoted line breaks inside one record. */
+export async function* csvRecords(chunks: AsyncIterable<Uint8Array>): AsyncGenerator<string> {
   const decoder = new TextDecoder("utf-8");
   let buf = "";
   let pending = "";
@@ -111,7 +112,7 @@ export async function parseMdrpStream(chunks: AsyncIterable<Uint8Array>, opts: {
   let totalRows = 0;
   let lineNo = 0;
   const seen = new Set<string>();
-  for await (const rec of records(chunks)) {
+  for await (const rec of csvRecords(chunks)) {
     lineNo++;
     if (!rec.trim()) continue;
     const f = csvFields(rec);

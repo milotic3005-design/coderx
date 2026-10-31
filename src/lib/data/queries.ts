@@ -269,12 +269,48 @@ export async function stateDrugFeesFor(db: Database, codes: string[], latest: Ma
   return { release: rel, rows };
 }
 
+/** Current hospital price transparency releases (one per hospital) and their anonymized rows for these codes. */
+export async function hospitalRatesFor(db: Database, codes: string[]) {
+  const releases = await db
+    .select()
+    .from(t.sourceReleases)
+    .where(and(eq(t.sourceReleases.sourceKey, "hpt_multicare"), eq(t.sourceReleases.isCurrent, true), eq(t.sourceReleases.status, "succeeded")))
+    .orderBy(asc(t.sourceReleases.periodLabel));
+  if (!releases.length || !codes.length) return { hospitals: [], rows: [] };
+  const rows = await db
+    .select()
+    .from(t.hospitalDrugRates)
+    .where(and(inArray(t.hospitalDrugRates.sourceReleaseId, releases.map((r) => r.id)), inArray(t.hospitalDrugRates.hcpcsCode, codes)));
+  const n = (v: string | null) => (v == null ? null : Number(v));
+  return {
+    hospitals: releases.map((r) => {
+      const details = (r.report as { details?: { hospital?: string; lastUpdatedOn?: string | null } } | null)?.details;
+      return { key: r.periodLabel ?? "", name: details?.hospital ?? r.dataset, lastUpdatedOn: details?.lastUpdatedOn ?? r.publicationDate, release: toProvenance(r) };
+    }),
+    rows: rows.map((r) => ({
+      hospitalKey: r.hospitalKey,
+      code: r.hcpcsCode,
+      planType: r.planType,
+      setting: r.setting,
+      billingClass: r.billingClass,
+      methodology: r.methodology,
+      drugQuantity: n(r.drugQuantity),
+      drugUnit: r.drugUnit,
+      amounts: r.amounts,
+      percentContracts: r.percentContracts,
+      algorithmContracts: r.algorithmContracts,
+      grossMin: n(r.grossMin),
+      grossMax: n(r.grossMax),
+    })),
+  };
+}
+
 export async function getHcpcsDetail(code: string, dbArg?: Database) {
   const db = dbArg ?? (await getDb());
   const [row] = await db.select().from(t.hcpcsCodes).where(eq(t.hcpcsCodes.code, code));
   if (!row) return null;
   const { byId, latest } = await loadReleases(db);
-  const [history, payments, notPayable, crossRefs, linkedDrugs, opps, appleHealth] = await Promise.all([
+  const [history, payments, notPayable, crossRefs, linkedDrugs, opps, appleHealth, hospitalRates] = await Promise.all([
     db.select().from(t.hcpcsCodeHistory).where(eq(t.hcpcsCodeHistory.code, code)).orderBy(desc(t.hcpcsCodeHistory.period)),
     paymentHistory(db, [code], byId),
     db
@@ -306,6 +342,7 @@ export async function getHcpcsDetail(code: string, dbArg?: Database) {
       .orderBy(desc(t.codeRelationships.isCurrent), asc(t.drugs.displayName)),
     oppsFor(db, [code], latest),
     stateDrugFeesFor(db, [code], latest),
+    hospitalRatesFor(db, [code]),
   ]);
   const latestCrosswalk = latest.get("cms_ndc_hcpcs")?.periodLabel ?? null;
   const [crosswalk, mue] = await Promise.all([crosswalkEntries(db, { codes: [code] }, latestCrosswalk), mueFor(db, [code], latest)]);
@@ -374,6 +411,7 @@ export async function getHcpcsDetail(code: string, dbArg?: Database) {
     purpleBookRelease: latest.get("fda_purple_book") ? toProvenance(latest.get("fda_purple_book")!) : null,
     opps: opps.get(code) ?? null,
     appleHealthDrugFees: appleHealth.rows,
+    hospitalRates,
     releases: {
       hcpcs: hcpcsRelease ? toProvenance(hcpcsRelease) : null,
       payment: codePayments[0] ? toProvenance(byId.get(codePayments[0].releaseId)!) : null,

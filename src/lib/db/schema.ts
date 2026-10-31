@@ -274,6 +274,39 @@ export const oppsRates = pgTable(
   (t) => [index("opps_rates_code_idx").on(t.hcpcsCode), index("opps_rates_release_idx").on(t.sourceReleaseId)],
 );
 
+/**
+ * Anonymized negotiated drug rates from a hospital price transparency file: one row per
+ * drug code, setting, billing class, methodology, and drug quantity, with one amount per
+ * payer-plan contract. Payer and plan names are never stored. One current release per
+ * hospital (period label = hospital key).
+ */
+export const hospitalDrugRates = pgTable(
+  "hospital_drug_rates",
+  {
+    id: serial("id").primaryKey(),
+    hospitalKey: text("hospital_key").notNull(),
+    hcpcsCode: text("hcpcs_code").notNull(),
+    /** commercial | medicare_advantage | medicaid_managed_care, derived from the plan name in the file. */
+    planType: text("plan_type").notNull(),
+    setting: text("setting"),
+    billingClass: text("billing_class"),
+    methodology: text("methodology"),
+    drugQuantity: numeric("drug_quantity"),
+    drugUnit: text("drug_unit"),
+    amounts: jsonb("amounts").$type<number[]>().notNull(),
+    percentContracts: integer("percent_contracts").notNull().default(0),
+    algorithmContracts: integer("algorithm_contracts").notNull().default(0),
+    grossMin: numeric("gross_min"),
+    grossMax: numeric("gross_max"),
+    cashMin: numeric("cash_min"),
+    cashMax: numeric("cash_max"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("hospital_drug_rates_code_idx").on(t.hcpcsCode), index("hospital_drug_rates_release_idx").on(t.sourceReleaseId)],
+);
+
 /** CMS OPPS Addendum A: national payment rate per APC (CMS group titles) for a quarter. */
 export const oppsApcRates = pgTable(
   "opps_apc_rates",

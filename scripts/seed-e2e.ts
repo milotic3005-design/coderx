@@ -6,7 +6,8 @@ import { rmSync } from "node:fs";
 import { createDbHandle } from "@/lib/db/client";
 import { runMigrations } from "@/lib/db/migrate";
 import { importRelease, runDerive } from "@/ingest/pipeline";
-import { FIXTURE_RELEASES, fixtureFetcher } from "../tests/helpers/fixtures";
+import { importHospitalRates, hospitalRatesSchema } from "@/ingest/hospital-import";
+import { FIXTURE_RELEASES, fixtureFetcher, hospitalRatesFixtureUpload } from "../tests/helpers/fixtures";
 
 async function main() {
   const dir = process.env.CODERX_PGLITE_DIR ?? ".data/e2e-pglite";
@@ -20,6 +21,7 @@ async function main() {
       if (o.status !== "imported") throw new Error(`${release.sourceKey}: ${o.reason}`);
     }
     const report = await runDerive(handle.db);
+    await importHospitalRates(handle.db, hospitalRatesSchema.parse(await hospitalRatesFixtureUpload()));
     console.log(`seed-e2e: ${dir} ready (${report.drugs} drugs, ${report.hcpcsCodes} codes, ${report.searchDocuments} search documents)`);
   } finally {
     await handle.close();

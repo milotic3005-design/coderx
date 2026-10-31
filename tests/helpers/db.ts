@@ -1,7 +1,8 @@
 import { createDbHandle, type DbHandle } from "@/lib/db/client";
 import { runMigrations } from "@/lib/db/migrate";
 import { importRelease, runDerive } from "@/ingest/pipeline";
-import { FIXTURE_RELEASES, fixtureFetcher } from "./fixtures";
+import { importHospitalRates, hospitalRatesSchema } from "@/ingest/hospital-import";
+import { FIXTURE_RELEASES, fixtureFetcher, hospitalRatesFixtureUpload } from "./fixtures";
 
 /** Fresh in-memory PostgreSQL (PGlite) with migrations applied. */
 export async function freshDb(): Promise<DbHandle> {
@@ -19,6 +20,7 @@ export async function seededDb(): Promise<DbHandle> {
     if (outcome.status !== "imported") throw new Error(`Fixture import failed for ${release.sourceKey}: ${outcome.reason}`);
   }
   await runDerive(handle.db);
+  await importHospitalRates(handle.db, hospitalRatesSchema.parse(await hospitalRatesFixtureUpload()));
   return handle;
 }
 

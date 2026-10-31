@@ -4,16 +4,18 @@
  * of an official field; nothing is inferred from names.
  */
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { parseCmsDosage } from "@/lib/billing";
 import { getDb, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { todayUs } from "@/lib/dates";
 import { EXCLUDE_FLAG_LABELS, formatPeriod } from "@/lib/format";
 import { isCodeActive } from "@/lib/hcpcs";
+import { pooledByPlanType, summarizeRates } from "@/lib/hospital-rates";
 import { medicaidFlags, type MedicaidInfo } from "@/lib/medicaid";
 import type { MueEntry } from "@/lib/mue";
 import { formatNdc11 } from "@/lib/ndc";
 import { loadReleases, toProvenance, type Provenance, type ReleaseRow } from "./provenance";
-import { medicaidFor, mueFor, mueReleases } from "./queries";
+import { hospitalRatesFor, medicaidFor, mueFor, mueReleases } from "./queries";
 
 const today = () => todayUs();
 
@@ -495,7 +497,7 @@ export async function siteOfCareData(code: string, dbArg?: Database) {
   const oppsA = latest.get("cms_opps_addendum_a") ?? null;
   const oppsB = latest.get("cms_opps_addendum_b") ?? null;
   const hcaRel = latest.get("wa_hca_home_infusion") ?? null;
-  const [codeRows, payRows, oppsRows, apcRows, hcaRows] = await Promise.all([
+  const [codeRows, payRows, oppsRows, apcRows, hcaRows, hospitalRates] = await Promise.all([
     db.select({ code: t.hcpcsCodes.code, longDescription: t.hcpcsCodes.longDescription, isDrug: t.hcpcsCodes.isDrug, terminationDate: t.hcpcsCodes.terminationDate }).from(t.hcpcsCodes).where(eq(t.hcpcsCodes.code, code)),
     payRel?.periodLabel
       ? db
@@ -520,6 +522,7 @@ export async function siteOfCareData(code: string, dbArg?: Database) {
           .where(eq(t.stateFeeSchedule.sourceReleaseId, hcaRel.id))
           .orderBy(asc(t.stateFeeSchedule.hcpcsCode), asc(t.stateFeeSchedule.modifier))
       : [],
+    hospitalRatesFor(db, [code]),
   ]);
   const row = codeRows[0] ?? null;
   const p = payRows[0]?.p ?? null;
@@ -552,6 +555,12 @@ export async function siteOfCareData(code: string, dbArg?: Database) {
     apcPeriod: oppsA?.periodLabel ?? null,
     remedyOffset: details?.remedyOffset ?? null,
     inpatientDeductible: detailsB?.inpatientDeductible ?? details?.inpatientDeductible ?? null,
+    /** MultiCare commercial outpatient contracts for this code, as a percent of the CMS payment limit. */
+    commercialBenchmark: (() => {
+      const limit = p?.paymentLimit != null ? Number(p.paymentLimit) : null;
+      const pooled = pooledByPlanType(summarizeRates(hospitalRates.rows, parseCmsDosage(p?.dosageDescriptor ?? null), limit), limit).find((x) => x.planType === "commercial");
+      return pooled && pooled.medianPct != null ? { contracts: pooled.contracts, medianPct: pooled.medianPct, minPct: pooled.minPct!, maxPct: pooled.maxPct!, hospitals: new Set(hospitalRates.rows.map((r) => r.hospitalKey)).size } : null;
+    })(),
     hca: hcaRel
       ? {
           effectiveDate: hcaRel.effectiveStart ?? hcaRel.periodLabel,

@@ -458,6 +458,14 @@ export function SiteOfCareTool({ data, initialUnits, initialPerMonth }: { data: 
         </Group>
 
         <Group title="Commercial (your contract)">
+          {data.commercialBenchmark ? (
+            <p className="text-xs text-ink-muted">
+              MultiCare&apos;s published commercial outpatient rates for {data.code}: median {data.commercialBenchmark.medianPct}% of the CMS payment limit (range {data.commercialBenchmark.minPct}–{data.commercialBenchmark.maxPct}%, {data.commercialBenchmark.contracts} contracts).{" "}
+              <a href={`/tools/price-benchmark?code=${data.code}`} className="font-semibold text-brand hover:underline">
+                By hospital
+              </a>
+            </p>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-2">
             <BasisInput label="HOPD drug" kind={s.cmHopdDrugKind} value={s.cmHopdDrug} onKind={(k) => set({ cmHopdDrugKind: k })} onValue={(v) => set({ cmHopdDrug: v })} />
             <label className="block text-sm font-semibold text-ink">

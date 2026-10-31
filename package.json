@@ -18,6 +18,7 @@
     "ingest": "tsx scripts/ingest.ts",
     "ingest:discover": "tsx scripts/ingest.ts --discover",
     "refresh:purple-book": "tsx scripts/refresh-purple-book.ts",
+    "refresh:price-benchmark": "tsx scripts/refresh-price-benchmark.ts",
     "fixtures": "tsx scripts/make-fixtures.ts",
     "e2e:db": "tsx scripts/seed-e2e.ts",
     "audit": "npm audit --omit=dev",

@@ -66,6 +66,23 @@ curl -sS -X POST "https://<domain>/api/admin/import" \
 
 Generate tokens with `openssl rand -base64 48`. Store `DATABASE_URL`, `CODERX_ADMIN_TOKEN`, and `CRON_SECRET` as **sensitive** Vercel environment variables. The Purple Book job reads `CODERX_ADMIN_TOKEN` from `.env.production.local` on the operator's Mac (below). No secret is read by client code; only `NEXT_PUBLIC_SITE_URL` is public.
 
+## MultiCare price benchmark (operator's Mac, monthly)
+
+MultiCare's price transparency files are 1–1.4 GB each, too large for a Vercel function, and by the operator's decision only anonymized aggregates are published. `scripts/refresh-price-benchmark.ts` (`npm run refresh:price-benchmark`) runs on the operator's Mac:
+
+1. For each hospital in `src/ingest/hospitals.ts`, HEADs the file; when Last-Modified matches the local cache it reuses the cache, otherwise it streams the file (about 75 s per GB) and keeps only HCPCS drug rows.
+2. Uploads the anonymized groups (plan types and amounts, no payer or plan names) to `POST /api/admin/hospital-rates`, unless `/api/sources` already lists that hospital with the same SHA-256.
+3. Writes the private report to `~/Documents/CodeRx Price Benchmark/`: `index.html` (search a code; rates by payer and plan per CMS billing unit and as a percent of the CMS payment limit) and `multicare-drug-rates.csv` (every contract with NDCs and chargemaster descriptions). The `cache/` folder holds each hospital's parsed contracts. None of it is uploaded; keep it private.
+
+```bash
+scripts/price-benchmark-launchd.sh install     # monthly: the 3rd at 06:00 local time
+scripts/price-benchmark-launchd.sh status
+scripts/price-benchmark-launchd.sh run         # run now (add --dry-run, --force, or --only yakima-memorial,valley)
+scripts/price-benchmark-launchd.sh uninstall
+```
+
+Same token handling, Node selection, network wait, and failure notification as the Purple Book job below. Log: `~/Library/Logs/coderx-price-benchmark-refresh.log`. When MultiCare reposts a file under a new path, update its URL in `src/ingest/hospitals.ts` (the upload endpoint accepts only the listed hospitals and the file host).
+
 ## Publisher files blocked from cloud egress (Purple Book)
 
 FDA's bot defense blocks the Purple Book CSV for cloud networks: Vercel gets a 404, and GitHub-hosted Actions runners get a 302 to `/apology_objects/abuse-detection-apology.html` for both the downloads page and the file (checked 2026-10-15 from two Azure regions). Ordinary networks are not blocked. The Vercel cron records its failure; the import is done from an operator's Mac by `scripts/refresh-purple-book.ts` (`npm run refresh:purple-book`):

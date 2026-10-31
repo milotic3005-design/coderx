@@ -23,7 +23,8 @@ afterAll(async () => {
 
 describe("ingestion pipeline (real CMS/FDA excerpts)", () => {
   it("records every release with checksum, dates, and status", async () => {
-    const releases = await h.db.select().from(t.sourceReleases);
+    // Fixture releases plus one hospital price transparency upload (seeded separately).
+    const releases = (await h.db.select().from(t.sourceReleases)).filter((r) => r.sourceKey !== "hpt_multicare");
     expect(releases).toHaveLength(FIXTURE_RELEASES.length);
     for (const r of releases) {
       expect(r.status).toBe("succeeded");

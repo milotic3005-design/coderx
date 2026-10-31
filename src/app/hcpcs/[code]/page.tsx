@@ -9,6 +9,7 @@ import { BillingUnitCard, CodeHistoryTable, CrosswalkTable, LimitationsList, Pay
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
 import { GlanceStrip, type GlanceItem } from "@/components/glance";
+import { HospitalRatesTable } from "@/components/hospital-rates";
 import { StickyRecordBar } from "@/components/sticky-record-bar";
 import { CoverageLinks, MueTable } from "@/components/tool-blocks";
 import { cachedHcpcsDetail } from "@/lib/data/cached";
@@ -333,7 +334,18 @@ export default async function HcpcsPage({ params }: { params: Params }) {
                 <p className="mt-2 text-xs text-ink-muted">{STATE_FEE_SOURCES.wa_hca_professional_drugs.note}</p>
               </div>
             </div>
-            <ProvenanceFooter sources={[d.releases.payment, d.releases.opps, d.releases.appleHealthDrugs]} />
+            {d.hospitalRates.rows.length ? (
+              <div className="mt-6">
+                <h3 className="mb-3 text-sm font-semibold text-ink">MultiCare negotiated rates (hospital price transparency files)</h3>
+                <HospitalRatesTable code={code} rates={d.hospitalRates} billingUnit={d.billingUnit.parsed} unitText={d.billingUnit.text} paymentLimit={isCurrentPayment && latest?.paymentLimit != null ? Number(latest.paymentLimit) : null} detail={false} />
+                <p className="mt-2 text-sm">
+                  <Link href={`/tools/price-benchmark?code=${code}`} className="font-semibold text-brand hover:underline">
+                    Rates by hospital
+                  </Link>
+                </p>
+              </div>
+            ) : null}
+            <ProvenanceFooter sources={[d.releases.payment, d.releases.opps, d.releases.appleHealthDrugs, ...d.hospitalRates.hospitals.filter((h) => d.hospitalRates.rows.some((r) => r.hospitalKey === h.key)).map((h) => h.release)]} />
           </Section>
 
           <Section

@@ -121,6 +121,32 @@ describe("quarterly changes", () => {
   });
 });
 
+describe("MultiCare price benchmark", () => {
+  it("serves the anonymized hospital rates with the code and skips a re-upload of the same file", async () => {
+    const d = (await getHcpcsDetail("J9312", h.db))!;
+    expect(d.hospitalRates.hospitals).toEqual([expect.objectContaining({ key: "yakima-memorial", name: "MultiCare Yakima Memorial Hospital", lastUpdatedOn: "2026-08-27" })]);
+    expect(d.hospitalRates.hospitals[0].release).toMatchObject({ sourceKey: "hpt_multicare", status: "hospital-published" });
+    expect(d.hospitalRates.rows.length).toBeGreaterThan(0);
+    expect(JSON.stringify(d.hospitalRates)).not.toMatch(/Regence|Premera|Molina|RealValue/);
+    const { importHospitalRates, hospitalRatesSchema } = await import("@/ingest/hospital-import");
+    const { hospitalRatesFixtureUpload } = await import("../helpers/fixtures");
+    expect((await importHospitalRates(h.db, hospitalRatesSchema.parse(await hospitalRatesFixtureUpload()))).status).toBe("skipped");
+  });
+  it("rejects uploads for unknown hospitals or other file hosts", async () => {
+    const { hospitalRatesSchema } = await import("@/ingest/hospital-import");
+    const { hospitalRatesFixtureUpload } = await import("../helpers/fixtures");
+    const upload = await hospitalRatesFixtureUpload();
+    expect(hospitalRatesSchema.safeParse({ ...upload, hospitalKey: "elsewhere" }).success).toBe(false);
+    expect(hospitalRatesSchema.safeParse({ ...upload, file: { ...upload.file, url: "https://example.com/x.csv" } }).success).toBe(false);
+  });
+  it("gives the site-of-care tool MultiCare's commercial median against the CMS limit", async () => {
+    const { siteOfCareData } = await import("@/lib/data/tools");
+    const soc = await siteOfCareData("J9312", h.db);
+    expect(soc.commercialBenchmark).toMatchObject({ hospitals: 1 });
+    expect(soc.commercialBenchmark!.medianPct).toBeGreaterThan(100);
+  });
+});
+
 describe("biosimilar comparator", () => {
   it("groups each brand under its own Purple Book reference even when brands share a BLA", async () => {
     // Fresenius Kabi licenses Conexxence (reference Prolia) and Bomyntra (reference Xgeva) under BLA 761398.

@@ -22,7 +22,9 @@ files that were current on that date.
 | 7 | `cms_mue_practitioner`, `cms_mue_outpatient`, `cms_mue_dme` | CMS | NCCI Medically Unlikely Edit tables (practitioner, facility outpatient hospital, DME supplier) | Quarterly | **Ingested** (current quarter; HCPCS Level II rows only) |
 | 8 | `cms_mdrp_products` | CMS | Drug Products in the Medicaid Drug Rebate Program | Quarterly | **Ingested** (newest quarter, indexed NDCs only) |
 | 9 | `wa_hca_home_infusion` | Washington State HCA | Apple Health (Medicaid) Home Infusion Therapy/Parenteral Nutrition Program fee schedule | As published | **Ingested** (effective-date releases; HCPCS Level II rows only) |
-| 10 | `cms_opps_addendum_a`, `cms_opps_addendum_b` | CMS | Hospital OPPS Addendum A (payment by APC) and Addendum B (payment by HCPCS code), quarterly updates | Quarterly | **Ingested** (current quarter; Addendum B HCPCS Level II rows only; AMA license accepted by the operator on 2026-10-26) |
+| 10 | `cms_opps_addendum_a`, `cms_opps_addendum_b` | CMS | Hospital OPPS Addendum A (payment by APC) and Addendum B (payment by HCPCS code), quarterly updates | Quarterly | **Ingested** (two newest quarters; Addendum B HCPCS Level II rows only; AMA license accepted by the operator on 2026-10-26) |
+| 11 | `wa_hca_professional_drugs` | Washington State HCA | Apple Health (Medicaid) Professional Administered Drug Fee Schedule | As published | **Ingested** (effective-date releases; HCPCS Level II rows only) |
+| 12 | `hpt_multicare` | MultiCare Health System | Hospital standard charges (price transparency, 45 CFR 180.50), MultiCare's Washington hospitals | Monthly (operator's Mac) | **Ingested as anonymized drug rates** (no payer or plan names) |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
 | — | — | NLM | DailyMed | Daily | Link-out only |
 
@@ -176,6 +178,30 @@ files that were current on that date.
 | Fields used | B: HCPCS code, SI, APC, payment rate, national/minimum/adjusted copayment, IRA coinsurance %, pass-through expiration, note. A: APC, group title, SI, relative weight, payment rate, copayments. The 340B remedy offset ratio and its status indicators are read from the files' notes block and kept in the release report. |
 | Known limitations | National unadjusted rates: the site-of-care tool applies the wage index the user enters to 60% of APC rates (42 CFR 419.43). No CPT-to-APC mapping is stored; users choose drug administration APC levels. Outliers, rural SCH adjustments, and the coinsurance cap are not modeled. |
 | Ingestion | Discovered from the quarterly addenda page (newest quarter page per addendum, zip path taken from the license link); manifest pins 2026-Q4. 2026-Q4: Addendum A 1,061 APCs; Addendum B 6,735 HCPCS Level II rows kept, 11,696 CPT and 847 CDT rows dropped. |
+
+## 11. Washington State HCA — Professional Administered Drug Fee Schedule
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | Washington State Health Care Authority (HCA), Apple Health (Medicaid) |
+| Source URL | https://www.hca.wa.gov/assets/billers-and-providers/professional-administered-drugs-20261001.xlsx (pattern `professional-administered-drugs-{YYYYMMDD}.xlsx`, listed on HCA's billing guides and fee schedules page) |
+| Format | XLSX: title block ("Effective October 1, 2026", "Updated October 29, 2026"), then Code Status Indicator, Code, Maximum Allowable Fee, PA Required, Comments. A few rows carry the modifier in the code cell ("J3490-HG"). The legend is in the workbook. |
+| Licensing / restrictions | Washington State government publication. CPT rows are counted and dropped. |
+| Fields used | Code (and modifier), status indicator, maximum allowable fee (text such as `AAC`, `NC`, `DP`, `DC` kept verbatim), PA flag, comments |
+| Known limitations | For professional claims; hospital-administered drugs are paid under HCA's outpatient (EAPG/OPPS) rules. `AAC` = paid at actual acquisition cost (NDC or invoice). 2026-10-01: 1,168 HCPCS rows, 106 CPT rows dropped, 12 duplicate rows reported. |
+| Ingestion | Pinned in the manifest by effective date. HCA re-posts in place, so the daily refresh also re-imports when the file's Last-Modified is newer than the last import (identical files are skipped by checksum). |
+
+## 12. MultiCare hospital price transparency files (anonymized drug rates)
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | MultiCare Health System, one file per hospital license, as required by 45 CFR 180.50 |
+| Source URL | Listed on https://www.multicare.org/patient-resources/billing/transparency/; files on `sthpiprd.blob.core.windows.net` (pinned in `src/ingest/hospitals.ts`, checked 2026-10-30: Tacoma General & Allenmore, Auburn, Capital, Covington, Deaconess, Good Samaritan, Mary Bridge, Valley, Yakima Memorial, Navos) |
+| Format | CSV, CMS template v3.0.0 "tall" layout; about 1–1.4 GB per hospital |
+| Licensing / restrictions | Federally required public files. MultiCare's website terms restrict republishing its site content, so by the operator's decision (2026-10-30) CodeRx publishes only anonymized aggregates: no payer or plan names, no chargemaster descriptions, no CPT rows. The full payer-level detail stays in a private report on the operator's Mac. |
+| Fields used | HCPCS drug code (J, Q, C9, A9), setting, billing class, methodology, negotiated dollar (one per payer-plan contract), counts of percent- and algorithm-only contracts, drug quantity and measure, gross and cash charge ranges. Plan type (commercial, Medicare Advantage, Apple Health managed care) is derived from the plan name in the file and uploaded instead of the name. |
+| Known limitations | Rates are shown per CMS billing unit only when the file's drug measure converts (ME, GR, ML, F2, EA; "UN" is not converted). Case rates and other encounter-level methodologies are counted but left out of per-unit figures. Hospital-published data; CodeRx does not verify it. Yakima Memorial (2026-08-27 file): 4.9 million rows, 373,609 drug rows, 83,035 contracts, 1,805 codes, 32 payer-plans. |
+| Ingestion | `scripts/refresh-price-benchmark.ts` on the operator's Mac streams each file, uploads anonymized groups to `POST /api/admin/hospital-rates`, and keeps one current release per hospital (period label = hospital key; same SHA-256 skipped). See docs/05-operations.md. |
 
 ## Evaluated but not ingested
 

@@ -114,3 +114,21 @@ test.describe("referral intake card", () => {
     await expect(page.getByRole("button", { name: "Print card" })).toBeVisible();
   });
 });
+
+test.describe("MultiCare price benchmark", () => {
+  test("shows anonymized negotiated rates per billing unit by plan type", async ({ page }) => {
+    await page.goto("/tools/price-benchmark?code=J9312", { waitUntil: "networkidle" });
+    const pooled = page.getByRole("table", { name: /MultiCare outpatient negotiated rates for J9312 per 10 MG, all hospitals, by plan type/ });
+    await expect(pooled.getByRole("row", { name: /Commercial/ })).toBeVisible();
+    await expect(pooled.getByRole("row", { name: /Medicare Advantage/ })).toBeVisible();
+    await expect(page.getByRole("table", { name: /by MultiCare hospital and plan type/ })).toContainText("MultiCare Yakima Memorial Hospital");
+    await expect(page.locator("main")).not.toContainText("Regence");
+  });
+
+  test("code pages and the site-of-care tool show the benchmark", async ({ page }) => {
+    await page.goto("/hcpcs/J9312", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: "MultiCare negotiated rates (hospital price transparency files)" })).toBeVisible();
+    await page.goto("/tools/site-of-care?code=J9312&units=50", { waitUntil: "networkidle" });
+    await expect(page.getByText(/MultiCare.s published commercial outpatient rates for J9312: median \d+% of the CMS payment limit/)).toBeVisible();
+  });
+});
