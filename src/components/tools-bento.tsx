@@ -115,26 +115,9 @@ function ScanPreview() {
   );
 }
 
-function CapacityPreview() {
-  return (
-    <div className="mt-4 space-y-1">
-      {[
-        [55, 30],
-        [70, 20],
-        [40, 45],
-      ].map(([a, b], i) => (
-        <span key={i} className="flex h-2.5 overflow-hidden rounded-sm bg-paper-sunken">
-          <span className="bg-brand/70" style={{ width: `${a}%` }} />
-          <span className="bg-accent/70" style={{ width: `${b}%` }} />
-        </span>
-      ))}
-    </div>
-  );
-}
 
 const PREVIEW: Record<string, ReactNode> = {
   "/tools/scan": <ScanPreview />,
-  "/tools/capacity": <CapacityPreview />,
   "/calculator": <CalculatorPreview />,
   "/tools/audit": <AuditPreview />,
   "/tools/margin": <MarginPreview />,
@@ -147,9 +130,8 @@ const LAYOUT: Record<string, string> = {
   "/tools/audit": "",
   "/tools/margin": "",
   "/tools/biosimilars": "",
-  "/tools/changes": "",
+  "/tools/changes": "xl:col-span-2",
   "/tools/site-of-care": "",
-  "/tools/capacity": "md:col-span-2 xl:col-span-1",
 };
 
 /** The five tools as a bento grid: the calculator large, the director tools around it. */

@@ -188,35 +188,6 @@ describe("biosimilar switch simulator", () => {
   });
 });
 
-describe("chair capacity planner", () => {
-  const input = {
-    chairs: 10,
-    openMinutes: 600,
-    turnoverMinutes: 15,
-    targetPct: 85,
-    visits: [
-      { name: "Short", chairMinutes: 45, perDay: 40 },
-      { name: "Long", chairMinutes: 285, perDay: 8 },
-    ],
-  };
-  it("computes utilization, chairs needed, and headroom", async () => {
-    const { planCapacity } = await import("@/lib/capacity");
-    const r = planCapacity(input);
-    // demand: 40 × 60 + 8 × 300 = 4,800 of 6,000 chair-minutes
-    expect(r).toMatchObject({ availableMinutes: 6000, demandMinutes: 4800, utilizationPct: 80, chairsNeeded: 10, tooLong: [] });
-    // target 85% of 6,000 = 5,100; 300 spare minutes ÷ 100-minute average slot = 3 visits
-    expect(r.headroomVisits).toBe(3);
-    expect(r.byType.map((t) => t.sharePct)).toEqual([50, 50]);
-  });
-  it("packs the day and reports visits that do not fit", async () => {
-    const { packChairs } = await import("@/lib/capacity");
-    const ok = packChairs(input);
-    expect(ok.overflow).toEqual([]);
-    expect(ok.chairs.every((c) => c.minutes - input.turnoverMinutes <= input.openMinutes)).toBe(true);
-    const tight = packChairs({ ...input, chairs: 4 });
-    expect(tight.overflow.reduce((n, o) => n + o.count, 0)).toBeGreaterThan(0);
-  });
-});
 
 describe("vial barcode parsing: decoder output", () => {
   it("ignores the leading FNC1 that DataMatrix decoders return as GS", async () => {

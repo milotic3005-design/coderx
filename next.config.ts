@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    // The chair capacity planner was retired on 2026-10-30.
+    return [{ source: "/tools/capacity", destination: "/tools", permanent: true }];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

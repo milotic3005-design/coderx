@@ -43,7 +43,7 @@ npm run lint && npm run typecheck && npm test && npm run test:e2e && npm run bui
 | Axe WCAG checks, heading order, and overflow for every `/tools` page | `tests/e2e/a11y-and-layout.spec.ts` |
 | At-a-glance strip, sticky record bar, command palette (Ctrl+K, ranking, Escape), tools bento, pinned calculator summary | `tests/e2e/ui.spec.ts` |
 | Medicaid rebate product data (streaming parser across chunk boundaries, quarter/scope filter, URL discovery, NDC page, claim qualifier) | `tests/unit/parsers.test.ts`, `tests/integration/pipeline.test.ts`, `tests/e2e/tools2.spec.ts` |
-| Vial scanner (GS1 string, UPC, check digits, real DataMatrix photo decoded in the browser), switch simulator, capacity planner, RSS feed | `tests/unit/calculator-tools.test.ts`, `tests/e2e/tools2.spec.ts` |
+| Vial scanner (GS1 string, UPC, check digits, real DataMatrix photo decoded in the browser), switch simulator, RSS feed, retired capacity-planner redirect | `tests/unit/calculator-tools.test.ts`, `tests/e2e/tools2.spec.ts` |
 
 Also covered: NDC normalization edge cases, parsers for every source format, ZIP corruption and truncation, idempotent re-imports, transactional rollback, CPT exclusion, quarter history, biosimilar linking by BLA, “no name-based inference”, API validation and error envelopes, admin auth, rate limiting, CSP and security headers, axe-core WCAG 2.x A/AA in light and dark themes, heading order, touch targets, table scrolling on small screens.
 

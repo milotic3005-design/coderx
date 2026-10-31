@@ -43,7 +43,7 @@ test.describe("Medicaid rebate data", () => {
   });
 });
 
-test.describe("biosimilar switch simulator, capacity planner, RSS", () => {
+test.describe("biosimilar switch simulator and RSS", () => {
   test("simulator compares all-reference with a 50% switch", async ({ page }) => {
     await page.goto("/tools/biosimilars?ref=rituxan-rituximab", { waitUntil: "networkidle" });
     const table = page.getByRole("table", { name: "Annual totals before and after the switch" });
@@ -51,13 +51,6 @@ test.describe("biosimilar switch simulator, capacity planner, RSS", () => {
     await expect(table).toContainText("$327,121");
   });
 
-  test("capacity planner computes utilization from the example mix", async ({ page }) => {
-    await page.goto("/tools/capacity", { waitUntil: "networkidle" });
-    const out = page.getByRole("region", { name: "Capacity" });
-    await expect(out).toContainText("61%");
-    await page.getByLabel("Chairs", { exact: true }).fill("4");
-    await expect(out.getByRole("alert")).toContainText("Does not fit in one day");
-  });
 
   test("RSS feed lists watchlist changes", async ({ request }) => {
     const res = await request.get("/feeds/changes?codes=J9312");
@@ -99,4 +92,10 @@ test.describe("site of care: HOPD vs home infusion", () => {
     await expect(row).toContainText("$3,447.35"); // 50 × $68 + A4222 at the HCA maximum of $47.35
     await expect(row).toContainText("Home infusion by $1,647.35/mo");
   });
+});
+
+test("the retired capacity planner URL redirects to the tools page", async ({ page }) => {
+  const res = await page.goto("/tools/capacity");
+  expect(page.url()).toMatch(/\/tools$/);
+  expect(res?.status()).toBe(200);
 });

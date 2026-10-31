@@ -1,4 +1,4 @@
-import { Armchair, Calculator, ClipboardCheck, GitCompareArrows, History, Hospital, Scale, ScanLine } from "lucide-react";
+import { Calculator, ClipboardCheck, GitCompareArrows, History, Hospital, Scale, ScanLine } from "lucide-react";
 
 /** The Tools section, in the order shown on /tools and in the footer. */
 export const TOOLS = [
@@ -50,12 +50,5 @@ export const TOOLS = [
     title: "What changed this quarter",
     who: "Everyone who maintains a chargemaster",
     body: "Payment-limit movers, new and terminated drug codes, codes added to or dropped from the payment file, and NDCs added to or removed from the CMS crosswalk — with a personal watchlist and an RSS feed.",
-  },
-  {
-    href: "/tools/capacity",
-    icon: Armchair,
-    title: "Chair capacity planner",
-    who: "Infusion center directors",
-    body: "Chair utilization, chairs needed at a target, room for more visits, and a day-packing preview — from your chairs, hours, and visit mix. Nothing leaves your browser.",
   },
 ] as const;
