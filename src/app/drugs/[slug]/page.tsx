@@ -7,6 +7,7 @@ import { ActiveBadge, ClassBadge, DataStatusBadge, FamilyBadge, NocBadge } from 
 import { RecordView } from "@/components/client-bits";
 import { BillingUnitCard, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, PerDiemCodes, PerDiemReimbursement } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav, TableScroll, td, th } from "@/components/layout-bits";
+import { Icd10Groups } from "@/components/icd10-list";
 import { ProvenanceFooter } from "@/components/provenance";
 import { GlanceStrip, type GlanceAction, type GlanceItem } from "@/components/glance";
 import { StickyRecordBar } from "@/components/sticky-record-bar";
@@ -14,6 +15,7 @@ import { CoverageLinks } from "@/components/tool-blocks";
 import { cachedDrugDetail } from "@/lib/data/cached";
 import { EXCLUDE_FLAG_LABELS, formatDate, formatMoney, formatNumber, formatPeriod, PRODUCT_CLASS_LABELS, titleCase } from "@/lib/format";
 import { slugSchema } from "@/lib/api/validation";
+import { mcdArticleUrl } from "@/ingest/parsers/cms-mcd";
 import { SITE } from "@/lib/site";
 
 type Params = Promise<{ slug: string }>;
@@ -94,6 +96,7 @@ export default async function DrugPage({ params }: { params: Params }) {
     { id: "reimbursement", label: "Reimbursement" },
     { id: "related", label: "Related products & codes" },
     { id: "coverage", label: "Coverage & policy" },
+    { id: "icd10", label: "ICD-10 codes" },
     { id: "history", label: "Code history" },
     { id: "sources", label: "Data sources" },
     { id: "limitations", label: "Limitations" },
@@ -451,7 +454,86 @@ export default async function DrugPage({ params }: { params: Params }) {
             />
           </Section>
 
-          <Section id="history" number="08" title="Code history" description="Quarterly changes to the HCPCS codes linked to this drug.">
+          <Section
+            id="icd10"
+            number="08"
+            title="Diagnosis codes (ICD-10-CM) in Medicare billing articles"
+            description="ICD-10-CM codes that Medicare contractors' Billing and Coding articles list as supporting medical necessity for this drug's HCPCS codes — covered diagnoses, not how often each is used. Washington (Noridian JF) articles come first; other contractors' articles are linked below."
+          >
+            {d.coverageArticles.articles.length ? (
+              <div className="space-y-6">
+                {d.coverageArticles.articles
+                  .filter((a) => a.isHomeState)
+                  .map((a) => (
+                    <div key={a.displayId} className="rounded-xl border hairline bg-surface p-5">
+                      <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Washington · {a.contractors.join(", ")}</p>
+                      <h3 className="mt-1 text-base font-semibold text-ink">
+                        <Link href={`/coverage/${a.displayId}`} className="hover:text-brand hover:underline">
+                          {a.title}
+                        </Link>{" "}
+                        <span className="code-chip text-sm font-normal text-ink-muted">{a.displayId}</span>
+                      </h3>
+                      <p className="mt-1 text-sm text-ink-muted">
+                        For {a.codes.join(", ")} · effective {formatDate(a.effectiveDate)} · {a.icd10Count.toLocaleString()} covered ICD-10-CM code{a.icd10Count === 1 ? "" : "s"} ·{" "}
+                        <a href={mcdArticleUrl(a.articleId, a.version)} rel="noopener noreferrer">
+                          CMS article
+                        </a>
+                      </p>
+                      {a.icd10.length ? (
+                        <details className="mt-3">
+                          <summary className="cursor-pointer text-sm font-semibold text-brand">Show the {a.icd10Count.toLocaleString()} covered codes</summary>
+                          <div className="mt-3">
+                            <Icd10Groups rows={a.icd10} label={`Covered ICD-10-CM codes in ${a.displayId}`} />
+                          </div>
+                        </details>
+                      ) : (
+                        <p className="mt-2 text-sm text-ink-muted">This article lists no covered ICD-10-CM codes; see the CMS article.</p>
+                      )}
+                    </div>
+                  ))}
+                {d.coverageArticles.articles.some((a) => !a.isHomeState) ? (
+                  <TableScroll label="Other Medicare contractors' articles">
+                    <table className="w-full min-w-[40rem] border-collapse">
+                      <caption className="sr-only">Billing and Coding articles from other Medicare contractors for this drug&apos;s HCPCS codes</caption>
+                      <thead>
+                        <tr>
+                          {["Article", "Contractor", "States", "Codes", "ICD-10-CM codes"].map((h) => (
+                            <th key={h} scope="col" className={th}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {d.coverageArticles.articles
+                          .filter((a) => !a.isHomeState)
+                          .map((a) => (
+                            <tr key={a.displayId}>
+                              <td className={td}>
+                                <Link href={`/coverage/${a.displayId}`} className="font-semibold text-brand hover:underline">
+                                  {a.title}
+                                </Link>
+                                <span className="block code-chip text-xs text-ink-muted">{a.displayId}</span>
+                              </td>
+                              <td className={td}>{a.contractors.join(", ") || "—"}</td>
+                              <td className={`${td} text-xs text-ink-muted`}>{a.states.join(", ") || "—"}</td>
+                              <td className={`${td} code-chip text-xs`}>{a.codes.join(", ")}</td>
+                              <td className={`${td} code-chip`}>{a.icd10Count.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </TableScroll>
+                ) : null}
+                {!d.coverageArticles.articles.some((a) => a.isHomeState) ? <p className="text-sm text-ink-muted">Noridian (Jurisdiction F, Washington) has no current Billing and Coding article for these codes.</p> : null}
+              </div>
+            ) : (
+              <NoData>No current Medicare Billing and Coding article lists {d.codes.map((c) => c.code).join(", ") || "this drug's codes"}.</NoData>
+            )}
+            <ProvenanceFooter sources={[d.coverageArticles.release]} />
+          </Section>
+
+          <Section id="history" number="09" title="Code history" description="Quarterly changes to the HCPCS codes linked to this drug.">
             {d.codeHistory.length ? (
               <div className="space-y-6">
                 {d.codes.map((c) => (
@@ -469,14 +551,14 @@ export default async function DrugPage({ params }: { params: Params }) {
             <ProvenanceFooter sources={[d.releases.hcpcs]} />
           </Section>
 
-          <Section id="sources" number="09" title="Data sources">
+          <Section id="sources" number="10" title="Data sources">
             <ProvenanceFooter sources={d.provenance} />
             <p className="mt-3 text-sm text-ink-muted">
               Every import with its checksum is listed on the <Link href="/sources" className="font-semibold text-brand hover:underline">data sources</Link> page.
             </p>
           </Section>
 
-          <Section id="limitations" number="10" title="Limitations and disclaimers">
+          <Section id="limitations" number="11" title="Limitations and disclaimers">
             <LimitationsList
               items={[
                 "FDA NDC Directory data is submitted by labelers; FDA notes that inclusion does not mean the information was verified or that a product is approved, covered, or reimbursable.",

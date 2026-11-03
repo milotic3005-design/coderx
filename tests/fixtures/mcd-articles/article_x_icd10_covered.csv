@@ -1,0 +1,61 @@
+article_id,article_version,icd10_code_id,icd10_code_version,icd10_covered_group,range,sort_order,description,last_updated,asterisk
+56380,56,C81.00,17,1,N,2218,"Nodular lymphocyte predominant Hodgkin lymphoma, unspecified site",2025-08-26 12:14:59,N
+56380,56,C81.01,17,1,N,2219,"Nodular lymphocyte predominant Hodgkin lymphoma, lymph nodes of head, face, and neck",2025-08-26 12:14:59,N
+56380,56,C81.02,17,1,N,2220,"Nodular lymphocyte predominant Hodgkin lymphoma, intrathoracic lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.03,17,1,N,2221,"Nodular lymphocyte predominant Hodgkin lymphoma, intra-abdominal lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.04,17,1,N,2222,"Nodular lymphocyte predominant Hodgkin lymphoma, lymph nodes of axilla and upper limb",2025-08-26 12:14:59,N
+56380,56,C81.05,17,1,N,2223,"Nodular lymphocyte predominant Hodgkin lymphoma, lymph nodes of inguinal region and lower limb",2025-08-26 12:14:59,N
+56380,56,C81.06,17,1,N,2224,"Nodular lymphocyte predominant Hodgkin lymphoma, intrapelvic lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.07,17,1,N,2225,"Nodular lymphocyte predominant Hodgkin lymphoma, spleen",2025-08-26 12:14:59,N
+56380,56,C81.08,17,1,N,2226,"Nodular lymphocyte predominant Hodgkin lymphoma, lymph nodes of multiple sites",2025-08-26 12:14:59,N
+56380,56,C81.09,17,1,N,2227,"Nodular lymphocyte predominant Hodgkin lymphoma, extranodal and solid organ sites",2025-08-26 12:14:59,N
+56380,56,C81.0A,17,1,N,2228,"Nodular lymphocyte predominant Hodgkin lymphoma, in remission",2025-08-26 12:14:59,N
+56380,56,C81.10,17,1,N,2230,"Nodular sclerosis Hodgkin lymphoma, unspecified site",2025-08-26 12:14:59,N
+56380,56,C81.11,17,1,N,2231,"Nodular sclerosis Hodgkin lymphoma, lymph nodes of head, face, and neck",2025-08-26 12:14:59,N
+56380,56,C81.12,17,1,N,2232,"Nodular sclerosis Hodgkin lymphoma, intrathoracic lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.13,17,1,N,2233,"Nodular sclerosis Hodgkin lymphoma, intra-abdominal lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.14,17,1,N,2234,"Nodular sclerosis Hodgkin lymphoma, lymph nodes of axilla and upper limb",2025-08-26 12:14:59,N
+56380,56,C81.15,17,1,N,2235,"Nodular sclerosis Hodgkin lymphoma, lymph nodes of inguinal region and lower limb",2025-08-26 12:14:59,N
+56380,56,C81.16,17,1,N,2236,"Nodular sclerosis Hodgkin lymphoma, intrapelvic lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.17,17,1,N,2237,"Nodular sclerosis Hodgkin lymphoma, spleen",2025-08-26 12:14:59,N
+56380,56,C81.18,17,1,N,2238,"Nodular sclerosis Hodgkin lymphoma, lymph nodes of multiple sites",2025-08-26 12:14:59,N
+56380,56,C81.19,17,1,N,2239,"Nodular sclerosis Hodgkin lymphoma, extranodal and solid organ sites",2025-08-26 12:14:59,N
+56380,56,C81.1A,17,1,N,2240,"Nodular sclerosis Hodgkin lymphoma, in remission",2025-08-26 12:14:59,N
+56380,56,C81.20,17,1,N,2242,"Mixed cellularity Hodgkin lymphoma, unspecified site",2025-08-26 12:14:59,N
+56380,56,C81.21,17,1,N,2243,"Mixed cellularity Hodgkin lymphoma, lymph nodes of head, face, and neck",2025-08-26 12:14:59,N
+56380,56,C81.22,17,1,N,2244,"Mixed cellularity Hodgkin lymphoma, intrathoracic lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.23,17,1,N,2245,"Mixed cellularity Hodgkin lymphoma, intra-abdominal lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.24,17,1,N,2246,"Mixed cellularity Hodgkin lymphoma, lymph nodes of axilla and upper limb",2025-08-26 12:14:59,N
+56380,56,C81.25,17,1,N,2247,"Mixed cellularity Hodgkin lymphoma, lymph nodes of inguinal region and lower limb",2025-08-26 12:14:59,N
+56380,56,C81.26,17,1,N,2248,"Mixed cellularity Hodgkin lymphoma, intrapelvic lymph nodes",2025-08-26 12:14:59,N
+56380,56,C81.27,17,1,N,2249,"Mixed cellularity Hodgkin lymphoma, spleen",2025-08-26 12:14:59,N
+57186,45,K22.0,18,1,N,14096,Achalasia of cardia,2026-08-10 16:56:09,N
+57186,45,K60.0,18,2,N,14547,Acute anal fissure,2026-08-10 16:56:09,N
+57186,45,K60.1,18,2,N,14548,Chronic anal fissure,2026-08-10 16:56:09,N
+57186,45,K60.2,18,2,N,14549,"Anal fissure, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.30,18,2,N,14551,"Anal fistula, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.311,18,2,N,14553,"Anal fistula, simple, initial",2026-08-10 16:56:09,N
+57186,45,K60.312,18,2,N,14554,"Anal fistula, simple, persistent",2026-08-10 16:56:09,N
+57186,45,K60.313,18,2,N,14555,"Anal fistula, simple, recurrent",2026-08-10 16:56:09,N
+57186,45,K60.319,18,2,N,14556,"Anal fistula, simple, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.321,18,2,N,14558,"Anal fistula, complex, initial",2026-08-10 16:56:09,N
+57186,45,K60.322,18,2,N,14559,"Anal fistula, complex, persistent",2026-08-10 16:56:09,N
+57186,45,K60.323,18,2,N,14560,"Anal fistula, complex, recurrent",2026-08-10 16:56:09,N
+57186,45,K60.329,18,2,N,14561,"Anal fistula, complex, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.40,18,2,N,14563,"Rectal fistula, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.411,18,2,N,14565,"Rectal fistula, simple, initial",2026-08-10 16:56:09,N
+57186,45,K60.412,18,2,N,14566,"Rectal fistula, simple, persistent",2026-08-10 16:56:09,N
+57186,45,K60.413,18,2,N,14567,"Rectal fistula, simple, recurrent",2026-08-10 16:56:09,N
+57186,45,K60.419,18,2,N,14568,"Rectal fistula, simple, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.421,18,2,N,14570,"Rectal fistula, complex, initial",2026-08-10 16:56:09,N
+57186,45,K60.422,18,2,N,14571,"Rectal fistula, complex, persistent",2026-08-10 16:56:09,N
+57186,45,K60.423,18,2,N,14572,"Rectal fistula, complex, recurrent",2026-08-10 16:56:09,N
+57186,45,K60.429,18,2,N,14573,"Rectal fistula, complex, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.50,18,2,N,14575,"Anorectal fistula, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.511,18,2,N,14577,"Anorectal fistula, simple, initial",2026-08-10 16:56:09,N
+57186,45,K60.512,18,2,N,14578,"Anorectal fistula, simple, persistent",2026-08-10 16:56:09,N
+57186,45,K60.513,18,2,N,14579,"Anorectal fistula, simple, recurrent",2026-08-10 16:56:09,N
+57186,45,K60.519,18,2,N,14580,"Anorectal fistula, simple, unspecified",2026-08-10 16:56:09,N
+57186,45,K60.521,18,2,N,14582,"Anorectal fistula, complex, initial",2026-08-10 16:56:09,N
+57186,45,K60.522,18,2,N,14583,"Anorectal fistula, complex, persistent",2026-08-10 16:56:09,N
+57186,45,K60.523,18,2,N,14584,"Anorectal fistula, complex, recurrent",2026-08-10 16:56:09,N

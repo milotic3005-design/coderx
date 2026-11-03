@@ -25,6 +25,7 @@ files that were current on that date.
 | 10 | `cms_opps_addendum_a`, `cms_opps_addendum_b` | CMS | Hospital OPPS Addendum A (payment by APC) and Addendum B (payment by HCPCS code), quarterly updates | Quarterly | **Ingested** (two newest quarters; Addendum B HCPCS Level II rows only; AMA license accepted by the operator on 2026-10-26) |
 | 11 | `wa_hca_professional_drugs` | Washington State HCA | Apple Health (Medicaid) Professional Administered Drug Fee Schedule | As published | **Ingested** (effective-date releases; HCPCS Level II rows only) |
 | 12 | `hpt_multicare` | MultiCare Health System | Hospital standard charges (price transparency, 45 CFR 180.50), MultiCare's Washington hospitals | Monthly (operator's Mac) | **Ingested as anonymized drug rates** (no payer or plan names) |
+| 13 | `cms_mcd_articles` | CMS | Medicare Coverage Database — Current Article Data (Billing and Coding articles) | Weekly | **Ingested** (active articles that list a HCPCS Level II drug code; ICD-10-CM and HCPCS codes only; license accepted by the operator on 2026-11-02) |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
 | — | — | NLM | DailyMed | Daily | Link-out only |
 
@@ -203,6 +204,18 @@ files that were current on that date.
 | Known limitations | Rates are shown per CMS billing unit only when the file's drug measure converts (ME, GR, ML, F2, EA; "UN" is not converted). Case rates and other encounter-level methodologies are counted but left out of per-unit figures, as are amounts above the hospital's own gross charge for the same quantity (or 25× the CMS limit when no gross charge is listed) — e.g. Apple Health managed care J9312 lines of about $3,000–4,950, shown separately as likely per-claim-line payments. Rows with no drug quantity whose description is CMS's short descriptor are treated as priced per CMS billing unit. Hospital-published data; CodeRx does not verify it. Yakima Memorial (2026-08-27 file): 4.9 million rows, 373,609 drug rows, 83,035 contracts, 1,805 codes, 32 payer-plans. |
 | Ingestion | `scripts/refresh-price-benchmark.ts` on the operator's Mac streams each file, uploads anonymized groups to `POST /api/admin/hospital-rates`, and keeps one current release per hospital (period label = hospital key; same SHA-256 skipped). See docs/05-operations.md. |
 
+## 13. CMS Medicare Coverage Database — Billing and Coding articles
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | Centers for Medicare & Medicaid Services (CMS), Medicare Coverage Database (MCD) |
+| Source URL | https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_article.zip, linked from https://www.cms.gov/medicare-coverage-database/downloads/downloads.aspx |
+| Format | ZIP (about 41 MB) holding `current_article_csv.zip`, a set of CSV tables. CodeRx reads `article`, `article_x_hcpc_code`, `article_x_icd10_covered`, `article_x_contractor`, `contractor`, `contractor_jurisdiction`, `state_lookup`, and `contractor_type_lookup`. |
+| Licensing / restrictions | U.S. Government data. CMS shows its AMA (CPT), ADA (CDT), and AHA (UB-04) license agreements before these downloads; the operator accepted them on 2026-11-02. Those licenses cover CPT, CDT, and revenue/bill-type codes, none of which CodeRx stores: CPT rows are counted and dropped at parse time, and article text and group paragraphs (which may quote CPT) are not kept. ICD-10-CM (CDC/NCHS) and HCPCS Level II (CMS) are public domain. |
+| Fields used | Article ID, version, title, type, status, effective and end dates; contractor name, number, and type; the states each A/B MAC jurisdiction serves; HCPCS Level II drug codes (J, Q, C9, A9) with their code group; covered ICD-10-CM codes with group, CMS's description, asterisk flag, and sort order |
+| Known limitations | Only active (status A) articles that list a drug code are kept. States come from A/B MAC jurisdictions only (Part B, A and B, A and B and HHH MAC); a Part A-only or home health contractor listed for a state does not make an article that state's policy. Washington is Noridian JF (contractor numbers 02401 and 02402); its articles are shown first and in full, other contractors' articles as a summary with a link to the CodeRx article page. An article lists the diagnoses that support medical necessity under its LCD — it is not a list of every payable diagnosis, and Medicare Advantage, Medicaid, and commercial plans set their own rules. The article text (documentation and coding instructions, secondary-diagnosis requirements behind an asterisk) is on the CMS page linked from each article. Download of 2026-11-02: 93 active drug articles, 776 article–drug code links, 41,270 covered ICD-10-CM rows, 9 articles for Washington. |
+| Ingestion | Snapshot source: each import replaces the previous one. The daily refresh sends a HEAD request and re-imports when the file's Last-Modified date is newer than the current release. Plausibility checks: at least 20 drug articles and 1,000 ICD-10 rows. |
+
 ## Evaluated but not ingested
 
 | Source | Why not (yet) |
@@ -210,7 +223,7 @@ files that were current on that date.
 | **CMS NOC pricing file** | Published as a separate file through October 2025; the 2026 payment-limit packages contain no NOC pricing file. NOC drugs are priced by MACs. |
 | **openFDA NDC API** | Same content as the bulk directory; the app must not depend on slow real-time government APIs, so bulk files are used. |
 | **Drugs@FDA, DailyMed** | Useful for labeling; CodeRx links out to DailyMed by NDC instead of storing labels. |
-| **Medicare Coverage Database (LCDs, NCDs, Billing & Coding articles, SAD exclusion lists)** | The CMS Coverage API returns these only with a token obtained by accepting the AMA, ADA, and AHA license agreements, which limit use to personal, non-commercial display — so covered-diagnosis lists cannot be republished on a public site. CodeRx links each code and drug to the official MCD search, SAD exclusion report, and MAC directory instead. |
+| **Medicare Coverage Database text (LCDs, NCDs, article text, SAD exclusion lists)** | LCD, NCD, and article text can quote CPT under the AMA license, so CodeRx stores only the public-domain parts of Billing and Coding articles (source 13: ICD-10-CM and HCPCS Level II codes plus article metadata). For the text, coverage criteria, and self-administered drug exclusions, CodeRx links each code and drug to the official MCD article, MCD search, SAD exclusion report, and MAC directory. |
 | **AWP, WAC, commercial payer rates, compendia** | Licensed; excluded by policy. Commercial negotiated rates published under the federal Transparency in Coverage rule (UnitedHealthcare, Aetna, Cigna, Regence, Premera) were requested; they need a separate monthly processing job outside this app (terabyte-scale files) and are not ingested yet. |
 
 ## Data-handling rules (enforced in code)

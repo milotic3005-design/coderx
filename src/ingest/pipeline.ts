@@ -12,6 +12,7 @@ import { download, streamDownload, streamFromBytes, type DownloadOptions, type D
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
 import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
+import { MCD_TABLES, parseMcdArticles, type McdTables } from "./parsers/cms-mcd";
 import { parseOppsAddendumA, parseOppsAddendumB } from "./parsers/cms-opps";
 import { parseNotPayableCsv, parsePaymentLimitCsv } from "./parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, type FdaPackage, type FdaProduct } from "./parsers/fda";
@@ -627,6 +628,39 @@ function parseOppsRelease(file: Downloaded, period: string): Parsed {
   };
 }
 
+/** MCD "Current Article Data": an outer zip holding current_article_csv.zip with one CSV per table. */
+function parseMcdRelease(file: Downloaded): Parsed {
+  const inner = unzipVerified(file.bytes, (n) => /current_article_csv\.zip$/i.test(baseName(n)))[0];
+  if (!inner) throw new ValidationError("MCD article archive: current_article_csv.zip not found.");
+  const wanted = new Set<string>(MCD_TABLES);
+  const entries = unzipVerified(inner.data, (n) => wanted.has(baseName(n).toLowerCase()));
+  const tables = Object.fromEntries(entries.map((e) => [baseName(e.name).toLowerCase(), decodeText(e.data).text])) as Partial<McdTables>;
+  const missing = MCD_TABLES.filter((n) => tables[n] == null);
+  if (missing.length) throw new ValidationError(`MCD article archive: missing ${missing.join(", ")}.`);
+  const parsed = parseMcdArticles(tables as McdTables);
+  assertPlausible(parsed.articles.length >= 20, `MCD export has only ${parsed.articles.length} active articles with drug codes; expected at least 20.`);
+  assertPlausible(parsed.icd10.length >= 1000, `MCD export has only ${parsed.icd10.length} covered ICD-10 rows for drug articles; expected at least 1,000.`);
+  return {
+    fileName: baseName(inner.name),
+    effectiveStart: null,
+    effectiveEnd: null,
+    recordCount: parsed.articles.length,
+    rejected: [],
+    excluded: parsed.excluded,
+    warnings: [],
+    details: { articles: parsed.articles.length, drugCodes: new Set(parsed.hcpcs.map((h) => h.hcpcsCode)).size, icd10Rows: parsed.icd10.length },
+    load: async (tx, releaseId) => {
+      await tx.delete(t.mcdArticleIcd10);
+      await tx.delete(t.mcdArticleHcpcs);
+      await tx.delete(t.mcdArticles);
+      await insertBatches(tx, t.mcdArticles, parsed.articles.map((a) => ({ ...a, sourceReleaseId: releaseId })), 11);
+      await insertBatches(tx, t.mcdArticleHcpcs, parsed.hcpcs.map((h) => ({ articleId: h.articleId, version: h.version, hcpcsCode: h.hcpcsCode, codeGroup: h.group, sourceReleaseId: releaseId })), 6);
+      await insertBatches(tx, t.mcdArticleIcd10, parsed.icd10.map((c) => ({ articleId: c.articleId, version: c.version, code: c.code, codeGroup: c.group, description: c.description, asterisk: c.asterisk, sortOrder: c.sortOrder, sourceReleaseId: releaseId })), 9);
+      return { articles: parsed.articles.length, icd10Rows: parsed.icd10.length };
+    },
+  };
+}
+
 function parseStateFeeRelease(file: Downloaded, period: string, sourceKey: keyof typeof STATE_FEE_SOURCES): Parsed {
   const { state, program } = STATE_FEE_SOURCES[sourceKey];
   const parsed = parseStateFeeSchedule(readFirstSheet(file.bytes));
@@ -778,6 +812,9 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
       case "cms_opps_addendum_a":
         parsed = parseOppsApcRelease(file, period);
         break;
+      case "cms_mcd_articles":
+        parsed = parseMcdRelease(file);
+        break;
       case "cms_opps_addendum_b":
         parsed = parseOppsRelease(file, period);
         break;
@@ -817,7 +854,8 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
       const diff = await parsed.load(tx, release.id, releasePeriod);
 
       // Supersede earlier releases: per quarter/month for periodic sources, all prior snapshots for daily FDA files.
-      const periodic = source.cadence !== "daily";
+      // Snapshot sources (daily FDA files, the weekly MCD export) supersede every earlier release.
+      const periodic = source.cadence !== "daily" && source.cadence !== "weekly";
       await tx
         .update(t.sourceReleases)
         .set({ isCurrent: false, status: "superseded" })
@@ -871,4 +909,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs", "cms_mcd_articles"];

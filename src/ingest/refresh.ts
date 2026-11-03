@@ -95,6 +95,19 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
     }
   }
 
+  // Medicare Coverage Database article export (CMS refreshes it weekly): import when Last-Modified moves past the current snapshot.
+  if (wanted.has("cms_mcd_articles")) {
+    const c = manifestFor("cms_mcd_articles")[0];
+    const [cur] = await currentReleases(db, "cms_mcd_articles");
+    try {
+      const remote = parseHttpDate((await headInfo(c.url)).lastModified);
+      if (options.force || !cur || (remote && remote > (cur.periodLabel ?? ""))) queue.push(c);
+      else skipped.push({ sourceKey: "cms_mcd_articles", reason: `Up to date (remote ${remote ?? "unknown"}, imported ${cur.periodLabel})` });
+    } catch (error) {
+      skipped.push({ sourceKey: "cms_mcd_articles", reason: `HEAD check failed: ${error instanceof Error ? error.message : String(error)}` });
+    }
+  }
+
   // Purple Book (monthly).
   if (wanted.has("fda_purple_book")) {
     const latestPb = candidates.filter((c) => c.sourceKey === "fda_purple_book").at(-1) ?? manifestFor("fda_purple_book")[0];

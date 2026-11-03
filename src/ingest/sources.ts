@@ -21,7 +21,8 @@ export type SourceKey =
   | "cms_opps_addendum_b"
   | "wa_hca_home_infusion"
   | "wa_hca_professional_drugs"
-  | "hpt_multicare";
+  | "hpt_multicare"
+  | "cms_mcd_articles";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -39,6 +40,7 @@ export const SOURCE_KEYS: SourceKey[] = [
   "wa_hca_home_infusion",
   "wa_hca_professional_drugs",
   "hpt_multicare",
+  "cms_mcd_articles",
 ];
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
@@ -84,7 +86,7 @@ export interface SourceDefinition {
   dataset: string;
   shortName: string;
   landingPageUrl: string;
-  cadence: "quarterly" | "daily" | "monthly" | "as published";
+  cadence: "quarterly" | "daily" | "weekly" | "monthly" | "as published";
   /** Badge used for data from this source. */
   badge: "official-cms" | "official-fda" | "official-state" | "hospital-published";
   licenseNote: string;
@@ -217,6 +219,17 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     badge: "official-state",
     licenseNote: "Washington State government publication. Maximum allowable fees and prior-authorization flags for drugs billed on professional claims. Only HCPCS Level II rows are stored.",
   },
+  cms_mcd_articles: {
+    key: "cms_mcd_articles",
+    organization: "CMS",
+    dataset: "Medicare Coverage Database — Current Article Data (Billing and Coding articles)",
+    shortName: "CMS Medicare Coverage Database articles",
+    landingPageUrl: "https://www.cms.gov/medicare-coverage-database/downloads/downloads.aspx",
+    cadence: "weekly",
+    badge: "official-cms",
+    licenseNote:
+      "U.S. Government data; CMS presents its AMA CPT, ADA CDT, and AHA UB-04 license agreements with these downloads (accepted by the CodeRx operator on 2026-11-02). CodeRx keeps only articles that list a HCPCS Level II drug code: title, number, dates, contractors, the drug codes, and the covered ICD-10-CM codes with CMS's descriptions. No CPT, CDT, revenue codes, or article text is stored.",
+  },
   hpt_multicare: {
     key: "hpt_multicare",
     organization: "MultiCare Health System",
@@ -348,6 +361,9 @@ export const MANIFEST: ReleaseCandidate[] = [
     publicationLabel: "Effective October 1, 2026; Updated October 29, 2026",
     publicationDate: "2026-10-29",
   },
+
+  // Medicare Coverage Database current articles (period assigned from Last-Modified; CMS refreshes the export weekly)
+  { sourceKey: "cms_mcd_articles", period: null, url: "https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_article.zip" },
 
   // FDA (period assigned from the file's Last-Modified date at download time)
   { sourceKey: "fda_ndc", period: null, url: "https://www.accessdata.fda.gov/cder/ndctext.zip" },

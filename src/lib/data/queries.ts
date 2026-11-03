@@ -305,6 +305,93 @@ export async function hospitalRatesFor(db: Database, codes: string[]) {
   };
 }
 
+/** The home state whose Medicare A/B MAC articles are listed first. */
+export const HOME_STATE = "WA";
+
+type ArticleRow = typeof t.mcdArticles.$inferSelect;
+const contractorSummary = (a: ArticleRow) => {
+  const names = [...new Set(a.contractors.map((c) => c.name).filter((n): n is string => !!n))];
+  return { contractors: names, contractorNumbers: [...new Set(a.contractors.map((c) => c.number).filter((n): n is string => !!n))].sort() };
+};
+
+/**
+ * Medicare Coverage Database articles that list any of these HCPCS codes, home-state
+ * (Washington) articles first with their covered ICD-10-CM codes; others as summaries.
+ */
+export async function coverageArticlesFor(db: Database, codes: string[], latest: Map<string, ReleaseRow>) {
+  const rel = latest.get("cms_mcd_articles");
+  if (!rel || !codes.length) return { release: null, articles: [] };
+  const links = await db
+    .select({ articleId: t.mcdArticleHcpcs.articleId, version: t.mcdArticleHcpcs.version, code: t.mcdArticleHcpcs.hcpcsCode })
+    .from(t.mcdArticleHcpcs)
+    .where(and(eq(t.mcdArticleHcpcs.sourceReleaseId, rel.id), inArray(t.mcdArticleHcpcs.hcpcsCode, codes)));
+  const ids = [...new Set(links.map((l) => l.articleId))];
+  if (!ids.length) return { release: toProvenance(rel), articles: [] };
+  const [articles, counts] = await Promise.all([
+    db.select().from(t.mcdArticles).where(and(eq(t.mcdArticles.sourceReleaseId, rel.id), inArray(t.mcdArticles.articleId, ids))),
+    db
+      .select({ articleId: t.mcdArticleIcd10.articleId, n: sql<number>`count(*)::int` })
+      .from(t.mcdArticleIcd10)
+      .where(and(eq(t.mcdArticleIcd10.sourceReleaseId, rel.id), inArray(t.mcdArticleIcd10.articleId, ids)))
+      .groupBy(t.mcdArticleIcd10.articleId),
+  ]);
+  const home = articles.filter((a) => a.states.includes(HOME_STATE));
+  const homeCodes = home.length
+    ? await db
+        .select()
+        .from(t.mcdArticleIcd10)
+        .where(and(eq(t.mcdArticleIcd10.sourceReleaseId, rel.id), inArray(t.mcdArticleIcd10.articleId, home.map((a) => a.articleId))))
+        .orderBy(asc(t.mcdArticleIcd10.articleId), asc(t.mcdArticleIcd10.codeGroup), asc(t.mcdArticleIcd10.sortOrder), asc(t.mcdArticleIcd10.code))
+    : [];
+  return {
+    release: toProvenance(rel),
+    articles: articles
+      .map((a) => ({
+        articleId: a.articleId,
+        version: a.version,
+        displayId: a.displayId,
+        title: a.title,
+        effectiveDate: a.effectiveDate,
+        states: a.states,
+        ...contractorSummary(a),
+        codes: [...new Set(links.filter((l) => l.articleId === a.articleId).map((l) => l.code))].sort(),
+        icd10Count: counts.find((c) => c.articleId === a.articleId)?.n ?? 0,
+        isHomeState: a.states.includes(HOME_STATE),
+        icd10: a.states.includes(HOME_STATE) ? homeCodes.filter((c) => c.articleId === a.articleId).map((c) => ({ code: c.code, group: c.codeGroup, description: c.description, asterisk: c.asterisk })) : [],
+      }))
+      .sort((x, y) => Number(y.isHomeState) - Number(x.isHomeState) || y.icd10Count - x.icd10Count || x.title.localeCompare(y.title)),
+  };
+}
+
+/** One MCD article with its drug codes and every covered ICD-10-CM code. */
+export async function getCoverageArticle(displayId: string, dbArg?: Database) {
+  const db = dbArg ?? (await getDb());
+  const { latest } = await loadReleases(db);
+  const rel = latest.get("cms_mcd_articles");
+  if (!rel) return null;
+  const [a] = await db.select().from(t.mcdArticles).where(and(eq(t.mcdArticles.sourceReleaseId, rel.id), eq(t.mcdArticles.displayId, displayId)));
+  if (!a) return null;
+  const [codes, icd10] = await Promise.all([
+    db
+      .select({ code: t.mcdArticleHcpcs.hcpcsCode, description: t.hcpcsCodes.shortDescription })
+      .from(t.mcdArticleHcpcs)
+      .leftJoin(t.hcpcsCodes, eq(t.hcpcsCodes.code, t.mcdArticleHcpcs.hcpcsCode))
+      .where(and(eq(t.mcdArticleHcpcs.sourceReleaseId, rel.id), eq(t.mcdArticleHcpcs.articleId, a.articleId)))
+      .orderBy(asc(t.mcdArticleHcpcs.hcpcsCode)),
+    db
+      .select({ code: t.mcdArticleIcd10.code, group: t.mcdArticleIcd10.codeGroup, description: t.mcdArticleIcd10.description, asterisk: t.mcdArticleIcd10.asterisk })
+      .from(t.mcdArticleIcd10)
+      .where(and(eq(t.mcdArticleIcd10.sourceReleaseId, rel.id), eq(t.mcdArticleIcd10.articleId, a.articleId)))
+      .orderBy(asc(t.mcdArticleIcd10.codeGroup), asc(t.mcdArticleIcd10.sortOrder), asc(t.mcdArticleIcd10.code)),
+  ]);
+  return {
+    article: { articleId: a.articleId, version: a.version, displayId: a.displayId, title: a.title, effectiveDate: a.effectiveDate, endDate: a.endDate, states: a.states, ...contractorSummary(a), isHomeState: a.states.includes(HOME_STATE) },
+    codes: [...new Map(codes.map((c) => [c.code, c])).values()],
+    icd10,
+    release: toProvenance(rel),
+  };
+}
+
 export async function getHcpcsDetail(code: string, dbArg?: Database) {
   const db = dbArg ?? (await getDb());
   const [row] = await db.select().from(t.hcpcsCodes).where(eq(t.hcpcsCodes.code, code));
@@ -440,7 +527,7 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
     return rel ? [{ key, rel }] : [];
   });
 
-  const [products, aliases, relationships, biosimilars, reference, stateFeeRows] = await Promise.all([
+  const [products, aliases, relationships, biosimilars, reference, stateFeeRows, coverageArticles] = await Promise.all([
     db
       .select({ p: t.ndcProducts, mfrSlug: t.manufacturers.slug, mfrName: t.manufacturers.name })
       .from(t.ndcProducts)
@@ -469,6 +556,7 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
           .where(inArray(t.stateFeeSchedule.sourceReleaseId, stateReleases.map((s) => s.rel.id)))
           .orderBy(asc(t.stateFeeSchedule.hcpcsCode), asc(t.stateFeeSchedule.modifier))
       : Promise.resolve([]),
+    coverageArticlesFor(db, drug.hcpcsCodes, latest),
   ]);
 
   const productIds = products.map((p) => p.p.productId);
@@ -570,6 +658,7 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
         }),
       })),
     },
+    coverageArticles,
     stateFeeSchedules: stateReleases.map(({ key, rel }) => ({
       ...STATE_FEE_SOURCES[key],
       effectiveDate: rel.effectiveStart ?? rel.periodLabel,

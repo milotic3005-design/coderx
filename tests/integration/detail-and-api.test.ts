@@ -121,6 +121,25 @@ describe("quarterly changes", () => {
   });
 });
 
+describe("ICD-10 codes from Medicare billing articles", () => {
+  it("lists Washington (Noridian JF) articles first with their covered codes", async () => {
+    const botox = (await getDrugDetail("botox-onabotulinumtoxina", h.db))!;
+    const [first] = botox.coverageArticles.articles;
+    expect(first).toMatchObject({ displayId: "A57186", isHomeState: true, contractors: ["Noridian Healthcare Solutions, LLC"], codes: ["J0585"], icd10Count: 30 });
+    expect(first.icd10).toHaveLength(30);
+    expect(botox.coverageArticles.release).toMatchObject({ sourceKey: "cms_mcd_articles", status: "official-cms" });
+  });
+  it("summarizes other contractors' articles without loading their code lists", async () => {
+    const rituxan = (await getDrugDetail("rituxan-rituximab", h.db))!;
+    expect(rituxan.coverageArticles.articles).toEqual([expect.objectContaining({ displayId: "A56380", isHomeState: false, contractors: ["Palmetto GBA"], icd10Count: 30, icd10: [] })]);
+    const { getCoverageArticle } = await import("@/lib/data/queries");
+    const article = (await getCoverageArticle("A56380", h.db))!;
+    expect(article.codes.map((c) => c.code)).toContain("J9312");
+    expect(article.icd10[0]).toMatchObject({ code: "C81.00", group: 1 });
+    expect(await getCoverageArticle("A52369", h.db)).toBeNull();
+  });
+});
+
 describe("MultiCare price benchmark", () => {
   it("serves the anonymized hospital rates with the code and skips a re-upload of the same file", async () => {
     const d = (await getHcpcsDetail("J9312", h.db))!;

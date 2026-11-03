@@ -172,3 +172,22 @@ test.describe("MultiCare price benchmark", () => {
     expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
   });
 });
+
+test.describe("ICD-10 codes from Medicare billing articles", () => {
+  test("a drug page shows the Washington article's covered codes and links the article page", async ({ page }) => {
+    await page.goto("/drugs/botox-onabotulinumtoxina", { waitUntil: "networkidle" });
+    const section = page.locator("#icd10");
+    await expect(section).toContainText("Washington · Noridian Healthcare Solutions, LLC");
+    await section.getByText("Show the 30 covered codes").click();
+    await expect(section.getByRole("region", { name: "Covered ICD-10-CM codes in A57186, group 1" })).toContainText("K22.0Achalasia of cardia");
+    await section.getByRole("link", { name: "Billing and Coding: Botulinum Toxin Injections" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Billing and Coding: Botulinum Toxin Injections");
+    await expect(page.getByRole("link", { name: /J0585/ })).toBeVisible();
+  });
+  test("other contractors' articles are listed when Washington has none", async ({ page }) => {
+    await page.goto("/drugs/rituxan-rituximab", { waitUntil: "networkidle" });
+    const section = page.locator("#icd10");
+    await expect(section).toContainText("Noridian (Jurisdiction F, Washington) has no current Billing and Coding article");
+    await expect(section.getByRole("table", { name: /other Medicare contractors/ })).toContainText("Palmetto GBA");
+  });
+});

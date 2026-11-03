@@ -307,6 +307,66 @@ export const hospitalDrugRates = pgTable(
   (t) => [index("hospital_drug_rates_code_idx").on(t.hcpcsCode), index("hospital_drug_rates_release_idx").on(t.sourceReleaseId)],
 );
 
+/**
+ * Medicare Coverage Database articles (mostly MAC "Billing and Coding" articles) that list a
+ * HCPCS Level II drug code. Snapshot source: the current release replaces the previous one.
+ */
+export const mcdArticles = pgTable(
+  "mcd_articles",
+  {
+    id: serial("id").primaryKey(),
+    articleId: integer("article_id").notNull(),
+    version: integer("version").notNull(),
+    displayId: text("display_id").notNull(),
+    title: text("title").notNull(),
+    articleType: text("article_type"),
+    effectiveDate: date("effective_date"),
+    endDate: date("end_date"),
+    contractors: jsonb("contractors").$type<{ id: string; number: string | null; name: string | null; type: string | null }[]>().notNull(),
+    /** States served by the article's A/B MACs. */
+    states: jsonb("states").$type<string[]>().notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("mcd_articles_article_idx").on(t.articleId), index("mcd_articles_release_idx").on(t.sourceReleaseId)],
+);
+
+/** HCPCS Level II drug codes listed in an MCD article (CPT rows are not stored). */
+export const mcdArticleHcpcs = pgTable(
+  "mcd_article_hcpcs",
+  {
+    id: serial("id").primaryKey(),
+    articleId: integer("article_id").notNull(),
+    version: integer("version").notNull(),
+    hcpcsCode: text("hcpcs_code").notNull(),
+    codeGroup: integer("code_group"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("mcd_article_hcpcs_code_idx").on(t.hcpcsCode), index("mcd_article_hcpcs_release_idx").on(t.sourceReleaseId)],
+);
+
+/** ICD-10-CM codes an MCD article covers, with CMS's descriptions (public-domain code set). */
+export const mcdArticleIcd10 = pgTable(
+  "mcd_article_icd10",
+  {
+    id: serial("id").primaryKey(),
+    articleId: integer("article_id").notNull(),
+    version: integer("version").notNull(),
+    code: text("code").notNull(),
+    codeGroup: integer("code_group"),
+    description: text("description"),
+    asterisk: boolean("asterisk").notNull().default(false),
+    sortOrder: integer("sort_order"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("mcd_article_icd10_article_idx").on(t.articleId, t.version), index("mcd_article_icd10_release_idx").on(t.sourceReleaseId)],
+);
+
 /** CMS OPPS Addendum A: national payment rate per APC (CMS group titles) for a quarter. */
 export const oppsApcRates = pgTable(
   "opps_apc_rates",
