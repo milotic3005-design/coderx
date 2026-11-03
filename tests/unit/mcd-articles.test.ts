@@ -26,6 +26,15 @@ describe("Medicare Coverage Database article parser", () => {
     expect(rituximab.states).not.toContain("WA");
     expect(rituximab.states).toEqual(expect.arrayContaining(["NC", "SC", "VA"]));
   });
+  it("reports Medicare sub-state regions as their state", () => {
+    // CMS's state_lookup has regions such as 63 "New York - Downstate" (DN) and 65 "New York - Upstate" (UN). The export uses CRLF.
+    const withRegions = { ...tables, "contractor_jurisdiction.csv": `${tables["contractor_jurisdiction.csv"].trimEnd()}\r\n374,13,1,63,2014-02-25 15:10:54.463000,1900-01-01 00:00:00,\r\n374,13,1,65,2014-02-25 15:10:54.463000,1900-01-01 00:00:00,\r\n` };
+    const states = parseMcdArticles(withRegions).articles.find((a) => a.articleId === 56380)!.states;
+    expect(states).toContain("NY");
+    expect(states).not.toEqual(expect.arrayContaining(["DN"]));
+    expect(states).not.toEqual(expect.arrayContaining(["UN"]));
+    expect(states.filter((s) => s === "NY")).toHaveLength(1);
+  });
   it("keeps covered ICD-10-CM codes with CMS's descriptions", () => {
     expect(p.icd10.find((c) => c.articleId === 56380 && c.code === "C81.00")).toMatchObject({ group: 1, description: "Nodular lymphocyte predominant Hodgkin lymphoma, unspecified site", asterisk: false });
     expect(p.icd10.filter((c) => c.articleId === 57186).length).toBe(30);

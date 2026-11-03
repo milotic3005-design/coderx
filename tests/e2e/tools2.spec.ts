@@ -178,9 +178,11 @@ test.describe("ICD-10 codes from Medicare billing articles", () => {
     await page.goto("/drugs/botox-onabotulinumtoxina", { waitUntil: "networkidle" });
     const section = page.locator("#icd10");
     await expect(section).toContainText("Washington · Noridian Healthcare Solutions, LLC");
-    await section.getByText("Show the 30 covered codes").click();
-    await expect(section.getByRole("region", { name: "Covered ICD-10-CM codes in A57186, group 1" })).toContainText("K22.0Achalasia of cardia");
-    await section.getByRole("link", { name: "Billing and Coding: Botulinum Toxin Injections" }).click();
+    await section.getByText(/^Show the [\d,]+ covered codes$/).click();
+    await expect(section.getByRole("region", { name: "Covered ICD-10-CM codes in A57186, group 1", exact: true })).toContainText("K22.0Achalasia of cardia");
+    // Other contractors' Botox articles share the title; open Washington's by its number.
+    await section.locator('a[href="/coverage/A57186"]').first().click();
+    await expect(page).toHaveURL(/\/coverage\/A57186$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Billing and Coding: Botulinum Toxin Injections");
     await expect(page.getByRole("link", { name: /J0585/ })).toBeVisible();
   });

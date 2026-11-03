@@ -14,6 +14,8 @@ import { isCptLike } from "@/lib/hcpcs";
 export const MCD_DRUG_CODE_RE = /^(J\d{4}|Q\d{4}|C9\d{3}|A9\d{3})$/;
 /** contractor_type_lookup ids for A/B MACs: MAC - Part B, A and B MAC, A and B and HHH MAC. */
 const AB_MAC_TYPES = new Set(["9", "12", "13"]);
+/** state_lookup splits some states into Medicare regions (e.g. DN "New York - Downstate"); report the state's USPS code. */
+const REGION_STATE: Record<string, string> = { DN: "NY", QN: "NY", UN: "NY", NF: "CA", SF: "CA", EM: "MO", WM: "MO", CNMI: "MP" };
 
 export interface McdContractor {
   id: string;
@@ -80,7 +82,7 @@ export function parseMcdArticles(tables: McdTables): McdParse {
   const typeNames = new Map<string, string>();
   eachRow(tables["contractor_type_lookup.csv"], (r) => typeNames.set(r.contractor_type_id, r.description));
   const stateAbbrev = new Map<string, string>();
-  eachRow(tables["state_lookup.csv"], (r) => stateAbbrev.set(r.state_id, r.state_abbrev));
+  eachRow(tables["state_lookup.csv"], (r) => stateAbbrev.set(r.state_id, REGION_STATE[r.state_abbrev] ?? r.state_abbrev));
   const contractors = new Map<string, McdContractor>();
   eachRow(tables["contractor.csv"], (r) =>
     contractors.set(`${r.contractor_id}|${r.contractor_type_id}|${r.contractor_version}`, { id: r.contractor_id, number: r.contractor_number || null, name: r.contractor_bus_name || null, type: typeNames.get(r.contractor_type_id) ?? null }),
