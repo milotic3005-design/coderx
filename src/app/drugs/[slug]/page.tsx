@@ -176,9 +176,9 @@ export default async function DrugPage({ params }: { params: Params }) {
                 {
                   label: "Manufacturer / labeler",
                   value: manufacturers.length ? (
-                    <span className="flex flex-col">
+                    <span className="flex flex-col gap-1">
                       {manufacturers.map(([slug, name]) => (
-                        <Link key={slug} href={`/manufacturers/${slug}`} className="text-brand hover:underline">
+                        <Link key={slug} href={`/manufacturers/${slug}`} className="inline-flex min-h-6 items-center self-start text-brand hover:underline">
                           {name}
                         </Link>
                       ))}
