@@ -52,6 +52,18 @@ curl -sS -X POST "https://<domain>/api/admin/import" \
 
 `data/manual-relationships.json` holds manually reviewed NDC→HCPCS or drug→HCPCS relationships. Each entry requires `kind`, `hcpcsCode`, `ndc11` or `drugSlug`, `evidenceUrl`, `reviewer`, `reviewedAt`, and `notes` (≥ 10 characters); invalid entries are rejected with a warning in the import report. Approved entries appear with the “Manually reviewed” badge. The file ships empty.
 
+## Clinical reference
+
+Drug pages show FDA-labeled indications, common ICD-10-CM codes, and a one-line typical adult dose (section 03). The data is keyed by HCPCS code and moves through three stages; only the last is published:
+
+1. **Drafts** — `data/clinical-drafts/batch-NN.json`, written from the FDA prescribing information. Never shown on the site. Every HCPCS code in a draft is checked against the current CMS HCPCS file before the draft is committed.
+2. **Review** — `npm run clinical -- export` writes `clinical-review.csv` (one row per indication; drugs already reviewed are left out unless `--all`). The reviewer opens it in Excel, corrects any cell, and for each row enters `APPROVE` or `REJECT`, their name and credentials, and the review date. Rows left blank are not imported. Save as **CSV UTF-8**.
+3. **Import** — `npm run clinical -- import clinical-review.csv` adds every approved row to `data/clinical-reference.json` with the reviewer and date, replacing earlier reviews of the same entry. Any invalid row (missing reviewer, bad date, a code that is not ICD-10-CM or HCPCS shaped, an Entry ID not in a draft) stops the whole import and nothing is written; `--dry-run` checks without writing. Commit the updated file; the next deploy publishes it with the “Manually reviewed” badge.
+
+With the CMS ICD-10-CM code file (`icd10cm-codes-YYYY.txt` or `icd10cm-order-YYYY.txt` from the CMS ICD-10 page), add `--icd10-file <path>` to `export`, `import`, or `check` to reject any code that is not a billable code in that release. Run `npm run clinical -- check --icd10-file <path>` after each October 1 ICD-10-CM update to catch retired codes.
+
+Indication text, codes, and doses are summaries for billing reference. They are not a payer's covered-diagnosis list (LCDs and payer policies are linked from Coverage and policy) and do not replace the prescribing information.
+
 ## Rate limiting and firewall
 
 `src/proxy.ts` applies per-IP fixed windows per instance (suggest 240/min, search 120/min, other reads 180/min, admin/cron 10/min). For global enforcement add a Vercel Firewall rule, e.g. rate-limit `/api/*` to 300 requests per minute per IP.

@@ -77,6 +77,7 @@ export default function MethodologyPage() {
               <li><DataStatusBadge status="official-fda" /> <strong>Biosimilar → reference:</strong> FDA Purple Book license type and reference product, matched to NDC products by BLA number.</li>
               <li><DataStatusBadge status="official-cms" /> <strong>HCPCS cross-references:</strong> the CMS cross-reference field, shown verbatim; not presented as a guaranteed replacement.</li>
               <li><DataStatusBadge status="manual" /> <strong>Manual reviews:</strong> supported through a reviewed file that requires evidence, reviewer, and date. None are published yet.</li>
+              <li><DataStatusBadge status="manual" /> <strong>Drug → indications, ICD-10-CM codes, typical dose:</strong> drafted from the FDA prescribing information and keyed by HCPCS code, then shown only after a named pharmacist approves each indication, code, and dose and the approval is imported with the reviewer and date. Codes are common examples for the labeled indication, not a payer’s covered-diagnosis list; off-label uses are not listed. A drug without an approved entry says so and links its DailyMed label.</li>
               <li><strong>NOC drugs:</strong> the CMS NOC code list flags NOC/NOS codes; the 2025 CMS NOC crosswalk identifies NDCs billed under a NOC code without naming which one. CodeRx never assigns a specific NOC code.</li>
             </ul>
           </Section>
@@ -131,7 +132,7 @@ export default function MethodologyPage() {
               <li><DataStatusBadge status="official-state" /> Value published by a state Medicaid agency (Washington HCA), shown as published.</li>
               <li><DataStatusBadge status="hospital-published" /> From a hospital&apos;s federally required price transparency file (45 CFR 180.50), shown as anonymized ranges without payer or plan names.</li>
               <li><DataStatusBadge status="derived" /> Calculated by CodeRx from official values; the formula is shown.</li>
-              <li><DataStatusBadge status="manual" /> Relationship approved by a named reviewer with cited evidence.</li>
+              <li><DataStatusBadge status="manual" /> Relationship or clinical summary approved by a named reviewer with cited evidence.</li>
               <li><DataStatusBadge status="historical" /> No longer in the most recent source file.</li>
               <li><DataStatusBadge status="verification-needed" /> Incomplete or conflicting; confirm with the publisher.</li>
             </ul>

@@ -7,6 +7,7 @@ import { parseCmsDosage, parseDescriptorDosage, type ParsedDosage } from "@/lib/
 import { getDb, rowsOf, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import { todayUs } from "@/lib/dates";
+import { clinicalFor } from "@/lib/clinical";
 import { CODE_FAMILIES, familyOf, isCodeActive } from "@/lib/hcpcs";
 import type { MedicaidInfo } from "@/lib/medicaid";
 import { type MueEntry, type MueServiceType } from "@/lib/mue";
@@ -588,6 +589,8 @@ export async function getDrugDetail(slug: string, dbArg?: Database) {
     })),
     codeHistory,
     sameCodeDrugs,
+    /** Pharmacist-reviewed indications, ICD-10-CM codes, and typical dose for this drug's codes (empty until reviewed). */
+    clinical: clinicalFor(codes),
     nocRelationship: relationships.find((r) => r.kind === "DRUG_NOC") ?? null,
     biosimilarRelationship: relationships.find((r) => r.kind === "BIOSIMILAR_REFERENCE") ?? null,
     latestCrosswalkPeriod: latestCrosswalk,

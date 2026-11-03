@@ -69,6 +69,8 @@ describe("read models expose provenance and honest gaps", () => {
   it("drug detail: home infusion per diem S-codes from the FDA class and route", async () => {
     const rituxan = (await getDrugDetail("rituxan-rituximab", h.db))!;
     expect(rituxan.perDiem.status).toBe("matched");
+    // Clinical reference ships empty: nothing appears until a named reviewer approves it.
+    expect(rituxan.clinical).toEqual([]);
     expect(rituxan.perDiem.matches[0]).toMatchObject({ therapy: { id: "chemotherapy" }, basis: "fda-epc", evidence: ["CD20-directed Cytolytic Antibody"] });
     // The fixture HCPCS file carries no S-codes, so the descriptor is reported missing rather than invented.
     expect(rituxan.perDiem.matches[0].codes.map((c) => [c.code, c.description])).toEqual([["S9329", null], ["S9330", null], ["S9331", null]]);
