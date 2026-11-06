@@ -91,8 +91,7 @@ describe("Part D link", () => {
   });
   it("does not double-count a plan across a drug's RxCUIs", async () => {
     const [row] = await h.db.select().from(t.partdWaFormularyDrugs).limit(1);
-    const { id: _id, ...copy } = row;
-    await h.db.insert(t.partdWaFormularyDrugs).values({ ...copy, rxcui: "993452" }); // Prolia's other RxCUI, in the openFDA fixture
+    await h.db.insert(t.partdWaFormularyDrugs).values({ ...row, id: undefined, rxcui: "993452" }); // Prolia's other RxCUI, in the openFDA fixture
     const l = (await partDListing(h.db, [PROXY], "J0897"))!;
     expect(l.plansListing).toEqual({ pdp: 1, mapd: 2 });
   });

@@ -1,4 +1,4 @@
-import { Calculator, ChartColumn, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, Scale, ScanLine } from "lucide-react";
+import { Calculator, ChartColumn, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, Scale, ScanLine, Waypoints } from "lucide-react";
 
 /** The Tools section, in the order shown on /tools and in the footer. */
 export const TOOLS = [
@@ -36,6 +36,13 @@ export const TOOLS = [
     title: "Site of care: HOPD vs home",
     who: "Infusion and pharmacy directors",
     body: "Monthly revenue for one therapy in your hospital outpatient department versus your home infusion pharmacy (no Medicare HIT certification), for Medicare, Washington Apple Health, and your commercial contracts — from CMS OPPS rates, the HCA schedule, and terms you enter.",
+  },
+  {
+    href: "/tools/part-b-vs-d",
+    icon: Waypoints,
+    title: "Part B vs Part D",
+    who: "Pharmacists, billers, and intake",
+    body: "Which Medicare benefit pays for a drug in each setting, with the CMS source for every answer: Noridian's self-administered drug list, DME policies, Washington Part D plan coverage, and the dollars for each lawful pathway.",
   },
   {
     href: "/tools/price-benchmark",

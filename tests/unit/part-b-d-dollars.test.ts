@@ -59,6 +59,11 @@ describe("Comparing pathways", () => {
     expect(r.lawfulCount).toBe(2);
     expect(r.higher).toBe("hopd_b");
   });
+  it("does not call a rounding-sized gap higher", () => {
+    const r = compareDollars({ ...base, opps: { paymentRate: 54.563, copayPerUnit: 10.92 }, paymentLimit: 54.563, results: results(facts({ dmePolicies: ["pump"] })), units: 100 });
+    expect(r.lawfulCount).toBeGreaterThanOrEqual(2);
+    expect(r.higher).toBeNull();
+  });
   it("shows no ranking when only one pathway is lawful", () => {
     const sad = facts({ sad: { status: "listed", products: ["Enbrel®"], contractorsListing: 8, contractorsTotal: 8, displayId: "A53033" } });
     const r = compareDollars({ ...base, results: results(sad) });
@@ -84,6 +89,13 @@ describe("Comparing pathways", () => {
   it("hides the Part D pathway when Part B would pay at home", () => {
     const r = compareDollars({ ...base, results: results(facts({ dmePolicies: ["nebulizer"] })) });
     expect(key(r, "home_d").expectedPerDose).toBeNull();
+  });
+  it("says which pathways apply to the case, even with no rate", () => {
+    const r = compareDollars({ ...base, partDPerHcpcsUnit: null });
+    expect(key(r, "hopd_b").lawful).toBe(true);
+    expect(key(r, "home_d").lawful).toBe(true);
+    expect(key(r, "home_d").source).toBeNull();
+    expect(key(r, "home_b_dme").lawful).toBe(false);
   });
   it("has no sequestration on Part D", () => {
     expect(key(compareDollars(base), "home_d").expectedPerDose).toBe(1680);

@@ -28,6 +28,8 @@ export const UNIT_COST_CONFIRMED_FORMS: Set<string> = new Set([
 export const PART_D_RATIO_BAND = { min: 0.25, max: 4 };
 const SEQUESTRATION_PCT = 2;
 const PART_B_PATIENT_SHARE = 0.2;
+/** A gap under 1% is copay rounding, not a difference worth marking. */
+const TIE_MARGIN = 0.01;
 /** Same ceiling as the numeric inputs on the other tools. */
 const MAX_INPUT = 99_999;
 
@@ -58,6 +60,8 @@ export type PathwayKey = "hopd_b" | "home_b_dme" | "home_d";
 
 export interface Pathway {
   key: PathwayKey;
+  /** The rules allow this pathway for the case, whether or not there is a rate for it. */
+  lawful: boolean;
   allowedPerUnit: number | null;
   expectedPerDose: number | null;
   expectedPerMonth: number | null;
@@ -95,7 +99,7 @@ export function compareDollars(input: DollarInput): DollarResult {
   const pathway = (key: PathwayKey, lawful: boolean, perUnit: number | null, source: Pathway["source"], expected: (allowed: number) => number): Pathway => {
     const allowedPerUnit = lawful ? perUnit : null;
     const expectedPerDose = allowedPerUnit != null && units != null ? cents(expected(allowedPerUnit * units)) : null;
-    return { key, allowedPerUnit, expectedPerDose, expectedPerMonth: expectedPerDose != null && doses != null ? cents(expectedPerDose * doses) : null, source: allowedPerUnit != null ? source : null };
+    return { key, lawful, allowedPerUnit, expectedPerDose, expectedPerMonth: expectedPerDose != null && doses != null ? cents(expectedPerDose * doses) : null, source: allowedPerUnit != null ? source : null };
   };
 
   const hopdLawful = verdict("hopd") === "part_b";
@@ -118,6 +122,7 @@ export function compareDollars(input: DollarInput): DollarResult {
   const priced = pathways.filter((p) => p.expectedPerDose != null);
   const lawfulCount = [hopdLawful, dmeLawful, partDLawful].filter(Boolean).length;
   const top = [...priced].sort((a, b) => b.expectedPerDose! - a.expectedPerDose!);
-  const higher = lawfulCount >= 2 && priced.length >= 2 && top[0].expectedPerDose !== top[1].expectedPerDose ? top[0].key : null;
+  const clearlyHigher = priced.length >= 2 && top[0].expectedPerDose! > top[1].expectedPerDose! * (1 + TIE_MARGIN);
+  const higher = lawfulCount >= 2 && clearlyHigher ? top[0].key : null;
   return { pathways, higher, lawfulCount, rawPartD: input.rawPartD };
 }

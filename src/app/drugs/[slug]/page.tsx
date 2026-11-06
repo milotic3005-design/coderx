@@ -446,6 +446,11 @@ export default async function DrugPage({ params }: { params: Params }) {
             title="Coverage and policy"
             description="Medicare coverage is set nationally (NCDs) and by each Medicare Administrative Contractor (LCDs and Billing & Coding articles). These links open the official documents."
           >
+            <p className="mb-4 text-sm">
+              <Link href={`/tools/part-b-vs-d?drug=${d.drug.slug}`} className="font-semibold text-brand hover:underline">
+                Which Medicare benefit pays for this drug?
+              </Link>
+            </p>
             <CoverageLinks
               keywords={[
                 ...(d.drug.genericName ? [{ label: d.drug.genericName.toLowerCase(), value: d.drug.genericName.toLowerCase() }] : []),
