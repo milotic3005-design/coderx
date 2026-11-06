@@ -65,3 +65,14 @@ tier ≥ 80 mark the query ambiguous.
 2. The CMS cross-reference field is shown as a cross-reference, never as a guaranteed replacement code.
 3. The FDA NDC Directory scope rule (clinician-administered routes + CMS-crosswalked NDCs) reflects buy-and-bill use; products outside it are reported as “not in the CodeRx index”.
 4. Dates are calendar dates without time zones; “today” is evaluated in UTC on the server.
+
+## 8. Medicare benefit rules (Part B vs Part D tool)
+
+Part B and Part D are not interchangeable. Under Social Security Act §1860D-2(e)(2)(B), a drug is not a Part D drug when payment for it, as prescribed and dispensed or administered, is available under Part A or B. `src/lib/part-b-d.ts` therefore decides the benefit per setting from CMS facts and the user's answers, and `src/lib/part-b-d-dollars.ts` compares dollars only between pathways that are lawful for the case.
+
+- Facts come from CMS tables: Noridian JF's SAD list (A53033), the DME MAC policy code lists, OPPS status, and Drugs Not Payable Under Part B. Rules cite the Part D Manual Chapter 6 (Rev. 18), the Medicare Benefit Policy Manual Chapter 15 §50.2, and CMS's coverage table (March 2018).
+- A rule that needs a source not yet imported, or an answer not yet given, returns "Needs a check". It never falls through to Part D.
+- Catch-all codes (J3490, J3590, C9399, J7799, and similar) do not decide by code; the page lists the named products.
+- Part D coverage is linked by exact NDC, product NDC, and RxCUI, never by name, and counted as a union of formularies.
+- Part D dollars use each plan's `UNIT_COST`, a retail average, converted by `UNIT_COST × packageSize ÷ billUnitsPerItem`. CMS does not label the unit, so conversion applies only to FDA dosage forms where at least 3 products converted to 0.5 to 2 times the Part B limit (October 2026 sample of 499 NDCs), and only when the result is within 0.25 to 4 times the limit.
+- A pathway is marked higher only when it beats the next by more than 1%. Smaller gaps are copay rounding.

@@ -17,6 +17,7 @@ const nav = [
   { id: "normalization", label: "Normalization" },
   { id: "relationships", label: "Relationships" },
   { id: "reimbursement", label: "Reimbursement" },
+  { id: "benefit", label: "Part A, B, or D" },
   { id: "units", label: "Billing units" },
   { id: "search", label: "Search ranking" },
   { id: "badges", label: "Status badges" },
@@ -92,7 +93,17 @@ export default function MethodologyPage() {
             <p className="mt-3">Not included: commercial payer rates, AWP, WAC, and 340B pricing.</p>
           </Section>
 
-          <Section id="units" number="06" title="Billing units and the calculator">
+          <Section id="benefit" number="06" title="Part A, Part B, or Part D">
+            <ul>
+              <li>Part B and Part D are not interchangeable. A drug is not a Part D drug when Part A or B would pay for it as prescribed and dispensed or administered, so the Part B vs Part D tool decides the benefit from the facts first and compares dollars only between pathways that are lawful for the case.</li>
+              <li>Rules come from the Social Security Act, the Part D Manual (Chapter 6), the Medicare Benefit Policy Manual, and CMS&apos;s coverage table. Each row of the tool links its source.</li>
+              <li>Drug-specific facts come from CMS data: Noridian JF&apos;s self-administered drug list for Washington, the DME MAC policy code lists, OPPS status, and the Drugs Not Payable Under Part B file.</li>
+              <li>Part D coverage is read from CMS&apos;s quarterly formulary file for Washington plans. CMS lists one proxy NDC per RxNorm concept, so drugs are linked by exact NDC, product NDC, and RxCUI, and never by name. &ldquo;Not listed&rdquo; means CMS&apos;s file does not list the drug; it does not mean a plan would deny it.</li>
+              <li>The Part D benchmark is each plan&apos;s average unit cost at in-area retail pharmacies, not a home infusion contract rate. It is converted to HCPCS units only for dosage forms confirmed against real data and only when the result is within 0.25 to 4 times the Part B limit. Otherwise the raw cost is shown and nothing is compared.</li>
+            </ul>
+          </Section>
+
+          <Section id="units" number="07" title="Billing units and the calculator">
             <p>
               The billing unit comes from the CMS “HCPCS Code Dosage” column when available (official); otherwise it is read from the HCPCS long descriptor (derived). Billable units per package come from the CMS crosswalk. The calculator reports units as dose ÷ unit rounded up to a whole unit; for single-dose containers, units attributable to the discarded amount are ceil(amount opened ÷ unit) − administered units. Dollar figures are labeled derived arithmetic. Modifiers are discussed only as education.
             </p>
@@ -107,7 +118,7 @@ export default function MethodologyPage() {
             </p>
           </Section>
 
-          <Section id="search" number="07" title="Search ranking">
+          <Section id="search" number="08" title="Search ranking">
             <ol className="list-decimal space-y-1.5 pl-5">
               <li>Exact HCPCS code or NDC (any format)</li>
               <li>Exact brand or generic name</li>
@@ -124,7 +135,7 @@ export default function MethodologyPage() {
             </p>
           </Section>
 
-          <Section id="badges" number="08" title="Status badges">
+          <Section id="badges" number="09" title="Status badges">
             <ul className="space-y-2 [&]:list-none [&]:pl-0">
               <li><DataStatusBadge status="official-cms" /> Value published by CMS, shown as published.</li>
               <li><DataStatusBadge status="official-fda" /> Value published by FDA, shown as published.</li>
@@ -137,17 +148,17 @@ export default function MethodologyPage() {
             </ul>
           </Section>
 
-          <Section id="limitations" number="09" title="Limitations">
+          <Section id="limitations" number="10" title="Limitations">
             <ul>
               <li>Coverage is not implied by the presence of a code, crosswalk row, or payment limit.</li>
               <li>CMS crosswalks are not comprehensive; a missing NDC does not mean it cannot be billed.</li>
               <li>FDA directory content is labeler-submitted and not verified by FDA.</li>
               <li>History begins with the earliest quarter imported (Q1 2025).</li>
-              <li>Payer-specific rules, MAC local coverage determinations, MUEs, and OPPS packaging are out of scope.</li>
+              <li>Payer-specific rules are out of scope, and being on a CMS list does not by itself meet coverage criteria.</li>
             </ul>
           </Section>
 
-          <Section id="assumptions" number="10" title="Assumptions">
+          <Section id="assumptions" number="11" title="Assumptions">
             <ul>
               <li>A HCPCS code is “active” when it has no termination date or the termination date is today or later; “today” is the calendar date in U.S. Eastern time.</li>
               <li>An NDC package is “active” when it is in the active FDA directory and its marketing end date has not passed.</li>
