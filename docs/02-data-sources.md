@@ -26,6 +26,7 @@ files that were current on that date.
 | 11 | `wa_hca_professional_drugs` | Washington State HCA | Apple Health (Medicaid) Professional Administered Drug Fee Schedule | As published | **Ingested** (effective-date releases; HCPCS Level II rows only) |
 | 12 | `hpt_multicare` | MultiCare Health System | Hospital standard charges (price transparency, 45 CFR 180.50), MultiCare's Washington hospitals | Monthly (operator's Mac) | **Ingested as anonymized drug rates** (no payer or plan names) |
 | 13 | `cms_mcd_articles` | CMS | Medicare Coverage Database — Current Article Data (Billing and Coding articles) | Weekly | **Ingested** (active articles that list a HCPCS Level II drug code; ICD-10-CM and HCPCS codes only; license accepted by the operator on 2026-11-02) |
+| 14 | `cms_mcd_lcds` | CMS | Medicare Coverage Database — Current LCD Data (DME MAC drug policies) | Weekly | **Ingested** (HCPCS Level II drug codes of 5 policies only; license accepted by the operator on 2026-11-05) |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
 | — | — | NLM | DailyMed | Daily | Link-out only |
 
@@ -215,6 +216,18 @@ files that were current on that date.
 | Fields used | Article ID, version, title, type, status, effective and end dates; contractor name, number, and type; the states each A/B MAC jurisdiction serves; HCPCS Level II drug codes (J, Q, C9, A9) with their code group; covered ICD-10-CM codes with group, CMS's description, asterisk flag, and sort order. For self-administered drug (SAD) exclusion lists (article type 3, 8 active lists): each row's HCPCS code, product name, start and end dates, CMS's reason, and Noridian's route markers (`*` means JA for IV or JB for subcutaneous; `**` means JB for subcutaneous or no modifier for IM) |
 | Known limitations | Only active (status A) articles that list a drug code are kept. States come from A/B MAC jurisdictions only (Part B, A and B, A and B and HHH MAC); a Part A-only or home health contractor listed for a state does not make an article that state's policy. Washington is Noridian JF (contractor numbers 02401 and 02402); its articles are shown first and in full, other contractors' articles as a summary with a link to the CodeRx article page. An article lists the diagnoses that support medical necessity under its LCD — it is not a list of every payable diagnosis, and Medicare Advantage, Medicaid, and commercial plans set their own rules. The article text (documentation and coding instructions, secondary-diagnosis requirements behind an asterisk) is on the CMS page linked from each article. Download of 2026-11-02: 93 active drug articles, 776 article–drug code links, 41,270 covered ICD-10-CM rows, 9 articles for Washington. |
 | Ingestion | Snapshot source: each import replaces the previous one. The daily refresh sends a HEAD request and re-imports when the file's Last-Modified date is newer than the current release. Plausibility checks: at least 20 drug articles and 1,000 ICD-10 rows. |
+
+## 14. CMS Medicare Coverage Database — DME MAC drug policies
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | Centers for Medicare & Medicaid Services (CMS), Medicare Coverage Database (MCD) |
+| Source URL | https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_lcd.zip, linked from https://www.cms.gov/medicare-coverage-database/downloads/downloads.aspx |
+| Format | ZIP (about 33 MB) holding `current_lcd_csv.zip`. CodeRx reads `lcd`, `lcd_x_hcpc_code`, and `lcd_x_contractor`. |
+| Licensing / restrictions | U.S. Government data. CMS shows its AMA (CPT), ADA (CDT), and AHA (UB-04) license agreements before these downloads; the operator accepted them on 2026-11-05. CodeRx stores no CPT, CDT, or revenue codes and no LCD text. |
+| Fields used | HCPCS Level II drug codes (J, Q, C9, A9) and code group for L33794 External Infusion Pumps, L33610 Intravenous Immune Globulin, L33824 Immunosuppressive Drugs, L33827 Oral Antiemetic Drugs, and L33370 Nebulizers, with each LCD's title and version |
+| Known limitations | Active LCDs with a DME MAC contractor only; proposed LCDs are excluded. L33826 Oral Anticancer lists only catch-all codes and L38953 Parenteral Nutrition lists no drug codes, so those two are rules in `src/lib/part-b-d.ts`. A code on a list does not by itself meet the LCD's coverage criteria. |
+| Ingestion | Snapshot source: each import replaces the previous one. The daily refresh sends a HEAD request and re-imports when the file's Last-Modified date is newer than the current release. Plausibility check: at least 5 drug codes for each policy. |
 
 ## Evaluated but not ingested
 

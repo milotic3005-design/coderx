@@ -12,6 +12,7 @@ import { download, streamDownload, streamFromBytes, type DownloadOptions, type D
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
 import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
+import { DME_POLICIES, LCD_TABLES, parseLcdPolicies, type LcdTables } from "./parsers/cms-lcd";
 import { MCD_TABLES, NORIDIAN_JF_SAD_ARTICLE, parseMcdArticles, parseMcdSadLists, type McdTables } from "./parsers/cms-mcd";
 import { parseOppsAddendumA, parseOppsAddendumB } from "./parsers/cms-opps";
 import { parseNotPayableCsv, parsePaymentLimitCsv } from "./parsers/cms-payment";
@@ -668,6 +669,36 @@ function parseMcdRelease(file: Downloaded): Parsed {
   };
 }
 
+function parseLcdRelease(file: Downloaded): Parsed {
+  const inner = unzipVerified(file.bytes, (n) => /current_lcd_csv\.zip$/i.test(baseName(n)))[0];
+  if (!inner) throw new ValidationError("MCD LCD archive: current_lcd_csv.zip not found.");
+  const wanted = new Set<string>(LCD_TABLES);
+  const entries = unzipVerified(inner.data, (n) => wanted.has(baseName(n).toLowerCase()));
+  const tables = Object.fromEntries(entries.map((e) => [baseName(e.name).toLowerCase(), decodeText(e.data).text])) as Partial<LcdTables>;
+  const missing = LCD_TABLES.filter((n) => tables[n] == null);
+  if (missing.length) throw new ValidationError(`MCD LCD archive: missing ${missing.join(", ")}.`);
+  const parsed = parseLcdPolicies(tables as LcdTables);
+  for (const policy of Object.keys(DME_POLICIES)) {
+    const count = parsed.rows.filter((r) => r.policy === policy).length;
+    assertPlausible(count >= 5, `MCD LCD export has only ${count} drug codes for the ${policy} policy; expected at least 5.`);
+  }
+  return {
+    fileName: baseName(inner.name),
+    effectiveStart: null,
+    effectiveEnd: null,
+    recordCount: parsed.rows.length,
+    rejected: [],
+    excluded: parsed.excluded,
+    warnings: [],
+    details: { codes: new Set(parsed.rows.map((r) => r.hcpcsCode)).size, policies: new Set(parsed.rows.map((r) => r.policy)).size },
+    load: async (tx, releaseId) => {
+      await tx.delete(t.dmePolicyCodes);
+      await insertBatches(tx, t.dmePolicyCodes, parsed.rows.map((r) => ({ ...r, sourceReleaseId: releaseId })), 8);
+      return { codes: parsed.rows.length };
+    },
+  };
+}
+
 function parseStateFeeRelease(file: Downloaded, period: string, sourceKey: keyof typeof STATE_FEE_SOURCES): Parsed {
   const { state, program } = STATE_FEE_SOURCES[sourceKey];
   const parsed = parseStateFeeSchedule(readFirstSheet(file.bytes));
@@ -819,6 +850,9 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
       case "cms_opps_addendum_a":
         parsed = parseOppsApcRelease(file, period);
         break;
+      case "cms_mcd_lcds":
+        parsed = parseLcdRelease(file);
+        break;
       case "cms_mcd_articles":
         parsed = parseMcdRelease(file);
         break;
@@ -916,4 +950,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs", "cms_mcd_articles"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs", "cms_mcd_articles", "cms_mcd_lcds"];

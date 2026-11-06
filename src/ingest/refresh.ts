@@ -96,15 +96,16 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
   }
 
   // Medicare Coverage Database article export (CMS refreshes it weekly): import when Last-Modified moves past the current snapshot.
-  if (wanted.has("cms_mcd_articles")) {
-    const c = manifestFor("cms_mcd_articles")[0];
-    const [cur] = await currentReleases(db, "cms_mcd_articles");
+  for (const key of ["cms_mcd_articles", "cms_mcd_lcds"] as const) {
+    if (!wanted.has(key)) continue;
+    const c = manifestFor(key)[0];
+    const [cur] = await currentReleases(db, key);
     try {
       const remote = parseHttpDate((await headInfo(c.url)).lastModified);
       if (options.force || !cur || (remote && remote > (cur.periodLabel ?? ""))) queue.push(c);
-      else skipped.push({ sourceKey: "cms_mcd_articles", reason: `Up to date (remote ${remote ?? "unknown"}, imported ${cur.periodLabel})` });
+      else skipped.push({ sourceKey: key, reason: `Up to date (remote ${remote ?? "unknown"}, imported ${cur.periodLabel})` });
     } catch (error) {
-      skipped.push({ sourceKey: "cms_mcd_articles", reason: `HEAD check failed: ${error instanceof Error ? error.message : String(error)}` });
+      skipped.push({ sourceKey: key, reason: `HEAD check failed: ${error instanceof Error ? error.message : String(error)}` });
     }
   }
 

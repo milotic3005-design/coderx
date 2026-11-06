@@ -22,7 +22,8 @@ export type SourceKey =
   | "wa_hca_home_infusion"
   | "wa_hca_professional_drugs"
   | "hpt_multicare"
-  | "cms_mcd_articles";
+  | "cms_mcd_articles"
+  | "cms_mcd_lcds";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -41,6 +42,7 @@ export const SOURCE_KEYS: SourceKey[] = [
   "wa_hca_professional_drugs",
   "hpt_multicare",
   "cms_mcd_articles",
+  "cms_mcd_lcds",
 ];
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
@@ -230,6 +232,17 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     licenseNote:
       "U.S. Government data; CMS presents its AMA CPT, ADA CDT, and AHA UB-04 license agreements with these downloads (accepted by the CodeRx operator on 2026-11-02). CodeRx keeps only articles that list a HCPCS Level II drug code: title, number, dates, contractors, the drug codes, and the covered ICD-10-CM codes with CMS's descriptions. No CPT, CDT, revenue codes, or article text is stored.",
   },
+  cms_mcd_lcds: {
+    key: "cms_mcd_lcds",
+    organization: "CMS",
+    dataset: "Medicare Coverage Database — Current LCD Data (DME MAC drug policies)",
+    shortName: "CMS Medicare Coverage Database LCDs",
+    landingPageUrl: "https://www.cms.gov/medicare-coverage-database/downloads/downloads.aspx",
+    cadence: "weekly",
+    badge: "official-cms",
+    licenseNote:
+      "U.S. Government data; CMS presents its AMA CPT, ADA CDT, and AHA UB-04 license agreements with these downloads (accepted by the CodeRx operator on 2026-11-05). CodeRx keeps only the HCPCS Level II drug codes of five DME MAC policies, with each LCD's number, title, and version. No CPT, CDT, revenue codes, or LCD text is stored.",
+  },
   hpt_multicare: {
     key: "hpt_multicare",
     organization: "MultiCare Health System",
@@ -364,6 +377,7 @@ export const MANIFEST: ReleaseCandidate[] = [
 
   // Medicare Coverage Database current articles (period assigned from Last-Modified; CMS refreshes the export weekly)
   { sourceKey: "cms_mcd_articles", period: null, url: "https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_article.zip" },
+  { sourceKey: "cms_mcd_lcds", period: null, url: "https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_lcd.zip" },
 
   // FDA (period assigned from the file's Last-Modified date at download time)
   { sourceKey: "fda_ndc", period: null, url: "https://www.accessdata.fda.gov/cder/ndctext.zip" },

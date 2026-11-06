@@ -26,6 +26,7 @@
 | FDA NDC directory + excluded | `Last-Modified` is newer than the current snapshot **and** `CODERX_FDA_REFRESH_DAYS` (default 7) have passed — or a new crosswalk was imported the same run |
 | FDA Purple Book | a newer monthly file is posted — but FDA blocks Vercel's egress for this file, so the weekly launchd job below does the actual import |
 | CMS Medicare Coverage Database articles | the export's `Last-Modified` date (HEAD request) is newer than the current release; CMS updates it weekly |
+| CMS Medicare Coverage Database LCDs | same rule, for `current_lcd.zip` |
 | CMS Medicaid Drug Rebate Program product data | the next quarter's `drugproducts-q{N}-{YYYY}.csv` exists (HEAD probe); the ~330 MB file is streamed and filtered |
 | CMS NCCI MUE tables (practitioner, outpatient hospital, DME supplier) | a new quarter's table appears on the CMS MUE page (matched by file name), or a quarter's posting label changed |
 | Washington HCA home infusion fee schedule | the manifest pins a newer effective date than the current release. When HCA posts a new schedule, add its URL and effective date to `MANIFEST` in `src/ingest/sources.ts` (no automatic discovery yet) |

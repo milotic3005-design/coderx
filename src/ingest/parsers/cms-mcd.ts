@@ -95,7 +95,7 @@ export const MCD_TABLES = ["article.csv", "article_x_code_table.csv", "article_x
 export type McdTables = Record<(typeof MCD_TABLES)[number], string>;
 
 /** Calls `row` for each CSV record as a header-keyed object, without holding the parsed table. */
-function eachRow(text: string, row: (r: Record<string, string>) => void) {
+export function eachRow(text: string, row: (r: Record<string, string>) => void) {
   Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true, step: (res) => row(res.data) });
 }
 

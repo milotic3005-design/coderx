@@ -374,6 +374,25 @@ export const mcdSadEntries = pgTable(
   (t) => [index("mcd_sad_entries_code_idx").on(t.hcpcsCode), index("mcd_sad_entries_article_idx").on(t.articleId), index("mcd_sad_entries_release_idx").on(t.sourceReleaseId)],
 );
 
+/** Drug codes on the DME MAC policies that decide a Part B benefit (pump, IVIG, immunosuppressive, antiemetic, nebulizer). */
+export const dmePolicyCodes = pgTable(
+  "dme_policy_codes",
+  {
+    id: serial("id").primaryKey(),
+    policy: text("policy").notNull(),
+    lcdId: integer("lcd_id").notNull(),
+    version: integer("version").notNull(),
+    displayId: text("display_id").notNull(),
+    title: text("title").notNull(),
+    hcpcsCode: text("hcpcs_code").notNull(),
+    codeGroup: integer("code_group"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("dme_policy_codes_code_idx").on(t.hcpcsCode), index("dme_policy_codes_release_idx").on(t.sourceReleaseId)],
+);
+
 /** HCPCS Level II drug codes listed in an MCD article (CPT rows are not stored). */
 export const mcdArticleHcpcs = pgTable(
   "mcd_article_hcpcs",
