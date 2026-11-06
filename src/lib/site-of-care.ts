@@ -158,10 +158,15 @@ export function wageFactor(wageIndex: number): number {
   return OPPS_LABOR_SHARE * wageIndex + (1 - OPPS_LABOR_SHARE);
 }
 
+/** What a Part B line really pays: sequestration reduces Medicare's share, and the patient share is untouched. */
+export function programNet(allowed: number, patientShare: number, sequestrationPct: number): number {
+  return (allowed - patientShare) * (1 - sequestrationPct / 100) + patientShare;
+}
+
 function finish(lines: Line[], missing: string[], notes: string[], sequestrationPct: number, units: number, costPerUnit: number | null): SiteResult {
   const allowed = lines.reduce((t, l) => t + l.amount, 0);
   const patientShare = lines.reduce((t, l) => t + l.patientShare, 0);
-  const expected = lines.reduce((t, l) => t + (l.amount - l.patientShare) * (l.sequestered ? 1 - sequestrationPct / 100 : 1) + l.patientShare, 0);
+  const expected = lines.reduce((t, l) => t + programNet(l.amount, l.patientShare, l.sequestered ? sequestrationPct : 0), 0);
   const cost = costPerUnit != null ? r2(costPerUnit * units) : null;
   return {
     status: missing.length ? "incomplete" : "computed",
