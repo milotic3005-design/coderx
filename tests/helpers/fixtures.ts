@@ -28,6 +28,7 @@ export const FIXTURE_URLS = {
   waHcaProfessionalDrugs: "https://www.hca.wa.gov/assets/billers-and-providers/professional-administered-drugs-20261001.xlsx",
   mcdArticles: "https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_article.zip",
   mcdLcds: "https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_lcd.zip",
+  partdWa: "https://data.cms.gov/sites/default/files/2026-10/062e9434-ed9d-4e83-abbd-4d64eb375949/SPUF_2026_20261007.zip",
   oppsA2026q4: "https://www.cms.gov/files/zip/October-2026-OPPS-Addendum.zip",
   oppsB2026q4: "https://www.cms.gov/files/zip/October-2026-OPPS-Addendum-B.zip",
   oppsB2026q3: "https://www.cms.gov/files/zip/july-2026-opps-addendum-b.zip",
@@ -79,6 +80,7 @@ function bodies(): Map<string, Uint8Array> {
       }),
     ],
     [FIXTURE_URLS.mcdLcds, archive({ "current_lcd_csv.zip": archive(Object.fromEntries(["lcd.csv", "lcd_x_hcpc_code.csv", "lcd_x_contractor.csv"].map((n) => [n, read(`mcd-lcds/${n}`)]))) })],
+    [FIXTURE_URLS.partdWa, partdArchive()],
     [FIXTURE_URLS.oppsA2026q4, archive({ "508-compliant-version-2026_October_Web_Addendum_A.10.14.26.txt": read("opps-addendum-a-2026q4.txt") })],
     [FIXTURE_URLS.oppsB2026q4, archive({ "508-compliant-version-2026_October_Web_Addendum_B.10.14.26.txt": read("opps-addendum-b-2026q4.txt") })],
     [FIXTURE_URLS.oppsB2026q3, archive({ "508 Version July Addendum B/2026 July Web Addendum B.07.13.26.csv": read("opps-addendum-b-2026q3.csv") })],
@@ -103,6 +105,19 @@ export function fixtureFetcher(overrides: Record<string, Uint8Array> = {}) {
   };
 }
 
+/** The quarterly Part D archive's shape: each file is a ZIP inside the ZIP, and the 2.3 GB of pharmacy networks is left out. */
+export function partdArchive(): Uint8Array {
+  const nested = (name: string, file: string) => [`${name}.zip`, archive({ [`${name}.txt`]: read(`partd-wa/${file}`) })] as const;
+  return archive(
+    Object.fromEntries([
+      nested("geographic locator file  PPUF_2026Q3", "geographic-locator.txt"),
+      nested("plan information  PPUF_2026Q3", "plan-information.txt"),
+      nested("basic drugs formulary file  PPUF_2026Q3", "basic-drugs-formulary.txt"),
+      nested("pricing file PPUF_2026Q3", "pricing.txt"),
+    ]),
+  );
+}
+
 export const FIXTURE_RELEASES: ReleaseCandidate[] = [
   { sourceKey: "cms_hcpcs", period: "2025-Q4", url: FIXTURE_URLS.hcpcs2025q4, publicationLabel: "Updated 09/23/2025", publicationDate: "2025-09-23" },
   { sourceKey: "cms_hcpcs", period: "2026-Q4", url: FIXTURE_URLS.hcpcs2026q4, publicationLabel: "Updated 09/23/2026", publicationDate: "2026-09-23" },
@@ -119,6 +134,7 @@ export const FIXTURE_RELEASES: ReleaseCandidate[] = [
   { sourceKey: "wa_hca_home_infusion", period: "2026-07-01", url: FIXTURE_URLS.waHcaHomeInfusion, publicationLabel: "July 1, 2026", publicationDate: "2026-07-01" },
   { sourceKey: "cms_mcd_articles", period: null, url: FIXTURE_URLS.mcdArticles },
   { sourceKey: "cms_mcd_lcds", period: null, url: FIXTURE_URLS.mcdLcds },
+  { sourceKey: "cms_partd_wa", period: "2026-Q3", url: FIXTURE_URLS.partdWa, publicationLabel: "Quarterly file 2026-09-01" },
   { sourceKey: "wa_hca_professional_drugs", period: "2026-10-01", url: FIXTURE_URLS.waHcaProfessionalDrugs, publicationLabel: "Effective October 1, 2026; Updated October 29, 2026", publicationDate: "2026-10-29" },
   { sourceKey: "cms_opps_addendum_a", period: "2026-Q4", url: FIXTURE_URLS.oppsA2026q4, publicationLabel: "Addendum A - Updated 10/15/2026", publicationDate: "2026-10-15" },
   { sourceKey: "cms_opps_addendum_b", period: "2026-Q3", url: FIXTURE_URLS.oppsB2026q3, publicationLabel: "July 2026 OPPS Addendum B - Updated July 21, 2026", publicationDate: "2026-07-21" },

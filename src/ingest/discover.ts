@@ -265,3 +265,21 @@ export async function discoverReleases(): Promise<{ candidates: ReleaseCandidate
   ]);
   return { candidates, errors };
 }
+
+const PARTD_TITLE = "Quarterly Prescription Drug Plan Formulary, Pharmacy Network, and Pricing Information :";
+
+/** The newest quarterly Part D archive in the CMS data catalog. Its URL holds a random id, so it cannot be pinned. */
+export async function discoverPartdWa(loadCatalog: () => Promise<string> = () => fetchPage("https://data.cms.gov/data.json", 120_000)): Promise<ReleaseCandidate | null> {
+  const catalog = JSON.parse(await loadCatalog()) as { dataset?: { title?: string; distribution?: { format?: string; downloadURL?: string }[] }[] };
+  const newest = (catalog.dataset ?? [])
+    .flatMap((d) => {
+      const date = d.title?.startsWith(PARTD_TITLE) ? d.title.slice(PARTD_TITLE.length).trim() : null;
+      const url = d.distribution?.find((x) => x.format === "ZIP" && x.downloadURL?.startsWith("https://data.cms.gov/"))?.downloadURL;
+      return date && /^\d{4}-\d{2}-\d{2}$/.test(date) && url ? [{ date, url }] : [];
+    })
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .at(-1);
+  if (!newest) return null;
+  const [year, month] = newest.date.split("-").map(Number);
+  return { sourceKey: "cms_partd_wa", period: `${year}-Q${Math.ceil(month / 3)}`, url: newest.url, publicationLabel: `Quarterly file ${newest.date}` };
+}

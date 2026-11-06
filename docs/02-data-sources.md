@@ -27,6 +27,7 @@ files that were current on that date.
 | 12 | `hpt_multicare` | MultiCare Health System | Hospital standard charges (price transparency, 45 CFR 180.50), MultiCare's Washington hospitals | Monthly (operator's Mac) | **Ingested as anonymized drug rates** (no payer or plan names) |
 | 13 | `cms_mcd_articles` | CMS | Medicare Coverage Database — Current Article Data (Billing and Coding articles) | Weekly | **Ingested** (active articles that list a HCPCS Level II drug code; ICD-10-CM and HCPCS codes only; license accepted by the operator on 2026-11-02) |
 | 14 | `cms_mcd_lcds` | CMS | Medicare Coverage Database — Current LCD Data (DME MAC drug policies) | Weekly | **Ingested** (HCPCS Level II drug codes of 5 policies only; license accepted by the operator on 2026-11-05) |
+| 15 | `cms_partd_wa` | CMS | Quarterly Prescription Drug Plan Formulary, Pharmacy Network, and Pricing Information | Quarterly | **Ingested** (Washington plans only; no plan names; pharmacy network files never downloaded) |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
 | — | — | NLM | DailyMed | Daily | Link-out only |
 
@@ -228,6 +229,18 @@ files that were current on that date.
 | Fields used | HCPCS Level II drug codes (J, Q, C9, A9) and code group for L33794 External Infusion Pumps, L33610 Intravenous Immune Globulin, L33824 Immunosuppressive Drugs, L33827 Oral Antiemetic Drugs, and L33370 Nebulizers, with each LCD's title and version |
 | Known limitations | Active LCDs with a DME MAC contractor only; proposed LCDs are excluded. L33826 Oral Anticancer lists only catch-all codes and L38953 Parenteral Nutrition lists no drug codes, so those two are rules in `src/lib/part-b-d.ts`. A code on a list does not by itself meet the LCD's coverage criteria. |
 | Ingestion | Snapshot source: each import replaces the previous one. The daily refresh sends a HEAD request and re-imports when the file's Last-Modified date is newer than the current release. Plausibility check: at least 5 drug codes for each policy. |
+
+## 15. CMS Part D formulary and pricing file (Washington plans)
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | Centers for Medicare & Medicaid Services (CMS) |
+| Source URL | `SPUF_{year}_{date}.zip` on data.cms.gov, found in https://data.cms.gov/data.json by the title "Quarterly Prescription Drug Plan Formulary, Pharmacy Network, and Pricing Information". The URL holds a random id, so it is discovered, not pinned. |
+| Format | ZIP (2.5 GB) of nested ZIPs, pipe-delimited text. Read by HTTP byte range: geographic locator, plan information, basic drugs formulary (8 MB), and pricing (192 MB, 54 million rows, 2 GB of text, streamed). The pharmacy network files (2.3 GB) are never downloaded. |
+| Licensing / restrictions | U.S. Government public use file. |
+| Fields used | Washington plans (PDP region 30; MA-PD by Washington county; regional PPOs by MA region; "Washington D.C." excluded). Per formulary: RXCUI, proxy NDC, tier, prior authorization, step therapy, quantity limit, selected drug. Per proxy NDC: plan count and minimum, median, and maximum 30-day `UNIT_COST`. Plan names are read but not stored. |
+| Known limitations | The file's NDC is a proxy, one per RxCUI, so drugs are linked by NDC, product, and RxCUI (section 16). `UNIT_COST` is the plan's average at in-area retail pharmacies, not a home infusion contract rate. "Not listed" means CMS's file does not list the drug for Washington plans; it does not mean a plan would deny it. Part D Manual Ch. 6 Appendix C tells sponsors not to list a Part B-covered oral anticancer drug with no other medically accepted indication. Special needs plans are counted. 2026 Q3: 125 plans (10 PDP, 115 MA-PD), 32 formularies, 108,628 formulary rows, 4,912 RXCUIs. |
+| Ingestion | Snapshot source: each import replaces the previous one. The daily refresh reads the CMS catalog and imports when a newer quarter appears. Identical files are skipped by a checksum of the four entries' names, CRCs, and sizes. Plausibility checks: at least 50 plans and 1,000 RXCUIs. |
 
 ## Evaluated but not ingested
 

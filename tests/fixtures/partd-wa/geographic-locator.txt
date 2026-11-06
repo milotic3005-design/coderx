@@ -1,0 +1,6 @@
+COUNTY_CODE|STATENAME|COUNTY|MA_REGION_CODE|MA_REGION|PDP_REGION_CODE|PDP_REGION
+09000|Washington D.C.|District of Columbia|05|Mid-Atlantic (Delaware, District of Columbia and Maryland)|05|Mid-Atlantic (Delaware, District of Columbia and Maryland)
+28100|Nebraska|Burt|19|Upper Midwest and Northern Plains (Iowa, Minnesota, Montana, Nebraska, North Dakota, South Dakota and Wyoming)|25|Upper Midwest and Northern Plains (Iowa, Minnesota, Montana, Nebraska, North Dakota, South Dakota and Wyoming)
+50000|Washington|Adams|23|Northwest (Idaho, Oregon, Utah and Washington)|30|Oregon, Washington
+50050|Washington|Clark|23|Northwest (Idaho, Oregon, Utah and Washington)|30|Oregon, Washington
+50260|Washington|Pierce|23|Northwest (Idaho, Oregon, Utah and Washington)|30|Oregon, Washington

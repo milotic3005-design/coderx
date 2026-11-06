@@ -23,7 +23,8 @@ export type SourceKey =
   | "wa_hca_professional_drugs"
   | "hpt_multicare"
   | "cms_mcd_articles"
-  | "cms_mcd_lcds";
+  | "cms_mcd_lcds"
+  | "cms_partd_wa";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -43,6 +44,7 @@ export const SOURCE_KEYS: SourceKey[] = [
   "hpt_multicare",
   "cms_mcd_articles",
   "cms_mcd_lcds",
+  "cms_partd_wa",
 ];
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
@@ -242,6 +244,16 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     badge: "official-cms",
     licenseNote:
       "U.S. Government data; CMS presents its AMA CPT, ADA CDT, and AHA UB-04 license agreements with these downloads (accepted by the CodeRx operator on 2026-11-05). CodeRx keeps only the HCPCS Level II drug codes of five DME MAC policies, with each LCD's number, title, and version. No CPT, CDT, revenue codes, or LCD text is stored.",
+  },
+  cms_partd_wa: {
+    key: "cms_partd_wa",
+    organization: "CMS",
+    dataset: "Quarterly Prescription Drug Plan Formulary, Pharmacy Network, and Pricing Information (Washington plans)",
+    shortName: "CMS Part D plan formulary and pricing file",
+    landingPageUrl: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-part-d-prescribers/quarterly-prescription-drug-plan-formulary-pharmacy-network-and-pricing-information",
+    cadence: "quarterly",
+    badge: "official-cms",
+    licenseNote: "U.S. Government public use file. CodeRx keeps Washington PDP and MA-PD formulary rows and the spread of plans' 30-day unit costs. Plan names are not stored. UNIT_COST is a plan's average at in-area retail pharmacies, not a home infusion contract rate.",
   },
   hpt_multicare: {
     key: "hpt_multicare",

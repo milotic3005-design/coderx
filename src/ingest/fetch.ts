@@ -39,7 +39,7 @@ function cacheKey(url: string): string {
   return createHash("sha1").update(url).digest("hex");
 }
 
-async function fetchWithRetry(url: string, init: RequestInit, retries: number, timeoutMs: number): Promise<Response> {
+export async function fetchWithRetry(url: string, init: RequestInit, retries: number, timeoutMs: number): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {

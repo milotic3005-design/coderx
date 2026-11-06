@@ -12,6 +12,8 @@ import { download, streamDownload, streamFromBytes, type DownloadOptions, type D
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
 import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
+import { readPartdWa, type PartdWaParse } from "./parsers/cms-partd";
+import { byteSourceFromBytes, byteSourceFromUrl } from "./remote-zip";
 import { DME_POLICIES, LCD_TABLES, parseLcdPolicies, type LcdTables } from "./parsers/cms-lcd";
 import { MCD_TABLES, NORIDIAN_JF_SAD_ARTICLE, parseMcdArticles, parseMcdSadLists, type McdTables } from "./parsers/cms-mcd";
 import { parseOppsAddendumA, parseOppsAddendumB } from "./parsers/cms-opps";
@@ -699,6 +701,30 @@ function parseLcdRelease(file: Downloaded): Parsed {
   };
 }
 
+function parsePartdRelease(p: PartdWaParse, fileName: string): Parsed {
+  assertPlausible(p.plans.length >= 50, `Part D file has only ${p.plans.length} Washington plans; expected at least 50.`);
+  const rxcuis = new Set(p.drugs.map((d) => d.rxcui)).size;
+  assertPlausible(rxcuis >= 1000, `Part D file has only ${rxcuis} RxCUIs for Washington plans; expected at least 1,000.`);
+  return {
+    fileName,
+    effectiveStart: null,
+    effectiveEnd: null,
+    recordCount: p.drugs.length,
+    rejected: [],
+    warnings: [],
+    details: { plans: p.plans.length, pdpPlans: p.plans.filter((x) => x.type === "PDP").length, mapdPlans: p.plans.filter((x) => x.type === "MA-PD").length, formularies: p.formularies.length, rxcuis, costs: p.costs.length },
+    load: async (tx, releaseId) => {
+      await tx.delete(t.partdWaCosts);
+      await tx.delete(t.partdWaFormularyDrugs);
+      await tx.delete(t.partdWaFormularies);
+      await insertBatches(tx, t.partdWaFormularies, p.formularies.map((f) => ({ ...f, sourceReleaseId: releaseId })), 4);
+      await insertBatches(tx, t.partdWaFormularyDrugs, p.drugs.map((d) => ({ ...d, sourceReleaseId: releaseId })), 9);
+      await insertBatches(tx, t.partdWaCosts, p.costs.map((c) => ({ ...c, unitCostMin: String(c.unitCostMin), unitCostMedian: String(c.unitCostMedian), unitCostMax: String(c.unitCostMax), sourceReleaseId: releaseId })), 7);
+      return { rows: p.drugs.length, costs: p.costs.length };
+    },
+  };
+}
+
 function parseStateFeeRelease(file: Downloaded, period: string, sourceKey: keyof typeof STATE_FEE_SOURCES): Parsed {
   const { state, program } = STATE_FEE_SOURCES[sourceKey];
   const parsed = parseStateFeeSchedule(readFirstSheet(file.bytes));
@@ -798,6 +824,12 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
       const { sha256: digest, byteSize } = src.result();
       file = { url: candidate.url, bytes: new Uint8Array(0), sha256: digest, byteSize, lastModified: src.lastModified, etag: src.etag, contentType: src.contentType, fromCache: false };
       streamed = parseMdrpRelease(mdrp, candidate.period, baseName(new URL(candidate.url).pathname));
+    } else if (candidate.sourceKey === "cms_partd_wa") {
+      // 2.5 GB archive: read the four files needed by byte range, and stream the price file.
+      const remote = options.fetcher ? null : await byteSourceFromUrl(candidate.url);
+      const partd = await readPartdWa(remote ?? byteSourceFromBytes((await options.fetcher!(candidate.url)).bytes));
+      file = { url: candidate.url, bytes: new Uint8Array(0), sha256: partd.checksum, byteSize: partd.byteSize, lastModified: remote?.lastModified ?? null, etag: remote?.etag ?? null, contentType: "application/zip", fromCache: false };
+      streamed = parsePartdRelease(partd, baseName(new URL(candidate.url).pathname));
     } else {
       file = options.fetcher ? await options.fetcher(candidate.url) : await download(candidate.url, options.download);
     }
@@ -841,6 +873,7 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
         parsed = parsePurpleBookRelease(file);
         break;
       case "cms_mdrp_products":
+      case "cms_partd_wa":
         parsed = streamed!;
         break;
       case "wa_hca_home_infusion":
@@ -896,7 +929,7 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
 
       // Supersede earlier releases: per quarter/month for periodic sources, all prior snapshots for daily FDA files.
       // Snapshot sources (daily FDA files, the weekly MCD export) supersede every earlier release.
-      const periodic = source.cadence !== "daily" && source.cadence !== "weekly";
+      const periodic = source.cadence !== "daily" && source.cadence !== "weekly" && candidate.sourceKey !== "cms_partd_wa";
       await tx
         .update(t.sourceReleases)
         .set({ isCurrent: false, status: "superseded" })
@@ -950,4 +983,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs", "cms_mcd_articles", "cms_mcd_lcds"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs", "cms_mcd_articles", "cms_mcd_lcds", "cms_partd_wa"];

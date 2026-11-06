@@ -393,6 +393,55 @@ export const dmePolicyCodes = pgTable(
   (t) => [index("dme_policy_codes_code_idx").on(t.hcpcsCode), index("dme_policy_codes_release_idx").on(t.sourceReleaseId)],
 );
 
+/** Washington Part D formularies and how many plans use each: 125 plans share 32 formularies in 2026. */
+export const partdWaFormularies = pgTable("partd_wa_formularies", {
+  formularyId: text("formulary_id").primaryKey(),
+  pdpPlans: integer("pdp_plans").notNull(),
+  mapdPlans: integer("mapd_plans").notNull(),
+  sourceReleaseId: integer("source_release_id")
+    .notNull()
+    .references(() => sourceReleases.id),
+});
+
+/** Formulary rows are per formulary so that a drug's plan count is a union across its RxCUIs. */
+export const partdWaFormularyDrugs = pgTable(
+  "partd_wa_formulary_drugs",
+  {
+    id: serial("id").primaryKey(),
+    formularyId: text("formulary_id").notNull(),
+    rxcui: text("rxcui").notNull(),
+    /** CMS's representative NDC for the RxCUI. */
+    proxyNdc: text("proxy_ndc").notNull(),
+    tier: integer("tier"),
+    priorAuth: boolean("prior_auth").notNull(),
+    stepTherapy: boolean("step_therapy").notNull(),
+    quantityLimit: boolean("quantity_limit").notNull(),
+    selectedDrug: boolean("selected_drug").notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("partd_wa_drugs_rxcui_idx").on(t.rxcui), index("partd_wa_drugs_ndc_idx").on(t.proxyNdc), index("partd_wa_drugs_ndc_prefix_idx").on(sql`${t.proxyNdc} text_pattern_ops`), index("partd_wa_drugs_release_idx").on(t.sourceReleaseId)],
+);
+
+/** Spread of Washington plans' 30-day UNIT_COST per proxy NDC: retail averages per NDC billing unit. */
+export const partdWaCosts = pgTable(
+  "partd_wa_costs",
+  {
+    id: serial("id").primaryKey(),
+    proxyNdc: text("proxy_ndc").notNull(),
+    rxcui: text("rxcui"),
+    planCount: integer("plan_count").notNull(),
+    unitCostMin: numeric("unit_cost_min").notNull(),
+    unitCostMedian: numeric("unit_cost_median").notNull(),
+    unitCostMax: numeric("unit_cost_max").notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("partd_wa_costs_ndc_idx").on(t.proxyNdc), index("partd_wa_costs_rxcui_idx").on(t.rxcui), index("partd_wa_costs_release_idx").on(t.sourceReleaseId)],
+);
+
 /** HCPCS Level II drug codes listed in an MCD article (CPT rows are not stored). */
 export const mcdArticleHcpcs = pgTable(
   "mcd_article_hcpcs",

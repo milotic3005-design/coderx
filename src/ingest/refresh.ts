@@ -5,7 +5,7 @@
 import { and, desc, eq, lt, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
-import { discoverReleases } from "./discover";
+import { discoverPartdWa, discoverReleases } from "./discover";
 import { headInfo } from "./fetch";
 import { importRelease, IMPORT_ORDER, runDerive, type ImportOutcome } from "./pipeline";
 import { manifestFor, SOURCE_KEYS, STATE_FEE_SOURCES, type ReleaseCandidate, type SourceKey, type StateFeeSourceKey } from "./sources";
@@ -106,6 +106,19 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
       else skipped.push({ sourceKey: key, reason: `Up to date (remote ${remote ?? "unknown"}, imported ${cur.periodLabel})` });
     } catch (error) {
       skipped.push({ sourceKey: key, reason: `HEAD check failed: ${error instanceof Error ? error.message : String(error)}` });
+    }
+  }
+
+  // Part D: the quarterly archive's URL has a random id, so the newest one comes from the CMS catalog.
+  if (wanted.has("cms_partd_wa")) {
+    try {
+      const c = await discoverPartdWa();
+      const [cur] = await currentReleases(db, "cms_partd_wa");
+      if (!c) skipped.push({ sourceKey: "cms_partd_wa", reason: "Not found in the CMS data catalog" });
+      else if (options.force || !cur || (c.period ?? "") > (cur.periodLabel ?? "")) queue.push(c);
+      else skipped.push({ sourceKey: "cms_partd_wa", reason: `${cur.periodLabel} is current` });
+    } catch (error) {
+      skipped.push({ sourceKey: "cms_partd_wa", reason: `Catalog check failed: ${error instanceof Error ? error.message : String(error)}` });
     }
   }
 
