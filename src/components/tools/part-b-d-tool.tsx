@@ -5,7 +5,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import type { BenefitData } from "@/lib/data/benefit";
 import { formatMoney } from "@/lib/format";
 import { compareDollars, convertUnitCost, type PathwayKey } from "@/lib/part-b-d-dollars";
-import { decideBenefit, questionsFor, RULE_SOURCES, type QuestionKey, type RouteChoice, type Setting, type SettingResult, type Verdict } from "@/lib/part-b-d";
+import { decideBenefit, homeSummary, questionsFor, RULE_SOURCES, type QuestionKey, type RouteChoice, type Setting, type SettingResult, type Verdict } from "@/lib/part-b-d";
 import { Section, TableScroll, td, th } from "../layout-bits";
 
 const KEY = "coderx:part-b-d";
@@ -164,7 +164,7 @@ export function PartBDTool({ data, initialUnits }: { data: BenefitData; initialU
   const questions = useMemo(() => questionsFor(facts), [facts]);
   const results = decideBenefit(facts, { route, answers, dmeposEnrolled: enrolled });
   const row = (setting: Setting) => results.find((r) => r.setting === setting)!;
-  const home = row("home_pump").verdict === "part_b_dme" ? row("home_pump") : row("home_no_pump");
+  const home = homeSummary(results);
 
   const converted = convertUnitCost(partD?.costs ?? [], data.asp?.limit ?? null);
   const dollars = compareDollars({
@@ -292,7 +292,7 @@ export function PartBDTool({ data, initialUnits }: { data: BenefitData; initialU
                   <td className={`${td} code-chip`}>{p.allowedPerUnit == null ? "—" : formatMoney(p.allowedPerUnit)}</td>
                   <td className={`${td} code-chip`}>{money(p.expectedPerDose)}</td>
                   <td className={`${td} code-chip`}>{money(p.expectedPerMonth)}</td>
-                  <td className={td}>{p.source === "you" ? "You entered" : p.source === "cms" ? "CMS" : p.lawful ? "No rate available" : "Does not apply to this case"}</td>
+                  <td className={td}>{p.source === "you" ? "You entered" : p.source === "cms" ? "CMS" : p.lawful ? NO_DATA : "Does not apply to this case"}</td>
                 </tr>
               ))}
             </tbody>
@@ -300,7 +300,7 @@ export function PartBDTool({ data, initialUnits }: { data: BenefitData; initialU
         </TableScroll>
         <div className="mt-3 space-y-1 text-sm text-ink-muted">
           {dollars.higher ? <p>Site of care is a clinical decision, not a billing choice.</p> : null}
-          {dollars.lawfulCount === 1 ? <p>Only one pathway is lawful for this case, so there is nothing to rank.</p> : null}
+          {dollars.onlyOneLawful ? <p>Only one pathway is lawful for this case, so there is nothing to rank.</p> : null}
           {partDPath.source == null && dollars.rawPartD != null && row("home_no_pump").verdict === "part_d" ? <p>CMS&apos;s median plan cost is {formatMoney(dollars.rawPartD)} per NDC unit. These units don&apos;t convert cleanly, so no dollar comparison is shown.</p> : null}
           <p>
             Part D pays no supplies or nursing. For administration and nursing, use{" "}

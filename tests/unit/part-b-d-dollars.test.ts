@@ -7,7 +7,7 @@ const FORM = "INJECTION";
 const forms = new Set([FORM]);
 const cost = (over: Partial<CostRow> = {}): CostRow => ({ unitCostMedian: 10, packageSize: 5, billUnitsPerItem: 50, dosageForm: FORM, ...over });
 
-const facts = (over: Partial<BenefitFacts> = {}): BenefitFacts => ({ code: "J0897", isActive: true, isNoc: false, routes: ["SUBCUTANEOUS"], productType: null, sad: { status: "not_listed", products: [], contractorsListing: 0, contractorsTotal: 8, displayId: "A53033" }, dmePolicies: [], notPayable: false, oppsStatus: "K", ...over });
+const facts = (over: Partial<BenefitFacts> = {}): BenefitFacts => ({ code: "J0897", isActive: true, isNoc: false, routes: ["SUBCUTANEOUS"], productType: null, sad: { status: "not_listed", products: [], contractorsListing: 0, contractorsTotal: 8, displayId: "A53033" }, dmePolicies: [], notPayable: false, oppsLoaded: true, oppsStatus: "K", ...over });
 const results = (f = facts()) => decideBenefit(f, { route: null, answers: {}, dmeposEnrolled: false });
 const base = { results: results(), units: 60, dosesPerMonth: 1, opps: { paymentRate: 30, copayPerUnit: 6 }, paymentLimit: 30, inpatientDeductible: 1736, partDPerHcpcsUnit: 28, rawPartD: 1680, contractRate: null };
 
@@ -63,6 +63,19 @@ describe("Comparing pathways", () => {
     const r = compareDollars({ ...base, opps: { paymentRate: 54.563, copayPerUnit: 10.92 }, paymentLimit: 54.563, results: results(facts({ dmePolicies: ["pump"] })), units: 100 });
     expect(r.lawfulCount).toBeGreaterThanOrEqual(2);
     expect(r.higher).toBeNull();
+  });
+  it("never ranks Part D for a pump drug, which Part B would pay", () => {
+    const r = compareDollars({ ...base, results: results(facts({ dmePolicies: ["pump"] })), contractRate: 70 });
+    expect(key(r, "home_d").lawful).toBe(false);
+    expect(key(r, "home_d").expectedPerDose).toBeNull();
+    expect(r.higher).not.toBe("home_d");
+  });
+  it("says only one pathway is lawful only when nothing else is open", () => {
+    const listed = facts({ sad: { status: "listed", products: ["Enbrel®"], contractorsListing: 8, contractorsTotal: 8, displayId: "A53033" } });
+    expect(compareDollars({ ...base, results: results(listed) }).onlyOneLawful).toBe(true);
+    expect(compareDollars({ ...base, results: results(facts({ oppsStatus: "E1" })) }).onlyOneLawful).toBe(false);
+    expect(compareDollars({ ...base, results: results(facts({ oppsStatus: "N" })) }).onlyOneLawful).toBe(false);
+    expect(compareDollars({ ...base, results: results(facts({ isActive: false })) }).onlyOneLawful).toBe(false);
   });
   it("shows no ranking when only one pathway is lawful", () => {
     const sad = facts({ sad: { status: "listed", products: ["Enbrel®"], contractorsListing: 8, contractorsTotal: 8, displayId: "A53033" } });

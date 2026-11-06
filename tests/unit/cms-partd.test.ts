@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { discoverPartdWa } from "@/ingest/discover";
+import { canStartPartd, partdCatalogDue } from "@/ingest/refresh";
 import { formularyCounts, parseFormularyRows, readPartdWa, summarizeCosts, washingtonPlans } from "@/ingest/parsers/cms-partd";
 import { byteSourceFromBytes } from "@/ingest/remote-zip";
 import { FIXTURE_DIR, partdArchive } from "../helpers/fixtures";
@@ -97,5 +98,20 @@ describe("Finding the newest quarterly file", () => {
   });
   it("returns null when the catalog has no such dataset", async () => {
     expect(await discoverPartdWa(async () => JSON.stringify({ dataset: [] }))).toBeNull();
+  });
+});
+
+describe("Fitting Part D into the daily refresh", () => {
+  const day = 86_400_000;
+  const now = Date.parse("2026-11-06T10:15:00Z");
+  it("checks the 18 MB catalog at most weekly once a quarter is loaded", () => {
+    expect(partdCatalogDue(null, now)).toBe(true);
+    expect(partdCatalogDue(new Date(now - 3 * day).toISOString(), now)).toBe(false);
+    expect(partdCatalogDue(new Date(now - 8 * day).toISOString(), now)).toBe(true);
+  });
+  it("starts only when the run has done nothing else and has time left", () => {
+    expect(canStartPartd(5_000, 0)).toBe(true);
+    expect(canStartPartd(5_000, 1)).toBe(false);
+    expect(canStartPartd(120_000, 0)).toBe(false);
   });
 });

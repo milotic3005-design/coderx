@@ -41,6 +41,19 @@ async function currentReleases(db: Database, sourceKey: SourceKey) {
     .orderBy(desc(t.sourceReleases.periodLabel));
 }
 
+const PARTD_CATALOG_DAYS = 7;
+const PARTD_LATEST_START_MS = 60_000;
+
+/** CMS's catalog is 18 MB and new quarters are rare, so a loaded quarter is rechecked weekly, not daily. */
+export function partdCatalogDue(importedAt: string | null | undefined, now: number): boolean {
+  return !importedAt || (now - Date.parse(importedAt)) / 86_400_000 >= PARTD_CATALOG_DAYS;
+}
+
+/** The Part D import streams 2 GB of text, so it runs alone and early; anything else defers it to the next day. */
+export function canStartPartd(elapsedMs: number, importedSoFar: number): boolean {
+  return importedSoFar === 0 && elapsedMs < PARTD_LATEST_START_MS;
+}
+
 export async function refreshSources(db: Database, options: RefreshOptions): Promise<RefreshResult> {
   const started = Date.now();
   const log = options.log ?? (() => {});
@@ -110,10 +123,13 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
   }
 
   // Part D: the quarterly archive's URL has a random id, so the newest one comes from the CMS catalog.
-  if (wanted.has("cms_partd_wa")) {
+  const [currentPartd] = wanted.has("cms_partd_wa") ? await currentReleases(db, "cms_partd_wa") : [];
+  if (wanted.has("cms_partd_wa") && !options.force && !partdCatalogDue(currentPartd?.importedAt, Date.now())) {
+    skipped.push({ sourceKey: "cms_partd_wa", reason: `${currentPartd?.periodLabel} is current; catalog checked weekly` });
+  } else if (wanted.has("cms_partd_wa")) {
     try {
       const c = await discoverPartdWa();
-      const [cur] = await currentReleases(db, "cms_partd_wa");
+      const cur = currentPartd;
       if (!c) skipped.push({ sourceKey: "cms_partd_wa", reason: "Not found in the CMS data catalog" });
       else if (options.force || !cur || (c.period ?? "") > (cur.periodLabel ?? "")) queue.push(c);
       else skipped.push({ sourceKey: "cms_partd_wa", reason: `${cur.periodLabel} is current` });
@@ -156,6 +172,10 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
   for (const candidate of queue) {
     if (Date.now() - started > budget) {
       skipped.push({ sourceKey: candidate.sourceKey, reason: `Time budget reached; ${candidate.period ?? "release"} deferred to the next run` });
+      continue;
+    }
+    if (candidate.sourceKey === "cms_partd_wa" && !canStartPartd(Date.now() - started, outcomes.filter((o) => o.status === "imported").length)) {
+      skipped.push({ sourceKey: candidate.sourceKey, reason: `Runs alone; ${candidate.period} deferred to the next run` });
       continue;
     }
     outcomes.push(await importRelease(db, candidate, { force: options.force, skipDerive: true, log }));

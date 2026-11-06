@@ -178,8 +178,8 @@ export async function headInfo(url: string, timeoutMs = 30_000): Promise<{ lastM
   return { lastModified: res.headers.get("last-modified"), etag: res.headers.get("etag"), contentLength: len ? Number(len) : null };
 }
 
-export async function fetchPage(url: string, timeoutMs = 60_000): Promise<string> {
-  const res = await fetchWithRetry(url, { headers: { "User-Agent": USER_AGENT, Accept: "text/html" } }, 2, timeoutMs);
+export async function fetchPage(url: string, timeoutMs = 60_000, retries = 2): Promise<string> {
+  const res = await fetchWithRetry(url, { headers: { "User-Agent": USER_AGENT, Accept: "text/html" } }, retries, timeoutMs);
   if (!res.ok) throw new Error(`GET ${url}: HTTP ${res.status}`);
   return res.text();
 }

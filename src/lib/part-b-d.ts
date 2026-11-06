@@ -36,7 +36,9 @@ export interface BenefitFacts {
   sad: SadFact | null;
   /** Null when the source has not been imported. */
   dmePolicies: DmePolicy[] | null;
-  notPayable: boolean;
+  /** Null when the source has not been imported. */
+  notPayable: boolean | null;
+  oppsLoaded: boolean;
   oppsStatus: string | null;
 }
 
@@ -85,10 +87,15 @@ type Outcome = Omit<SettingResult, "setting" | "modifier" | "notes"> & Partial<P
 
 const hasRoute = (f: BenefitFacts, route: string) => f.routes.includes(route);
 const onPolicy = (f: BenefitFacts, policy: DmePolicy) => f.dmePolicies?.includes(policy) ?? false;
-const isOralOnly = (f: BenefitFacts, a: BenefitAnswers) => a.route === "oral" || (f.routes.length > 0 && f.routes.every((r) => r === "ORAL"));
+/** The J8 family is CMS's oral drug codes, so the code is evidence of the route when no FDA product is linked. */
+const isOralCode = (f: BenefitFacts) => /^J8\d{3}$/.test(f.code ?? "");
+const isOralOnly = (f: BenefitFacts, a: BenefitAnswers) => a.route === "oral" || (f.routes.length > 0 ? f.routes.every((r) => r === "ORAL") : isOralCode(f));
 
-/** The J8 family is CMS's oral drug codes; antiemetics have their own policy and J8499 is non-chemotherapy. */
-const isOralChemoCode = (f: BenefitFacts) => /^J8\d{3}$/.test(f.code ?? "") && f.code !== "J8499" && hasRoute(f, "ORAL") && !onPolicy(f, "antiemetic");
+/** J8499 is non-chemotherapy, and antiemetics have their own policy. */
+const isOralChemoCode = (f: BenefitFacts) => isOralCode(f) && f.code !== "J8499" && (f.routes.length === 0 || hasRoute(f, "ORAL")) && !onPolicy(f, "antiemetic");
+
+/** Without a linked product the rules cannot tell what the drug is, and only a catch-all Part D answer would be left. */
+const isIdentified = (f: BenefitFacts) => f.routes.length > 0 || f.productType != null || isOralCode(f);
 
 export function questionsFor(f: BenefitFacts): { primary: QuestionKey[]; other: QuestionKey[] } {
   const primary: QuestionKey[] = [];
@@ -127,6 +134,10 @@ function statutoryCase(f: BenefitFacts, a: BenefitAnswers, place: "home" | "ltc"
   return unanswered ? "unanswered" : null;
 }
 
+const NOT_PAYABLE: Outcome = { verdict: "check", reason: "CMS lists this code as not payable under Part B, which conflicts with this Part B case. Check before billing.", sources: ["not_payable"] };
+const CATCH_ALL: Outcome = { verdict: "check", reason: "This is a catch-all code, so the code alone cannot show which product it is, or which benefit pays.", sources: ["opps"] };
+const NO_PRODUCT: Outcome = { verdict: "check", reason: "CMS links no product to this code, so this row cannot be decided. Check the drug's route and form.", sources: ["coverage_table"] };
+const VACCINE: Outcome = { verdict: "check", reason: "Which benefit pays depends on the vaccine. See the note below.", sources: ["vaccines", "coverage_table"] };
 const CATCH_ALL_LIST: Outcome = { verdict: "check", reason: "This is a catch-all code, so the code alone cannot show which product it is. Check your product against the DME policy.", sources: ["lcd_pump"] };
 const UNANSWERED: Outcome = { verdict: "check", reason: "Answer the question above to decide this row.", sources: ["coverage_table"] };
 const INACTIVE: Outcome = { verdict: "check", reason: "This HCPCS code is inactive, so Part B cannot be billed under it. Find the current code.", sources: ["opps"] };
@@ -141,6 +152,7 @@ const PART_D_DRUG_ONLY = "Part D pays for the drug only. Home infusion supplies 
 const dmeposNote = (a: BenefitAnswers) => (a.dmeposEnrolled ? "Your pharmacy can bill this as an enrolled DMEPOS supplier." : "This needs an enrolled DMEPOS supplier; Part D cannot pay because Part B would.");
 
 function hopdStatus(f: BenefitFacts, modifier: "JA" | null, notes: string[]): Outcome {
+  if (!f.oppsLoaded) return missing("CMS OPPS Addendum B");
   if (f.oppsStatus === "K" || f.oppsStatus === "G") return { verdict: "part_b", reason: "Part B pays for this drug separately in the hospital outpatient department.", modifier, notes, sources: ["opps"] };
   if (f.oppsStatus === "N") return { verdict: "part_b_packaged", reason: "Part B covers this drug, but its payment is packaged into the procedure or visit.", modifier, notes, sources: ["opps"] };
   return { verdict: "check", reason: f.oppsStatus ? `OPPS status ${f.oppsStatus} is not a separately paid or packaged drug status. Check Addendum B.` : "CMS's OPPS Addendum B has no status for this code.", modifier, notes, sources: ["opps"] };
@@ -149,6 +161,7 @@ function hopdStatus(f: BenefitFacts, modifier: "JA" | null, notes: string[]): Ou
 function hopd(f: BenefitFacts, a: BenefitAnswers): Outcome {
   if (!f.code) return { verdict: "check", reason: "This drug has no HCPCS code linked by CMS, so Part B cannot be decided.", sources: ["opps"] };
   if (!f.isActive) return INACTIVE;
+  if (f.notPayable === null) return missing("CMS's payment limit file");
   if (f.notPayable) return { verdict: "not_part_b", reason: "CMS lists this code as not payable under Part B.", sources: ["not_payable"] };
   if (!f.sad) return missing("The self-administered drug list");
 
@@ -175,11 +188,13 @@ function hopd(f: BenefitFacts, a: BenefitAnswers): Outcome {
       return { verdict: "check", reason: "Choose a route: on Noridian's list the subcutaneous form is excluded and the IM form is not.", sources: ["noridian_sad"] };
   }
 
+  if (f.isNoc) return CATCH_ALL;
   if (isOralOnly(f, a)) {
+    if (f.dmePolicies === null) return missing("The DME policy list");
     const statutory = statutoryCase(f, a, "home");
     if (statutory === "unanswered") return UNANSWERED;
     if (statutory === "catch_all") return CATCH_ALL_LIST;
-    if (statutory) return statutory;
+    if (statutory) return f.notPayable ? NOT_PAYABLE : statutory;
     return { verdict: "not_part_b", reason: "Oral drugs are usually self-administered, so Part B does not pay. The hospital may bill the patient.", sources: ["noridian_sad", "sad_hopd"] };
   }
   return hopdStatus(f, null, contractors);
@@ -190,10 +205,15 @@ function homePump(f: BenefitFacts): Outcome {
   if (!onPolicy(f, "pump")) return { verdict: "not_applicable", reason: "Not on Medicare's external infusion pump drug list, so the next row applies.", sources: ["lcd_pump"] };
   if (!f.isActive) return INACTIVE;
   if (f.isNoc) return CATCH_ALL_LIST;
+  if (f.notPayable) return NOT_PAYABLE;
   return { verdict: "part_b_dme", reason: "Part B pays for this drug as a supply for a covered external infusion pump, billed to the DME contractor, when the pump is medically necessary.", sources: ["lcd_pump", "coverage_table"] };
 }
 
-function partD(reason: string, sources: RuleSourceKey[]): Outcome {
+/** Part D is the answer left when nothing else applies, so it needs the drug to be known first. */
+function partD(f: BenefitFacts, reason: string, sources: RuleSourceKey[]): Outcome {
+  if (f.isNoc) return CATCH_ALL;
+  if (!isIdentified(f)) return NO_PRODUCT;
+  if (f.productType === "VACCINE") return VACCINE;
   return { verdict: "part_d", reason, notes: PART_D_NOTES, sources: [...sources, "part_d_definition", "ch6_exclusions"] };
 }
 
@@ -202,8 +222,8 @@ function homeNoPump(f: BenefitFacts, a: BenefitAnswers): Outcome {
   const statutory = statutoryCase(f, a, "home");
   if (statutory === "unanswered") return UNANSWERED;
   if (statutory === "catch_all") return CATCH_ALL_LIST;
-  if (statutory) return f.isActive ? statutory : INACTIVE;
-  return partD(PART_D_DRUG_ONLY, ["ch6_home_infusion"]);
+  if (statutory) return !f.isActive ? INACTIVE : f.notPayable ? NOT_PAYABLE : statutory;
+  return partD(f, PART_D_DRUG_ONLY, ["ch6_home_infusion"]);
 }
 
 function longTermCare(f: BenefitFacts, a: BenefitAnswers): Outcome {
@@ -211,8 +231,8 @@ function longTermCare(f: BenefitFacts, a: BenefitAnswers): Outcome {
   const statutory = statutoryCase(f, a, "ltc");
   if (statutory === "unanswered") return UNANSWERED;
   if (statutory === "catch_all") return CATCH_ALL_LIST;
-  if (statutory) return f.isActive ? statutory : INACTIVE;
-  return partD("Part D pays here, even for drugs given by a pump or nebulizer, because a long-term care facility is not a home for the DME benefit.", ["coverage_table"]);
+  if (statutory) return !f.isActive ? INACTIVE : f.notPayable ? NOT_PAYABLE : statutory;
+  return partD(f, "Part D pays here, even for drugs given by a pump or nebulizer, because a long-term care facility is not a home for the DME benefit.", ["coverage_table"]);
 }
 
 const finish = (f: BenefitFacts, a: BenefitAnswers, setting: Setting, o: Outcome): SettingResult => {
@@ -220,10 +240,17 @@ const finish = (f: BenefitFacts, a: BenefitAnswers, setting: Setting, o: Outcome
   if (o.verdict === "part_b_dme") notes.push(dmeposNote(a));
   const showsTransplantNote = (setting === "home_no_pump" || setting === "ltc") && onPolicy(f, "immunosuppressive");
   if (showsTransplantNote) notes.push(PART_B_ID_NOTE);
-  if (f.productType === "VACCINE" && (setting === "hopd" || setting === "home_no_pump")) notes.push(VACCINE_NOTE);
-  const sources = [...o.sources, ...(showsTransplantNote ? (["part_b_id"] as const) : []), ...(f.productType === "VACCINE" && (setting === "hopd" || setting === "home_no_pump") ? (["vaccines"] as const) : [])];
+  const showsVaccineNote = f.productType === "VACCINE" && (setting === "hopd" || setting === "home_no_pump" || setting === "ltc");
+  if (showsVaccineNote) notes.push(VACCINE_NOTE);
+  const sources = [...new Set([...o.sources, ...(showsTransplantNote ? (["part_b_id"] as const) : []), ...(showsVaccineNote ? (["vaccines"] as const) : [])])];
   return { setting, verdict: o.verdict, reason: o.reason, modifier: o.modifier ?? null, notes, sources };
 };
+
+/** The row for the home infusion pharmacy: the pump row when the pump benefit is in play at all, including when it needs a check. */
+export function homeSummary(results: SettingResult[]): SettingResult {
+  const pump = results.find((r) => r.setting === "home_pump");
+  return pump && pump.verdict !== "not_applicable" ? pump : results.find((r) => r.setting === "home_no_pump")!;
+}
 
 export function decideBenefit(f: BenefitFacts, a: BenefitAnswers): SettingResult[] {
   const outcomes: Record<Setting, Outcome> = {

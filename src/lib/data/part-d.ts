@@ -24,7 +24,10 @@ export interface PartDListing {
 
 const productOf = (ndc11: string) => ndc11.slice(0, 9);
 
-/** Null when the Part D source has not been imported. */
+/**
+ * Null means nothing can be said: the Part D source is not imported, or no identifier ties the
+ * drug to RxNorm. Zero plans means the drug's RxCUI is known and CMS's file does not list it.
+ */
 export async function partDListing(db: Database, ndc11s: string[], code: string | null): Promise<PartDListing | null> {
   const formularies = await db.select().from(t.partdWaFormularies);
   if (!formularies.length) return null;
@@ -38,7 +41,7 @@ export async function partDListing(db: Database, ndc11s: string[], code: string 
     return pdp + mapd;
   };
   const empty: PartDListing = { plansListing: { pdp: 0, mapd: 0 }, plansTotal: plansIn(formularies.map((f) => f.formularyId)), tierMin: null, tierMax: null, priorAuth: 0, stepTherapy: 0, quantityLimit: 0, selectedDrug: false, linkedBy: [], costs: [] };
-  if (!ndc11s.length) return empty;
+  if (!ndc11s.length) return null;
 
   const products = [...new Set(ndc11s.map(productOf))];
   const productColumn = sql<string>`left(${t.partdWaFormularyDrugs.proxyNdc}, 9)`;
@@ -48,7 +51,7 @@ export async function partDListing(db: Database, ndc11s: string[], code: string 
     db.selectDistinct({ rxcui: t.ndcRxcui.rxcui }).from(t.ndcRxcui).where(inArray(t.ndcRxcui.productNdc9, products)),
   ]);
   const rxcuis = [...new Set([...byNdc, ...byProduct, ...byRxcui].map((r) => r.rxcui))];
-  if (!rxcuis.length) return empty;
+  if (!rxcuis.length) return null;
 
   const rows = await db.select().from(t.partdWaFormularyDrugs).where(inArray(t.partdWaFormularyDrugs.rxcui, rxcuis));
   if (!rows.length) return empty;

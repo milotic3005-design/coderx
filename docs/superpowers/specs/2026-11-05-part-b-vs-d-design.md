@@ -262,3 +262,17 @@ Each has a default, so none blocks the design.
 - Plans outside Washington, and pharmacy-network status.
 - SNF consolidated billing exclusion lists as data.
 - Ordinary oral drugs that CodeRx does not index.
+
+## 12. Changes after the whole-branch review
+
+These amend the sections above, where they differ.
+
+- Section 6: Part D is what remains when nothing else applies, so it needs the drug to be known. A code with no linked product, a catch-all code, or a known vaccine returns `check` at home and in long-term care.
+- Section 6: the J8 code family counts as the oral route when no FDA product is linked.
+- Section 6: a code on Drugs Not Payable Under Part B returns `check` where a Part B home case would otherwise apply.
+- Section 4.1: a SAD entry is active only from its effective date until its end date.
+- Section 5: when no identifier links a drug to RxNorm, the page says nothing about Part D rather than "not listed".
+- Section 7: a pump-list drug is not priced against Part D. A pathway is marked higher only when it beats the next by more than 1%.
+- Section 4.3: the catalog is read at most weekly once a quarter is loaded, and the Part D import runs alone.
+- Section 3: a name matching several products offers the codes rather than picking one.
+- Rules cite Part D Manual Chapter 6 Rev. 18, not the Rev. 10 copy section 10 names.

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { decideBenefit, questionsFor, RULE_SOURCES, type BenefitAnswers, type BenefitFacts, type SadFact, type Setting } from "@/lib/part-b-d";
+import { decideBenefit, homeSummary, questionsFor, RULE_SOURCES, type BenefitAnswers, type BenefitFacts, type SadFact, type Setting } from "@/lib/part-b-d";
 
 const notListed: SadFact = { status: "not_listed", products: [], contractorsListing: 0, contractorsTotal: 8, displayId: "A53033" };
 const listed: SadFact = { ...notListed, status: "listed", products: ["Enbrel®"], contractorsListing: 8 };
 
 /** Facts as the real data gives them: an infused drug with a Part B status, unless a case says otherwise. */
-const facts = (over: Partial<BenefitFacts> = {}): BenefitFacts => ({ code: "J9312", isActive: true, isNoc: false, routes: ["INTRAVENOUS"], productType: "HUMAN PRESCRIPTION DRUG", sad: notListed, dmePolicies: [], notPayable: false, oppsStatus: "K", ...over });
+const facts = (over: Partial<BenefitFacts> = {}): BenefitFacts => ({ code: "J9312", isActive: true, isNoc: false, routes: ["INTRAVENOUS"], productType: "HUMAN PRESCRIPTION DRUG", sad: notListed, dmePolicies: [], notPayable: false, oppsLoaded: true, oppsStatus: "K", ...over });
 const answers = (over: Partial<BenefitAnswers> = {}): BenefitAnswers => ({ route: null, answers: {}, dmeposEnrolled: false, ...over });
 const row = (f: BenefitFacts, a: BenefitAnswers, setting: Setting) => decideBenefit(f, a).find((r) => r.setting === setting)!;
 
@@ -232,5 +232,84 @@ describe("notes and sources", () => {
         for (const s of r.sources) expect(RULE_SOURCES[s].url).toMatch(/^https:\/\//);
       }
     }
+  });
+});
+
+describe("codes CMS links to no product", () => {
+  const unlinked = facts({ code: "Q2035", routes: [], productType: null, oppsStatus: "L" });
+
+  it("never falls through to Part D at home or in long-term care", () => {
+    expect(row(unlinked, answers(), "home_no_pump").verdict).toBe("check");
+    expect(row(unlinked, answers(), "ltc").verdict).toBe("check");
+    expect(row(unlinked, answers(), "home_no_pump").reason).toContain("no product");
+  });
+  const busulfan = facts({ code: "J8510", routes: [], productType: null, oppsStatus: null });
+  it("still asks the cancer question for an oral chemotherapy code", () => {
+    expect(questionsFor(busulfan).primary).toEqual(["cancer"]);
+    expect(row(busulfan, answers(), "home_no_pump").verdict).toBe("check");
+    expect(row(busulfan, answers({ answers: { cancer: true } }), "home_no_pump").verdict).toBe("part_b_dme");
+    expect(row(busulfan, answers({ answers: { cancer: false } }), "home_no_pump").verdict).toBe("part_d");
+  });
+  it("treats the J8 family as oral in the HOPD", () => {
+    expect(row(busulfan, answers({ answers: { cancer: false } }), "hopd").verdict).toBe("not_part_b");
+  });
+  it("keeps a statutory answer for a listed code with no product link", () => {
+    const f = facts({ code: "J7525", routes: [], productType: null, dmePolicies: ["immunosuppressive"] });
+    expect(row(f, answers({ answers: { transplant: true } }), "home_no_pump").verdict).toBe("part_b_dme");
+    expect(row(f, answers({ answers: { transplant: false } }), "home_no_pump").verdict).toBe("check");
+  });
+});
+
+describe("vaccines", () => {
+  const flu = facts({ code: "Q2035", productType: "VACCINE", routes: ["INTRAMUSCULAR"], oppsStatus: "L" });
+  it("are not called Part D, because the vaccine decides the benefit", () => {
+    expect(row(flu, answers(), "home_no_pump").verdict).toBe("check");
+    expect(row(flu, answers(), "ltc").verdict).toBe("check");
+  });
+});
+
+describe("catch-all codes off Noridian's list", () => {
+  const noc = facts({ code: "J9999", isNoc: true, oppsStatus: "N" });
+  it("do not get a verdict in any Part B or Part D row", () => {
+    for (const s of ["hopd", "home_no_pump", "ltc"] as const) expect(row(noc, answers(), s).verdict).toBe("check");
+  });
+});
+
+describe("codes CMS lists as not payable under Part B", () => {
+  it("do not get a Part B verdict at home", () => {
+    const pump = facts({ notPayable: true, dmePolicies: ["pump"] });
+    expect(row(pump, answers(), "home_pump").verdict).toBe("check");
+  });
+  it("do not get a statutory Part B verdict, which would block Part D", () => {
+    const j8670 = facts({ code: "J8670", routes: ["ORAL"], dmePolicies: ["antiemetic"], notPayable: true, oppsStatus: null });
+    const r = row(j8670, answers({ answers: { antiemetic48h: true } }), "home_no_pump");
+    expect(r.verdict).toBe("check");
+    expect(r.reason).toContain("not payable");
+    expect(row(j8670, answers({ answers: { antiemetic48h: false } }), "home_no_pump").verdict).toBe("part_d");
+  });
+});
+
+describe("sources not loaded", () => {
+  it("does not decide an oral drug in the HOPD without the DME lists", () => {
+    expect(row(facts({ routes: ["ORAL"], dmePolicies: null }), answers(), "hopd").verdict).toBe("check");
+  });
+  it("does not claim OPPS has no status when OPPS is not loaded", () => {
+    const r = row(facts({ oppsLoaded: false, oppsStatus: null }), answers(), "hopd");
+    expect(r.verdict).toBe("check");
+    expect(r.reason).toContain("not been loaded");
+  });
+  it("does not say Part B when the not-payable list is not loaded", () => {
+    expect(row(facts({ notPayable: null }), answers(), "hopd").verdict).toBe("check");
+  });
+});
+
+describe("the home summary", () => {
+  it("uses the pump row when it applies, including when it needs a check", () => {
+    const f = facts({ code: "J7799", isNoc: true, dmePolicies: ["pump"] });
+    expect(homeSummary(decideBenefit(f, answers())).setting).toBe("home_pump");
+    expect(homeSummary(decideBenefit(treprostinil, answers())).setting).toBe("home_pump");
+  });
+  it("uses the no-pump row otherwise", () => {
+    expect(homeSummary(decideBenefit(prolia, answers())).setting).toBe("home_no_pump");
   });
 });

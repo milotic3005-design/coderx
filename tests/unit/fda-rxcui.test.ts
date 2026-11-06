@@ -15,7 +15,7 @@ describe("openFDA NDC to RxCUI link", () => {
     expect(p.rows.some((r) => r.rxcui === "200328" || r.rxcui === "200327")).toBe(true);
   });
   it("counts products with no RxCUI", () => {
-    expect(p.productsWithoutRxcui).toBe(1);
+    expect(p.productsWithoutRxcui).toBe(1); // the one product in the fixture with no RxCUI
   });
   it("has no duplicate pairs", () => {
     expect(new Set(p.rows.map((r) => `${r.productNdc9}|${r.rxcui}`)).size).toBe(p.rows.length);

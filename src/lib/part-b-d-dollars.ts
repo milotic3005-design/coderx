@@ -72,6 +72,8 @@ export interface DollarResult {
   pathways: Pathway[];
   higher: PathwayKey | null;
   lawfulCount: number;
+  /** One pathway is lawful and no setting row is still open, so it is safe to say so. */
+  onlyOneLawful: boolean;
   rawPartD: number | null;
 }
 
@@ -104,7 +106,8 @@ export function compareDollars(input: DollarInput): DollarResult {
 
   const hopdLawful = verdict("hopd") === "part_b";
   const dmeLawful = verdict("home_pump") === "part_b_dme" || verdict("home_no_pump") === "part_b_dme";
-  const partDLawful = verdict("home_no_pump") === "part_d";
+  // A pump drug is Part B at home, so the no-pump row's Part D answer is a different case, not an alternative to rank.
+  const partDLawful = verdict("home_no_pump") === "part_d" && verdict("home_pump") !== "part_b_dme";
 
   const copay = opps?.copayPerUnit ?? null;
   const hopdShare = (allowed: number) => {
@@ -124,5 +127,6 @@ export function compareDollars(input: DollarInput): DollarResult {
   const top = [...priced].sort((a, b) => b.expectedPerDose! - a.expectedPerDose!);
   const clearlyHigher = priced.length >= 2 && top[0].expectedPerDose! > top[1].expectedPerDose! * (1 + TIE_MARGIN);
   const higher = lawfulCount >= 2 && clearlyHigher ? top[0].key : null;
-  return { pathways, higher, lawfulCount, rawPartD: input.rawPartD };
+  const stillOpen = (["hopd", "home_pump", "home_no_pump"] as const).some((s) => verdict(s) === "check" || verdict(s) === "part_b_packaged") || verdict("home_no_pump") === "part_b";
+  return { pathways, higher, lawfulCount, onlyOneLawful: lawfulCount === 1 && !stillOpen, rawPartD: input.rawPartD };
 }

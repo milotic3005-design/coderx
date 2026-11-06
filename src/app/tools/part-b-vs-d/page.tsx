@@ -50,7 +50,9 @@ export default async function PartBvsDPage({ searchParams }: { searchParams: SP 
   const slug = (parsedSlug.success ? parsedSlug.data : null) ?? resolved?.slug ?? null;
   const data = code || slug ? await cachedBenefit(code ?? "", slug ?? "") : null;
   const labels = new Map(resolved?.choices.map((c) => [c.code, c.label]));
-  const needsCode = !!data?.found && !data.code && data.codes.length > 1;
+  const fromDrug = data?.found && !data.code && data.codes.length > 1 ? data.codes : [];
+  const choices = !code ? (resolved?.choices.length ? resolved.choices.map((c) => c.code) : fromDrug) : [];
+  const needsCode = choices.length > 0;
 
   return (
     <>
@@ -85,15 +87,15 @@ export default async function PartBvsDPage({ searchParams }: { searchParams: SP 
         </>
       ) : null}
 
-      {(q || code || slug) && !data?.found ? <NotInCodeRx /> : null}
+      {(q || code || slug) && !needsCode && !data?.found ? <NotInCodeRx /> : null}
 
       {needsCode ? (
         <div className="mb-10">
-          <p className="mb-2 text-sm font-semibold text-ink">{data.drug?.displayName ?? "This drug"} has more than one HCPCS code. Choose one: each can have a different answer.</p>
+          <p className="mb-2 text-sm font-semibold text-ink">{data?.drug?.displayName ?? "This"} matches more than one HCPCS code. Choose one: each can have a different answer.</p>
           <ul aria-label="HCPCS codes for this drug" className="flex flex-wrap gap-2">
-            {data.codes.map((c) => (
+            {choices.map((c) => (
               <li key={c}>
-                <Link href={`/tools/part-b-vs-d?code=${c}${data.drug ? `&drug=${data.drug.slug}` : ""}`} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-rule-strong px-3 text-sm text-ink hover:border-brand hover:text-brand">
+                <Link href={`/tools/part-b-vs-d?code=${c}${data?.drug ? `&drug=${data.drug.slug}` : ""}`} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-rule-strong px-3 text-sm text-ink hover:border-brand hover:text-brand">
                   <span className="code-chip font-semibold">{c}</span> {labels.get(c) ?? ""}
                 </Link>
               </li>
@@ -121,7 +123,7 @@ export default async function PartBvsDPage({ searchParams }: { searchParams: SP 
                   label: `OPPS status${data.opps ? ` (${formatPeriod(data.opps.period)})` : ""}`,
                   value: data.opps ? (
                     <>
-                      <span className="code-chip font-semibold">{data.opps.statusIndicator ?? "—"}</span> {SI_MEANING[data.opps.statusIndicator ?? ""] ?? "See CMS Addendum D1"}
+                      <span className="code-chip font-semibold">{data.opps.statusIndicator ?? SITE.noData}</span> {data.opps.statusIndicator ? (SI_MEANING[data.opps.statusIndicator] ?? "See CMS Addendum D1") : null}
                     </>
                   ) : (
                     SITE.noData

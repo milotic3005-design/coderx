@@ -269,7 +269,7 @@ export async function discoverReleases(): Promise<{ candidates: ReleaseCandidate
 const PARTD_TITLE = "Quarterly Prescription Drug Plan Formulary, Pharmacy Network, and Pricing Information :";
 
 /** The newest quarterly Part D archive in the CMS data catalog. Its URL holds a random id, so it cannot be pinned. */
-export async function discoverPartdWa(loadCatalog: () => Promise<string> = () => fetchPage("https://data.cms.gov/data.json", 120_000)): Promise<ReleaseCandidate | null> {
+export async function discoverPartdWa(loadCatalog: () => Promise<string> = () => fetchPage("https://data.cms.gov/data.json", 30_000, 0)): Promise<ReleaseCandidate | null> {
   const catalog = JSON.parse(await loadCatalog()) as { dataset?: { title?: string; distribution?: { format?: string; downloadURL?: string }[] }[] };
   const newest = (catalog.dataset ?? [])
     .flatMap((d) => {

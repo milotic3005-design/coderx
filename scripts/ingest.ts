@@ -12,7 +12,7 @@
  */
 import { createDbHandle } from "@/lib/db/client";
 import { runMigrations } from "@/lib/db/migrate";
-import { discoverReleases } from "@/ingest/discover";
+import { discoverPartdWa, discoverReleases } from "@/ingest/discover";
 import { importRelease, IMPORT_ORDER, runDerive, type ImportOutcome } from "@/ingest/pipeline";
 import { manifestFor, SOURCE_KEYS, type ReleaseCandidate, type SourceKey } from "@/ingest/sources";
 import * as t from "@/lib/db/schema";
@@ -77,6 +77,11 @@ async function main() {
       const res = await discoverReleases();
       discovered = res.candidates;
       for (const e of res.errors) log(`discovery warning: ${e}`);
+      if (keys.includes("cms_partd_wa")) {
+        const partd = await discoverPartdWa();
+        if (!partd) throw new Error("The CMS data catalog has no quarterly Part D file.");
+        discovered.push(partd);
+      }
     }
     const manifest = keys.flatMap((k) => manifestFor(k));
     const candidates = mergeCandidates(manifest, discovered.filter((c) => keys.includes(c.sourceKey)), quarters);

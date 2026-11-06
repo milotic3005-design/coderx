@@ -66,7 +66,7 @@ describe("benefit facts", () => {
   });
   it("names the sources it used", async () => {
     const keys = (await benefitData({ code: "J0490" }, h.db)).provenance.map((p) => p.sourceKey);
-    expect(keys).toEqual(expect.arrayContaining(["cms_mcd_articles", "cms_mcd_lcds", "cms_partd_wa", "cms_payment_limits"]));
+    expect(keys).toEqual(expect.arrayContaining(["cms_mcd_articles", "cms_mcd_lcds", "cms_partd_wa", "cms_payment_limits", "cms_ndc_hcpcs", "fda_ndc"]));
   });
 });
 
@@ -95,11 +95,16 @@ describe("Part D link", () => {
     const l = (await partDListing(h.db, [PROXY], "J0897"))!;
     expect(l.plansListing).toEqual({ pdp: 1, mapd: 2 });
   });
-  it("returns zero plans, not an error, when nothing links", async () => {
-    expect((await partDListing(h.db, [UNRELATED], null))?.plansListing).toEqual({ pdp: 0, mapd: 0 });
+  it("says zero plans when the drug's RxCUI is known and no plan lists it", async () => {
+    const l = (await partDListing(h.db, ["50242005121"], "J9312"))!;
+    expect(l.plansListing).toEqual({ pdp: 0, mapd: 0 });
+    expect(l.linkedBy).toEqual([]);
   });
-  it("returns zero plans for no NDCs", async () => {
-    expect((await partDListing(h.db, [], null))?.linkedBy).toEqual([]);
+  it("claims nothing when no identifier links the drug", async () => {
+    expect(await partDListing(h.db, [UNRELATED], null)).toBeNull();
+  });
+  it("claims nothing when CodeRx has no NDCs for the drug", async () => {
+    expect(await partDListing(h.db, [], null)).toBeNull();
   });
   it("carries costs with what is needed to convert them", async () => {
     const l = (await partDListing(h.db, [PROXY], "J0897"))!;
@@ -107,7 +112,53 @@ describe("Part D link", () => {
   });
 });
 
+describe("drugs CMS's current crosswalk does not link", () => {
+  it("says nothing about Part D for a code with no NDCs", async () => {
+    expect((await benefitData({ code: "J3357" }, h.db)).partD).toBeNull();
+  });
+  it("still finds the drug by its code", async () => {
+    await h.db.update(t.drugs).set({ hcpcsCodes: ["J3357", "J3358"] }).where(eq(t.drugs.slug, "stelara-ustekinumab"));
+    const d = await benefitData({ code: "J3357" }, h.db);
+    expect(d.facts.routes).toContain("SUBCUTANEOUS");
+    expect(d.facts.productType).toBe("HUMAN PRESCRIPTION DRUG");
+    expect(d.partD).toBeNull();
+  });
+});
+
+describe("what counts as a drug", () => {
+  it("does not treat a non-drug code as a drug", async () => {
+    const [code] = await h.db.select({ code: t.hcpcsCodes.code }).from(t.hcpcsCodes).where(eq(t.hcpcsCodes.isDrug, false)).limit(1);
+    expect((await benefitData({ code: code.code }, h.db)).found).toBe(false);
+  });
+  it("keeps catch-all drug codes", async () => {
+    expect((await benefitData({ code: "J3590" }, h.db)).found).toBe(true);
+  });
+});
+
+describe("SAD dates", () => {
+  it("ignores a row that has not taken effect yet", async () => {
+    const [row] = await h.db.select().from(t.mcdSadEntries).limit(1);
+    await h.db.insert(t.mcdSadEntries).values({ ...row, id: undefined, hcpcsCode: "J9312", effectiveDate: "2099-01-01" });
+    expect((await benefitData({ code: "J9312" }, h.db)).facts.sad).toMatchObject({ status: "not_listed", contractorsListing: 0 });
+    await h.db.delete(t.mcdSadEntries).where(eq(t.mcdSadEntries.hcpcsCode, "J9312"));
+  });
+});
+
 describe("missing sources", () => {
+  it("claims nothing about Part D without the RxCUI link", async () => {
+    const empty = await seededDbWithout(["fda_ndc_rxcui"]);
+    const d = await benefitData({ code: "J9312" }, empty.db);
+    expect(d.partD).toBeNull();
+    expect(d.missingSources).toContain("fda_ndc_rxcui");
+    await empty.close();
+  }, 120_000);
+  it("knows when the payment and OPPS files are missing", async () => {
+    const empty = await seededDbWithout(["cms_payment_limits", "cms_opps_addendum_b"]);
+    const d = await benefitData({ code: "J9312" }, empty.db);
+    expect(d.facts.notPayable).toBeNull();
+    expect(d.facts.oppsLoaded).toBe(false);
+    await empty.close();
+  }, 120_000);
   it("names missing sources when a feed is absent", async () => {
     const empty = await seededDbWithout(["cms_partd_wa", "cms_mcd_lcds"]);
     const d = await benefitData({ code: "J9312" }, empty.db);
@@ -133,6 +184,20 @@ describe("resolving what the user typed", () => {
   });
   it("takes a drug name", async () => {
     expect(await resolveBenefitQuery("rituxan", h.db)).toMatchObject({ code: "J9312", slug: "rituxan-rituximab" });
+  });
+  it("offers each code when an NDC maps to two", async () => {
+    expect((await resolveBenefitQuery("55513-0002-04", h.db)).choices.map((c) => c.code).sort()).toEqual(["J0881", "J0882"]);
+  });
+  it("finds the drug for an NDC with no crosswalk row", async () => {
+    expect(await resolveBenefitQuery("57894-060-02", h.db)).toMatchObject({ code: null, slug: "stelara-ustekinumab" });
+  });
+  it("finds a code by its name when no drug matches", async () => {
+    expect((await resolveBenefitQuery("etanercept", h.db)).code).toBe("J1438");
+  });
+  it("offers the codes instead of silently picking when several drugs match", async () => {
+    const r = await resolveBenefitQuery("denosumab", h.db);
+    expect(r.code).toBeNull();
+    expect(r.choices.length).toBeGreaterThan(1);
   });
   it("finds nothing for nonsense", async () => {
     expect(await resolveBenefitQuery("zzzzqq", h.db)).toEqual({ code: null, slug: null, choices: [] });

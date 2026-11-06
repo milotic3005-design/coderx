@@ -36,7 +36,7 @@ test.describe("Part B vs Part D tool", () => {
   test("the contract rate never leaves the browser", async ({ page }) => {
     const seen: string[] = [];
     page.on("request", (r) => seen.push(r.url() + (r.postData() ?? "")));
-    await page.goto("/tools/part-b-vs-d?code=J3285", { waitUntil: "networkidle" });
+    await page.goto("/tools/part-b-vs-d?code=J0897", { waitUntil: "networkidle" });
     await page.getByLabel(/contract rate/i).fill("123.45");
     await page.getByLabel("Units per dose").fill("10");
     await page.waitForTimeout(300);
@@ -65,7 +65,7 @@ test.describe("Part B vs Part D tool", () => {
     }
   });
   test("shows Washington plan coverage for a listed drug", async ({ page }) => {
-    await page.goto("/tools/part-b-vs-d?code=J0897&drug=prolia-denosumab", { waitUntil: "networkidle" });
+    await page.goto("/tools/part-b-vs-d?code=J0897", { waitUntil: "networkidle" });
     const panel = page.getByRole("region", { name: "Washington Part D plans" });
     await expect(panel).toContainText(/Tier/);
     await expect(panel).toContainText(/\d+ of \d+ Washington plans/);
@@ -75,6 +75,36 @@ test.describe("Part B vs Part D tool", () => {
     const panel = page.getByRole("region", { name: "Washington Part D plans" });
     await expect(panel).toContainText("CMS's formulary file does not list this drug for Washington plans.");
     await expect(panel).not.toContainText(/denied|not covered/i);
+  });
+  test("says nothing about Part D when no NDC links the code", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?code=J3357", { waitUntil: "networkidle" });
+    const panel = page.getByRole("region", { name: "Washington Part D plans" });
+    await expect(panel).toContainText("No authoritative public data was located for this field.");
+    await expect(panel).not.toContainText("does not list");
+  });
+  test("never ranks Part D for a pump drug", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?code=J3285&units=100", { waitUntil: "networkidle" });
+    await page.getByLabel(/contract rate/i).fill("70");
+    await expect(page.getByRole("row", { name: /Home, Part D/ })).toContainText("Does not apply to this case");
+    await expect(page.getByRole("row", { name: /Home, Part D/ })).not.toContainText("Higher");
+  });
+  test("a lawful pathway with no rate uses the standard no-data text", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?code=J9312", { waitUntil: "networkidle" });
+    await expect(page.getByRole("row", { name: /Home, Part D/ })).toContainText("No authoritative public data was located for this field.");
+  });
+  test("an NDC with two codes offers each code", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?q=55513-0002-04", { waitUntil: "networkidle" });
+    await expect(page.getByRole("list", { name: "HCPCS codes for this drug" }).getByRole("link")).toHaveCount(2);
+    await expect(page.getByText("This drug is not in CodeRx")).toHaveCount(0);
+  });
+  test("a generic name with several products offers the choice", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?q=denosumab", { waitUntil: "networkidle" });
+    await expect(page.getByRole("list", { name: "HCPCS codes for this drug" })).toBeVisible();
+    await expect(setting(page, /HOPD/)).toHaveCount(0);
+  });
+  test("a non-drug code is not treated as a drug", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?code=G0463", { waitUntil: "networkidle" });
+    await expect(page.getByText("This drug is not in CodeRx")).toBeVisible();
   });
   test("the drug page links to the tool", async ({ page }) => {
     await page.goto("/drugs/rituxan-rituximab", { waitUntil: "networkidle" });
