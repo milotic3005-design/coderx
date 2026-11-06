@@ -13,6 +13,7 @@ import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type Cr
 import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
 import { readPartdWa, type PartdWaParse } from "./parsers/cms-partd";
+import { parseOpenFdaRxcui } from "./parsers/fda-rxcui";
 import { byteSourceFromBytes, byteSourceFromUrl } from "./remote-zip";
 import { DME_POLICIES, LCD_TABLES, parseLcdPolicies, type LcdTables } from "./parsers/cms-lcd";
 import { MCD_TABLES, NORIDIAN_JF_SAD_ARTICLE, parseMcdArticles, parseMcdSadLists, type McdTables } from "./parsers/cms-mcd";
@@ -725,6 +726,27 @@ function parsePartdRelease(p: PartdWaParse, fileName: string): Parsed {
   };
 }
 
+function parseRxcuiRelease(file: Downloaded): Parsed {
+  const entry = unzipVerified(file.bytes, (n) => n.toLowerCase().endsWith(".json"))[0];
+  if (!entry) throw new ValidationError("openFDA NDC archive: JSON file not found.");
+  const parsed = parseOpenFdaRxcui(new TextDecoder("utf-8").decode(entry.data));
+  assertPlausible(parsed.rows.length >= 50_000, `openFDA NDC file has only ${parsed.rows.length} RxCUI links; expected at least 50,000.`);
+  return {
+    fileName: baseName(entry.name),
+    effectiveStart: null,
+    effectiveEnd: null,
+    recordCount: parsed.rows.length,
+    rejected: [],
+    excluded: { productsWithoutRxcui: parsed.productsWithoutRxcui },
+    warnings: [],
+    load: async (tx, releaseId) => {
+      await tx.delete(t.ndcRxcui);
+      await insertBatches(tx, t.ndcRxcui, parsed.rows.map((r) => ({ ...r, sourceReleaseId: releaseId })), 3);
+      return { links: parsed.rows.length };
+    },
+  };
+}
+
 function parseStateFeeRelease(file: Downloaded, period: string, sourceKey: keyof typeof STATE_FEE_SOURCES): Parsed {
   const { state, program } = STATE_FEE_SOURCES[sourceKey];
   const parsed = parseStateFeeSchedule(readFirstSheet(file.bytes));
@@ -883,6 +905,9 @@ export async function importRelease(db: Database, candidate: ReleaseCandidate, o
       case "cms_opps_addendum_a":
         parsed = parseOppsApcRelease(file, period);
         break;
+      case "fda_ndc_rxcui":
+        parsed = parseRxcuiRelease(file);
+        break;
       case "cms_mcd_lcds":
         parsed = parseLcdRelease(file);
         break;
@@ -983,4 +1008,4 @@ export async function runDerive(db: Database, log?: (m: string) => void): Promis
   return db.transaction((tx) => deriveAll(tx, log));
 }
 
-export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs", "cms_mcd_articles", "cms_mcd_lcds", "cms_partd_wa"];
+export const IMPORT_ORDER: SourceKey[] = ["cms_hcpcs", "cms_payment_limits", "cms_ndc_hcpcs", "cms_mue_practitioner", "cms_mue_outpatient", "cms_mue_dme", "fda_ndc", "fda_ndc_excluded", "cms_mdrp_products", "fda_purple_book", "cms_opps_addendum_a", "cms_opps_addendum_b", "wa_hca_home_infusion", "wa_hca_professional_drugs", "cms_mcd_articles", "cms_mcd_lcds", "fda_ndc_rxcui", "cms_partd_wa"];

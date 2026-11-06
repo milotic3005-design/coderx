@@ -28,7 +28,8 @@ files that were current on that date.
 | 13 | `cms_mcd_articles` | CMS | Medicare Coverage Database — Current Article Data (Billing and Coding articles) | Weekly | **Ingested** (active articles that list a HCPCS Level II drug code; ICD-10-CM and HCPCS codes only; license accepted by the operator on 2026-11-02) |
 | 14 | `cms_mcd_lcds` | CMS | Medicare Coverage Database — Current LCD Data (DME MAC drug policies) | Weekly | **Ingested** (HCPCS Level II drug codes of 5 policies only; license accepted by the operator on 2026-11-05) |
 | 15 | `cms_partd_wa` | CMS | Quarterly Prescription Drug Plan Formulary, Pharmacy Network, and Pricing Information | Quarterly | **Ingested** (Washington plans only; no plan names; pharmacy network files never downloaded) |
-| — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime |
+| 16 | `fda_ndc_rxcui` | FDA | openFDA NDC bulk download | As published (7-day interval) | **Ingested** (product NDC to RxCUI link only) |
+| — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime; the bulk file supplies source 16 |
 | — | — | NLM | DailyMed | Daily | Link-out only |
 
 ---
@@ -241,6 +242,18 @@ files that were current on that date.
 | Fields used | Washington plans (PDP region 30; MA-PD by Washington county; regional PPOs by MA region; "Washington D.C." excluded). Per formulary: RXCUI, proxy NDC, tier, prior authorization, step therapy, quantity limit, selected drug. Per proxy NDC: plan count and minimum, median, and maximum 30-day `UNIT_COST`. Plan names are read but not stored. |
 | Known limitations | The file's NDC is a proxy, one per RxCUI, so drugs are linked by NDC, product, and RxCUI (section 16). `UNIT_COST` is the plan's average at in-area retail pharmacies, not a home infusion contract rate. "Not listed" means CMS's file does not list the drug for Washington plans; it does not mean a plan would deny it. Part D Manual Ch. 6 Appendix C tells sponsors not to list a Part B-covered oral anticancer drug with no other medically accepted indication. Special needs plans are counted. 2026 Q3: 125 plans (10 PDP, 115 MA-PD), 32 formularies, 108,628 formulary rows, 4,912 RXCUIs. |
 | Ingestion | Snapshot source: each import replaces the previous one. The daily refresh reads the CMS catalog and imports when a newer quarter appears. Identical files are skipped by a checksum of the four entries' names, CRCs, and sizes. Plausibility checks: at least 50 plans and 1,000 RXCUIs. |
+
+## 16. openFDA NDC bulk file (RxCUI link)
+
+| Field | Detail |
+| --- | --- |
+| Publishing organization | U.S. Food and Drug Administration (openFDA) |
+| Source URL | https://download.open.fda.gov/drug/ndc/drug-ndc-0001-of-0001.json.zip, listed at https://open.fda.gov/data/downloads/ |
+| Format | ZIP (28 MB) holding one JSON file (243 MB) |
+| Licensing / restrictions | Public data. |
+| Fields used | `product_ndc` and `openfda.rxcui` only |
+| Known limitations | 44% of products have no RxCUI, including many plasma derivatives and some biologics (Cosentyx, Gammagard, Hizentra). For those, the Part D link relies on NDC and product matches. |
+| Ingestion | Snapshot source, refreshed on the same interval as the FDA NDC directory (`CODERX_FDA_REFRESH_DAYS`). Plausibility check: at least 50,000 links. |
 
 ## Evaluated but not ingested
 

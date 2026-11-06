@@ -79,7 +79,7 @@ export async function refreshSources(db: Database, options: RefreshOptions): Pro
 
   // FDA NDC directory (daily publisher cadence): import when Last-Modified moved and the configured interval has passed.
   const fdaIntervalDays = Number(process.env.CODERX_FDA_REFRESH_DAYS ?? 7);
-  for (const key of ["fda_ndc", "fda_ndc_excluded"] as const) {
+  for (const key of ["fda_ndc", "fda_ndc_excluded", "fda_ndc_rxcui"] as const) {
     if (!wanted.has(key)) continue;
     const c = manifestFor(key)[0];
     const [cur] = await currentReleases(db, key);

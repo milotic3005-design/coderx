@@ -24,7 +24,8 @@ export type SourceKey =
   | "hpt_multicare"
   | "cms_mcd_articles"
   | "cms_mcd_lcds"
-  | "cms_partd_wa";
+  | "cms_partd_wa"
+  | "fda_ndc_rxcui";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -45,6 +46,7 @@ export const SOURCE_KEYS: SourceKey[] = [
   "cms_mcd_articles",
   "cms_mcd_lcds",
   "cms_partd_wa",
+  "fda_ndc_rxcui",
 ];
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
@@ -255,6 +257,16 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     badge: "official-cms",
     licenseNote: "U.S. Government public use file. CodeRx keeps Washington PDP and MA-PD formulary rows and the spread of plans' 30-day unit costs. Plan names are not stored. UNIT_COST is a plan's average at in-area retail pharmacies, not a home infusion contract rate.",
   },
+  fda_ndc_rxcui: {
+    key: "fda_ndc_rxcui",
+    organization: "FDA",
+    dataset: "openFDA NDC bulk download (product NDC to RxCUI link)",
+    shortName: "openFDA NDC file",
+    landingPageUrl: "https://open.fda.gov/data/downloads/",
+    cadence: "daily",
+    badge: "official-fda",
+    licenseNote: "Public data. CodeRx keeps only the link between product NDC and RxCUI, which it uses to connect FDA products to CMS's Part D files.",
+  },
   hpt_multicare: {
     key: "hpt_multicare",
     organization: "MultiCare Health System",
@@ -390,6 +402,7 @@ export const MANIFEST: ReleaseCandidate[] = [
   // Medicare Coverage Database current articles (period assigned from Last-Modified; CMS refreshes the export weekly)
   { sourceKey: "cms_mcd_articles", period: null, url: "https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_article.zip" },
   { sourceKey: "cms_mcd_lcds", period: null, url: "https://downloads.cms.gov/medicare-coverage-database/downloads/exports/current_lcd.zip" },
+  { sourceKey: "fda_ndc_rxcui", period: null, url: "https://download.open.fda.gov/drug/ndc/drug-ndc-0001-of-0001.json.zip" },
 
   // FDA (period assigned from the file's Last-Modified date at download time)
   { sourceKey: "fda_ndc", period: null, url: "https://www.accessdata.fda.gov/cder/ndctext.zip" },

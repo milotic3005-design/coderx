@@ -442,6 +442,20 @@ export const partdWaCosts = pgTable(
   (t) => [index("partd_wa_costs_ndc_idx").on(t.proxyNdc), index("partd_wa_costs_rxcui_idx").on(t.rxcui), index("partd_wa_costs_release_idx").on(t.sourceReleaseId)],
 );
 
+/** FDA product NDC to RxNorm concept, from openFDA; links FDA products to CMS's proxy NDCs. */
+export const ndcRxcui = pgTable(
+  "ndc_rxcui",
+  {
+    id: serial("id").primaryKey(),
+    productNdc9: text("product_ndc9").notNull(),
+    rxcui: text("rxcui").notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [uniqueIndex("ndc_rxcui_pair_uq").on(t.productNdc9, t.rxcui), index("ndc_rxcui_rxcui_idx").on(t.rxcui), index("ndc_rxcui_release_idx").on(t.sourceReleaseId)],
+);
+
 /** HCPCS Level II drug codes listed in an MCD article (CPT rows are not stored). */
 export const mcdArticleHcpcs = pgTable(
   "mcd_article_hcpcs",

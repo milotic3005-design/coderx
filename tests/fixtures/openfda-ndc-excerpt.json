@@ -1,0 +1,28 @@
+{
+ "meta": {
+  "last_updated": "2026-11-06"
+ },
+ "results": [
+  {
+   "product_ndc": "72603-303",
+   "openfda": {
+    "rxcui": [
+     "200328"
+    ]
+   }
+  },
+  {
+   "product_ndc": "55513-710",
+   "openfda": {
+    "rxcui": [
+     "993452",
+     "993456"
+    ]
+   }
+  },
+  {
+   "product_ndc": "71399-0180",
+   "openfda": {}
+  }
+ ]
+}

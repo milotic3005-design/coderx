@@ -31,7 +31,7 @@ describe("ingestion pipeline (real CMS/FDA excerpts)", () => {
       expect(r.isCurrent).toBe(true);
       expect(r.checksumSha256).toMatch(/^[a-f0-9]{64}$/);
       expect(r.recordCount).toBeGreaterThan(0);
-      expect(r.downloadUrl).toMatch(/^https:\/\/(www\.cms\.gov|downloads\.cms\.gov|data\.cms\.gov|www\.accessdata\.fda\.gov|download\.medicaid\.gov|www\.hca\.wa\.gov)\//);
+      expect(r.downloadUrl).toMatch(/^https:\/\/(www\.cms\.gov|downloads\.cms\.gov|data\.cms\.gov|download\.open\.fda\.gov|www\.accessdata\.fda\.gov|download\.medicaid\.gov|www\.hca\.wa\.gov)\//);
     }
     const pay = releases.find((r) => r.sourceKey === "cms_payment_limits" && r.periodLabel === "2026-Q4")!;
     expect(pay).toMatchObject({ effectiveStart: "2026-10-01", effectiveEnd: "2026-12-31", publicationLabel: "09/17/2026 - Final file" });
