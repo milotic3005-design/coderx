@@ -36,3 +36,10 @@ J0402	"Inj, abilify asimtufii, 1 mg"	K	9246		$6.185	.	$1.24		$1.24	*		*
 J9302	Ofatumumab injection	E1										*
 Q5154	"Inj, omlyclo, 5 mg"	K	0979		$46.61		$9.33		$9.33			*
 J0174	"Lecanemab-irmb, for iv inj"	G	9157		$1.361	.	$0.28		$0.28	*		*
+J0490	Belimumab injection	K	1353		$58.333	.	$11.67		$11.67			*
+J1438	Etanercept injection	E1										
+J3285	Treprostinil injection	K	1701		$54.563	.	$10.92		$10.92			*
+J3357	"Ustekinumab sub cu inj, 1 mg"	E1										
+J3358	"Ustekinumab, iv inject, 1 mg"	K	9487		$10.249	.	$2.05		$2.05			*
+J0881	"Darbepoetin alfa, non-esrd"	K	1685		$3.081	.	$0.62		$0.62			*
+J0882	"Darbepoetin alfa, esrd use"	K	1482		$3.081	.	$0.62		$0.62			*

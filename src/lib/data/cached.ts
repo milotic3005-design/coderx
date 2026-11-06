@@ -6,6 +6,7 @@
 import { unstable_cache } from "next/cache";
 import { todayUs } from "@/lib/dates";
 import { getCoverageArticle, getDrugDetail, getFamilyCounts, getFamilyListing, getHcpcsDetail, getHomeData, getManufacturerDetail, getNdcDetail, getSourcesOverview } from "./queries";
+import { benefitData } from "./benefit";
 import { biosimilarGroups, quarterlyChanges, siteOfCareData } from "./tools";
 
 export const DATA_TAG = "coderx-data";
@@ -33,4 +34,5 @@ export const cachedFamilyListing = cached(
 export const cachedBiosimilarGroups = cached(() => biosimilarGroups(), "biosimilars");
 export const cachedQuarterlyChanges = cached((period: string | null) => quarterlyChanges(period), "changes");
 export const cachedSiteOfCare = cached((code: string) => siteOfCareData(code), "site-of-care");
+export const cachedBenefit = cached((code: string, slug: string) => benefitData({ code: code || undefined, slug: slug || undefined }), "benefit");
 export const cachedCoverageArticle = cached((displayId: string) => getCoverageArticle(displayId), "coverage-article");

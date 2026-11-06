@@ -335,7 +335,7 @@ describe("CMS OPPS addenda (real October 2026 excerpts)", () => {
   it("Addendum B: HCPCS Level II status indicators and rates, the remedy offset note, no CPT rows", () => {
     const b = parseOppsAddendumB(text("opps-addendum-b-2026q4.txt") + "96413\tChemo iv infusion 1 hr\tS\t5694\t3.6915\t$337.46\t.\t$67.50\r\nD0120\tPeriodic oral eval\tB\r\n");
     expect(b.calendarYear).toBe("CY 2026");
-    expect(b.rows).toHaveLength(31);
+    expect(b.rows).toHaveLength(38);
     expect(b.inpatientDeductible).toBe(1736);
     expect(b.excludedCpt).toBe(1);
     expect(b.excludedDental).toBe(1);

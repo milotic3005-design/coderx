@@ -158,7 +158,7 @@ function hopd(f: BenefitFacts, a: BenefitAnswers): Outcome {
     notes: ["A Part D plan may refund the patient only in limited cases, such as a drug on its formulary that could not reasonably be obtained at an in-network pharmacy."],
     sources: ["noridian_sad", "sad_hopd", "mbpm_sad"],
   };
-  const contractors = f.sad.status === "not_listed" && f.sad.contractorsListing > 0 ? [`${f.sad.contractorsListing} of ${f.sad.contractorsTotal} Medicare contractors list this code as self-administered. Noridian does not.`] : [];
+  const contractors = f.sad.status === "not_listed" && f.sad.contractorsListing > 0 ? [`${f.sad.contractorsListing} of ${f.sad.contractorsTotal} Medicare contractor lists include this code as self-administered. Noridian's Washington list does not.`] : [];
 
   switch (f.sad.status) {
     case "listed":
