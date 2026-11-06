@@ -1,0 +1,9 @@
+article_id,article_version,article_type,code_table_row,brand_name,eff_date,end_date,comments,hcpc_code_id,hcpc_code_version,last_updated,long_description,short_description
+53033,144,3,50,Enbrel&reg,2003-01-15 00:00:00,,Apparent on its Face|Presumption of Long-Term Non-Acute Administration,J1438,103,2026-09-22 14:46:46,"INJECTION, ETANERCEPT, 25 MG (CODE MAY BE USED FOR MEDICARE WHEN DRUG ADMINISTERED UNDER THE DIRECT SUPERVISION OF A PHYSICIAN, NOT FOR USE WHEN DRUG IS SELF ADMINISTERED)",Etanercept injection
+53033,144,3,43,Belimumab (Benlysta)*,2025-11-15 00:00:00,,Apparent on its Face,J0490,103,2026-09-22 14:46:46,"INJECTION, BELIMUMAB, 10 MG",Belimumab injection
+53033,144,3,47,H.P. Acthar® Gel subcutaneous use**,2023-10-01 00:00:00,,Apparent on its Face,J0801,103,2026-09-22 14:46:46,"INJECTION, CORTICOTROPIN (ACTHAR GEL), UP TO 40 UNITS",Inj. acthar gel to 40 units
+53033,144,3,107,Vedolizumab (Entyvio®) subcutaneous use*,2024-01-14 00:00:00,,Apparent on its Face,J3590,103,2026-09-22 14:46:46,UNCLASSIFIED BIOLOGICS,Unclassified biologics
+53033,144,3,108,Adalimumab-aaty (Yuflyma),2024-01-14 00:00:00,,Apparent on its Face,J3590,103,2026-09-22 14:46:46,UNCLASSIFIED BIOLOGICS,Unclassified biologics
+53033,144,3,173,Orencia (Abatacept)<br> ,2013-09-30 00:00:00,2013-09-30 00:00:00,,J0129,103,2026-09-22 14:46:46,"INJECTION, ABATACEPT, 10 MG (CODE MAY BE USED FOR MEDICARE WHEN DRUG ADMINISTERED UNDER THE DIRECT SUPERVISION OF A PHYSICIAN, NOT FOR USE WHEN DRUG IS SELF ADMINISTERED)",Abatacept injection
+53032,148,3,50,"Enbrel®
+",2013-09-16 00:00:00,,Apparent on its Face|Presumption of Long-Term Non-Acute Administration,J1438,103,2026-09-22 14:45:11,"INJECTION, ETANERCEPT, 25 MG (CODE MAY BE USED FOR MEDICARE WHEN DRUG ADMINISTERED UNDER THE DIRECT SUPERVISION OF A PHYSICIAN, NOT FOR USE WHEN DRUG IS SELF ADMINISTERED)",Etanercept injection

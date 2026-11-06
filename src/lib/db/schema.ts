@@ -332,6 +332,48 @@ export const mcdArticles = pgTable(
   (t) => [index("mcd_articles_article_idx").on(t.articleId), index("mcd_articles_release_idx").on(t.sourceReleaseId)],
 );
 
+/** Self-administered drug (SAD) exclusion lists: one active list per MAC jurisdiction group. */
+export const mcdSadLists = pgTable(
+  "mcd_sad_lists",
+  {
+    id: serial("id").primaryKey(),
+    articleId: integer("article_id").notNull(),
+    version: integer("version").notNull(),
+    displayId: text("display_id").notNull(),
+    effectiveDate: date("effective_date"),
+    contractors: jsonb("contractors").$type<{ id: string; number: string | null; name: string | null; type: string | null }[]>().notNull(),
+    /** States served by the list's A/B MACs. */
+    states: jsonb("states").$type<string[]>().notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("mcd_sad_lists_article_idx").on(t.articleId), index("mcd_sad_lists_release_idx").on(t.sourceReleaseId)],
+);
+
+/** Rows of a SAD list, including ended rows. */
+export const mcdSadEntries = pgTable(
+  "mcd_sad_entries",
+  {
+    id: serial("id").primaryKey(),
+    articleId: integer("article_id").notNull(),
+    version: integer("version").notNull(),
+    rowNumber: integer("row_number"),
+    hcpcsCode: text("hcpcs_code").notNull(),
+    /** CMS's product name for the row; miscellaneous codes such as J3590 have one row per product. */
+    productText: text("product_text").notNull(),
+    effectiveDate: date("effective_date"),
+    endDate: date("end_date"),
+    reasons: jsonb("reasons").$type<string[]>().notNull(),
+    /** single | double: Noridian's * and ** route markers. */
+    routeFlag: text("route_flag"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("mcd_sad_entries_code_idx").on(t.hcpcsCode), index("mcd_sad_entries_article_idx").on(t.articleId), index("mcd_sad_entries_release_idx").on(t.sourceReleaseId)],
+);
+
 /** HCPCS Level II drug codes listed in an MCD article (CPT rows are not stored). */
 export const mcdArticleHcpcs = pgTable(
   "mcd_article_hcpcs",

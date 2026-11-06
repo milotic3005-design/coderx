@@ -72,7 +72,7 @@ function bodies(): Map<string, Uint8Array> {
       archive({
         "current_article_csv.zip": archive(
           Object.fromEntries(
-            ["article.csv", "article_x_hcpc_code.csv", "article_x_icd10_covered.csv", "article_x_contractor.csv", "contractor.csv", "contractor_jurisdiction.csv", "state_lookup.csv", "contractor_type_lookup.csv"].map((n) => [n, read(`mcd-articles/${n}`)]),
+            ["article.csv", "article_x_code_table.csv", "article_x_hcpc_code.csv", "article_x_icd10_covered.csv", "article_x_contractor.csv", "contractor.csv", "contractor_jurisdiction.csv", "state_lookup.csv", "contractor_type_lookup.csv"].map((n) => [n, read(`mcd-articles/${n}`)]),
           ),
         ),
       }),

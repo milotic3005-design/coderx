@@ -7,6 +7,9 @@
  * Not kept: CPT rows (AMA copyright) and descriptions from the HCPCS table, article text
  * and group paragraphs (instructions may quote CPT), revenue and bill-type codes, and
  * every article without a drug code.
+ *
+ * Self-administered drug (SAD) exclusion lists are article type 3. Their drugs are in
+ * article_x_code_table.csv, not article_x_hcpc_code.csv.
  */
 import Papa from "papaparse";
 import { isCptLike } from "@/lib/hcpcs";
@@ -14,6 +17,10 @@ import { isCptLike } from "@/lib/hcpcs";
 export const MCD_DRUG_CODE_RE = /^(J\d{4}|Q\d{4}|C9\d{3}|A9\d{3})$/;
 /** contractor_type_lookup ids for A/B MACs: MAC - Part B, A and B MAC, A and B and HHH MAC. */
 const AB_MAC_TYPES = new Set(["9", "12", "13"]);
+/** Noridian JF, the list that applies to Washington. */
+export const NORIDIAN_JF_SAD_ARTICLE = 53033;
+/** Lists whose article text defines the asterisks: * is JA (IV) or JB (subcutaneous); ** is JB (subcutaneous) or no modifier (IM). */
+export const ROUTE_FLAG_ARTICLES = new Set([53032, 53033]);
 /** state_lookup splits some states into Medicare regions (e.g. DN "New York - Downstate"); report the state's USPS code. */
 const REGION_STATE: Record<string, string> = { DN: "NY", QN: "NY", UN: "NY", NF: "CA", SF: "CA", EM: "MO", WM: "MO", CNMI: "MP" };
 
@@ -63,7 +70,28 @@ export interface McdParse {
   excluded: { cptRows: number; articlesWithoutDrugCodes: number; inactiveArticles: number };
 }
 
-export const MCD_TABLES = ["article.csv", "article_x_hcpc_code.csv", "article_x_icd10_covered.csv", "article_x_contractor.csv", "contractor.csv", "contractor_jurisdiction.csv", "state_lookup.csv", "contractor_type_lookup.csv"] as const;
+export interface McdSadList {
+  articleId: number;
+  version: number;
+  displayId: string;
+  effectiveDate: string | null;
+  contractors: McdContractor[];
+  states: string[];
+}
+
+export interface McdSadEntry {
+  articleId: number;
+  version: number;
+  rowNumber: number | null;
+  hcpcsCode: string;
+  productText: string;
+  effectiveDate: string | null;
+  endDate: string | null;
+  reasons: string[];
+  routeFlag: "single" | "double" | null;
+}
+
+export const MCD_TABLES = ["article.csv", "article_x_code_table.csv", "article_x_hcpc_code.csv", "article_x_icd10_covered.csv", "article_x_contractor.csv", "contractor.csv", "contractor_jurisdiction.csv", "state_lookup.csv", "contractor_type_lookup.csv"] as const;
 export type McdTables = Record<(typeof MCD_TABLES)[number], string>;
 
 /** Calls `row` for each CSV record as a header-keyed object, without holding the parsed table. */
@@ -77,8 +105,17 @@ const int = (v: string | undefined) => {
 };
 const date = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : null);
 
-export function parseMcdArticles(tables: McdTables): McdParse {
-  // Contractors, their type names, and the states they serve (active jurisdictions only).
+const ENTITIES: Record<string, string> = { reg: "®", trade: "™", amp: "&", nbsp: " " };
+const cleanText = (v: string | undefined) =>
+  (v ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(reg|trade|amp|nbsp);?/gi, (_, e: string) => ENTITIES[e.toLowerCase()])
+    .replace(/&#(\d+);?/g, (_, n: string) => String.fromCodePoint(Number(n)))
+    .replace(/\s+/g, " ")
+    .trim();
+
+/** Contractors, their type names, and the states they serve (active jurisdictions only). */
+function readContractors(tables: McdTables) {
   const typeNames = new Map<string, string>();
   eachRow(tables["contractor_type_lookup.csv"], (r) => typeNames.set(r.contractor_type_id, r.description));
   const stateAbbrev = new Map<string, string>();
@@ -97,7 +134,26 @@ export function parseMcdArticles(tables: McdTables): McdParse {
     const s = stateAbbrev.get(r.state_id);
     if (s) contractorStates.set(k, (contractorStates.get(k) ?? new Set()).add(s));
   });
+  return { contractors, contractorStates };
+}
 
+/** The contractors and A/B MAC states of the articles in `wanted` ("id|version"). */
+function readArticleContractors(tables: McdTables, wanted: Set<string>) {
+  const { contractors, contractorStates } = readContractors(tables);
+  const articleContractors = new Map<string, McdContractor[]>();
+  const articleStates = new Map<string, Set<string>>();
+  eachRow(tables["article_x_contractor.csv"], (r) => {
+    const a = `${r.article_id}|${r.article_version}`;
+    if (!wanted.has(a)) return;
+    const k = `${r.contractor_id}|${r.contractor_type_id}|${r.contractor_version}`;
+    const c = contractors.get(k);
+    if (c) articleContractors.set(a, [...(articleContractors.get(a) ?? []), c]);
+    for (const s of contractorStates.get(k) ?? []) articleStates.set(a, (articleStates.get(a) ?? new Set()).add(s));
+  });
+  return { articleContractors, articleStates };
+}
+
+export function parseMcdArticles(tables: McdTables): McdParse {
   // Drug codes per article; CPT rows are counted and dropped.
   const hcpcs: McdArticleCode[] = [];
   const drugArticles = new Set<string>();
@@ -116,16 +172,7 @@ export function parseMcdArticles(tables: McdTables): McdParse {
     drugArticles.add(`${articleId}|${version}`);
   });
 
-  const articleContractors = new Map<string, McdContractor[]>();
-  const articleStates = new Map<string, Set<string>>();
-  eachRow(tables["article_x_contractor.csv"], (r) => {
-    const a = `${r.article_id}|${r.article_version}`;
-    if (!drugArticles.has(a)) return;
-    const k = `${r.contractor_id}|${r.contractor_type_id}|${r.contractor_version}`;
-    const c = contractors.get(k);
-    if (c) articleContractors.set(a, [...(articleContractors.get(a) ?? []), c]);
-    for (const s of contractorStates.get(k) ?? []) articleStates.set(a, (articleStates.get(a) ?? new Set()).add(s));
-  });
+  const { articleContractors, articleStates } = readArticleContractors(tables, drugArticles);
 
   const articles: McdArticle[] = [];
   const active = new Set<string>();
@@ -177,6 +224,43 @@ export function parseMcdArticles(tables: McdTables): McdParse {
     icd10,
     excluded: { cptRows, articlesWithoutDrugCodes, inactiveArticles },
   };
+}
+
+/** Active SAD exclusion lists (article type 3) and their entries, ended rows included: "active" depends on the day it is read. */
+export function parseMcdSadLists(tables: McdTables): { lists: McdSadList[]; entries: McdSadEntry[]; excluded: { cptRows: number } } {
+  const rows: { key: string; articleId: number; version: number; effectiveDate: string | null }[] = [];
+  eachRow(tables["article.csv"], (r) => {
+    if (r.article_type === "3" && r.status === "A") rows.push({ key: `${r.article_id}|${r.article_version}`, articleId: Number(r.article_id), version: Number(r.article_version), effectiveDate: date(r.article_eff_date) });
+  });
+  const active = new Set(rows.map((r) => r.key));
+  const { articleContractors, articleStates } = readArticleContractors(tables, active);
+  const lists = rows.map((r) => ({ articleId: r.articleId, version: r.version, displayId: `A${r.articleId}`, effectiveDate: r.effectiveDate, contractors: articleContractors.get(r.key) ?? [], states: [...(articleStates.get(r.key) ?? [])].sort() }));
+
+  const entries: McdSadEntry[] = [];
+  let cptRows = 0;
+  eachRow(tables["article_x_code_table.csv"], (r) => {
+    if (!active.has(`${r.article_id}|${r.article_version}`)) return;
+    const hcpcsCode = (r.hcpc_code_id ?? "").trim().toUpperCase();
+    if (!hcpcsCode) return;
+    if (isCptLike(hcpcsCode)) {
+      cptRows++;
+      return;
+    }
+    const articleId = Number(r.article_id);
+    const productText = cleanText(r.brand_name);
+    entries.push({
+      articleId,
+      version: Number(r.article_version),
+      rowNumber: int(r.code_table_row),
+      hcpcsCode,
+      productText,
+      effectiveDate: date(r.eff_date),
+      endDate: date(r.end_date),
+      reasons: (r.comments ?? "").split("|").map((c) => c.trim()).filter(Boolean),
+      routeFlag: !ROUTE_FLAG_ARTICLES.has(articleId) ? null : productText.endsWith("**") ? "double" : productText.endsWith("*") ? "single" : null,
+    });
+  });
+  return { lists, entries, excluded: { cptRows } };
 }
 
 /** The CMS page for an article version. */

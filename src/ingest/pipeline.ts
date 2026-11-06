@@ -12,7 +12,7 @@ import { download, streamDownload, streamFromBytes, type DownloadOptions, type D
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
 import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
-import { MCD_TABLES, parseMcdArticles, type McdTables } from "./parsers/cms-mcd";
+import { MCD_TABLES, NORIDIAN_JF_SAD_ARTICLE, parseMcdArticles, parseMcdSadLists, type McdTables } from "./parsers/cms-mcd";
 import { parseOppsAddendumA, parseOppsAddendumB } from "./parsers/cms-opps";
 import { parseNotPayableCsv, parsePaymentLimitCsv } from "./parsers/cms-payment";
 import { parseFdaPackages, parseFdaProducts, parsePurpleBookCsv, type FdaPackage, type FdaProduct } from "./parsers/fda";
@@ -640,19 +640,26 @@ function parseMcdRelease(file: Downloaded): Parsed {
   const parsed = parseMcdArticles(tables as McdTables);
   assertPlausible(parsed.articles.length >= 20, `MCD export has only ${parsed.articles.length} active articles with drug codes; expected at least 20.`);
   assertPlausible(parsed.icd10.length >= 1000, `MCD export has only ${parsed.icd10.length} covered ICD-10 rows for drug articles; expected at least 1,000.`);
+  const sad = parseMcdSadLists(tables as McdTables);
+  const noridianSad = sad.entries.filter((e) => e.articleId === NORIDIAN_JF_SAD_ARTICLE).length;
+  assertPlausible(noridianSad >= 50, `MCD export has only ${noridianSad} Noridian SAD rows; expected at least 50.`);
   return {
     fileName: baseName(inner.name),
     effectiveStart: null,
     effectiveEnd: null,
     recordCount: parsed.articles.length,
     rejected: [],
-    excluded: parsed.excluded,
+    excluded: { ...parsed.excluded, sadCptRows: sad.excluded.cptRows },
     warnings: [],
-    details: { articles: parsed.articles.length, drugCodes: new Set(parsed.hcpcs.map((h) => h.hcpcsCode)).size, icd10Rows: parsed.icd10.length },
+    details: { articles: parsed.articles.length, drugCodes: new Set(parsed.hcpcs.map((h) => h.hcpcsCode)).size, icd10Rows: parsed.icd10.length, sadLists: sad.lists.length, sadEntries: sad.entries.length },
     load: async (tx, releaseId) => {
       await tx.delete(t.mcdArticleIcd10);
       await tx.delete(t.mcdArticleHcpcs);
       await tx.delete(t.mcdArticles);
+      await tx.delete(t.mcdSadEntries);
+      await tx.delete(t.mcdSadLists);
+      await insertBatches(tx, t.mcdSadLists, sad.lists.map((l) => ({ ...l, sourceReleaseId: releaseId })), 7);
+      await insertBatches(tx, t.mcdSadEntries, sad.entries.map((e) => ({ ...e, sourceReleaseId: releaseId })), 10);
       await insertBatches(tx, t.mcdArticles, parsed.articles.map((a) => ({ ...a, sourceReleaseId: releaseId })), 11);
       await insertBatches(tx, t.mcdArticleHcpcs, parsed.hcpcs.map((h) => ({ articleId: h.articleId, version: h.version, hcpcsCode: h.hcpcsCode, codeGroup: h.group, sourceReleaseId: releaseId })), 6);
       await insertBatches(tx, t.mcdArticleIcd10, parsed.icd10.map((c) => ({ articleId: c.articleId, version: c.version, code: c.code, codeGroup: c.group, description: c.description, asterisk: c.asterisk, sortOrder: c.sortOrder, sourceReleaseId: releaseId })), 9);
