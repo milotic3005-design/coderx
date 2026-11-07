@@ -107,6 +107,22 @@ test.describe("Part B vs Part D tool", () => {
     await page.goto("/tools/part-b-vs-d?code=G0463", { waitUntil: "networkidle" });
     await expect(page.getByText("This drug is not in CodeRx")).toBeVisible();
   });
+  test("code choices keep their labels when arriving from a drug page", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?q=aranesp", { waitUntil: "networkidle" });
+    const slug = await page.getByRole("list", { name: "HCPCS codes for this drug" }).getByRole("link").first().getAttribute("href");
+    expect(slug).toBeTruthy();
+    await page.goto(`/tools/part-b-vs-d?drug=${new URL(slug!, "http://x").searchParams.get("drug") ?? "aranesp-darbepoetin-alfa"}`, { waitUntil: "networkidle" });
+    await expect(page.getByRole("list", { name: "HCPCS codes for this drug" })).toContainText(/darbepoetin/i);
+  });
+  test("data-driven sources show their data date", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?code=J9312", { waitUntil: "networkidle" });
+    await expect(setting(page, /HOPD/)).toContainText(/Data: /);
+  });
+  test("a bad contract rate says it is not being used", async ({ page }) => {
+    await page.goto("/tools/part-b-vs-d?code=J0897&units=60", { waitUntil: "networkidle" });
+    await page.getByLabel(/contract rate/i).fill("abc");
+    await expect(page.locator("#dollars")).toContainText("Enter your contract rate as a number above 0");
+  });
   test("the drug page links to the tool", async ({ page }) => {
     await page.goto("/drugs/rituxan-rituximab", { waitUntil: "networkidle" });
     await page.getByRole("link", { name: "Which Medicare benefit pays for this drug?" }).click();

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import type { BenefitData } from "@/lib/data/benefit";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatPeriod } from "@/lib/format";
 import { compareDollars, convertUnitCost, type PathwayKey } from "@/lib/part-b-d-dollars";
 import { decideBenefit, homeSummary, questionsFor, RULE_SOURCES, type QuestionKey, type RouteChoice, type Setting, type SettingResult, type Verdict } from "@/lib/part-b-d";
 import { Section, TableScroll, td, th } from "../layout-bits";
@@ -58,7 +58,7 @@ const QUESTION: Record<QuestionKey, string> = {
 const ROUTE_LABEL: Record<Exclude<RouteChoice, null>, string> = { iv: "Intravenous", subcutaneous: "Subcutaneous", im: "Intramuscular", oral: "Oral", other: "Other" };
 const FDA_ROUTE: Record<string, Exclude<RouteChoice, null>> = { INTRAVENOUS: "iv", SUBCUTANEOUS: "subcutaneous", INTRAMUSCULAR: "im", ORAL: "oral" };
 
-const PATHWAY_LABEL: Record<PathwayKey, string> = { hopd_b: "HOPD, Part B", home_b_dme: "Home, Part B (DME)", home_d: "Home, Part D" };
+const PATHWAY_LABEL: Record<PathwayKey, string> = { hopd_b: "HOPD, Part B", home_b_dme: "Home, Part B", home_d: "Home, Part D" };
 const NO_DATA = "No authoritative public data was located for this field.";
 
 /** The DMEPOS answer lasts across visits on this browser; if storage is blocked it lasts until the tab closes. */
@@ -86,10 +86,8 @@ function writeEnrolled(enrolled: boolean) {
   listeners.forEach((l) => l());
 }
 
-const parse = (text: string) => {
-  const value = Number(text);
-  return text.trim() === "" || !Number.isFinite(value) ? null : value;
-};
+/** Blank is null; anything else stays a number, NaN included, so the dollars code can reject it. */
+const parse = (text: string) => (text.trim() === "" ? null : Number(text));
 
 const money = (v: number | null) => (v == null ? "—" : formatMoney(v, 2));
 
@@ -118,7 +116,7 @@ function VerdictChip({ verdict }: { verdict: Verdict }) {
   return <span className={`inline-block rounded-md border px-2 py-0.5 text-sm font-semibold whitespace-nowrap ${VERDICT_STYLE[verdict]}`}>{VERDICT_LABEL[verdict]}</span>;
 }
 
-function ResultRow({ r }: { r: SettingResult }) {
+function ResultRow({ r, dates }: { r: SettingResult; dates: BenefitData["sourceDates"] }) {
   return (
     <tr>
       <th scope="row" className={`${td} text-left font-semibold text-ink`}>
@@ -143,6 +141,7 @@ function ResultRow({ r }: { r: SettingResult }) {
               <a href={RULE_SOURCES[s].url} rel="noopener noreferrer" className="text-brand hover:underline">
                 {RULE_SOURCES[s].title}, {RULE_SOURCES[s].section}
               </a>
+              {dates[s] ? <span className="block text-ink-faint">Data: {formatPeriod(dates[s])}</span> : null}
             </li>
           ))}
         </ul>
@@ -173,6 +172,7 @@ export function PartBDTool({ data, initialUnits }: { data: BenefitData; initialU
     dosesPerMonth: parse(doses),
     opps: data.opps,
     paymentLimit: data.asp?.limit ?? null,
+    partBCoinsurancePct: data.asp?.coinsurancePct,
     inpatientDeductible: data.inpatientDeductible,
     partDPerHcpcsUnit: converted.perHcpcsUnit,
     rawPartD: converted.raw,
@@ -247,7 +247,7 @@ export function PartBDTool({ data, initialUnits }: { data: BenefitData; initialU
             </thead>
             <tbody>
               {results.map((r) => (
-                <ResultRow key={r.setting} r={r} />
+                <ResultRow key={r.setting} r={r} dates={data.sourceDates} />
               ))}
             </tbody>
           </table>
@@ -299,6 +299,7 @@ export function PartBDTool({ data, initialUnits }: { data: BenefitData; initialU
           </table>
         </TableScroll>
         <div className="mt-3 space-y-1 text-sm text-ink-muted">
+          {dollars.contractRateRejected ? <p>Enter your contract rate as a number above 0. It is not being used.</p> : null}
           {dollars.higher ? <p>Site of care is a clinical decision, not a billing choice.</p> : null}
           {dollars.onlyOneLawful ? <p>Only one pathway is lawful for this case, so there is nothing to rank.</p> : null}
           {partDPath.source == null && dollars.rawPartD != null && row("home_no_pump").verdict === "part_d" ? <p>CMS&apos;s median plan cost is {formatMoney(dollars.rawPartD)} per NDC unit. These units don&apos;t convert cleanly, so no dollar comparison is shown.</p> : null}

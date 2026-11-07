@@ -313,3 +313,23 @@ describe("the home summary", () => {
     expect(homeSummary(decideBenefit(prolia, answers())).setting).toBe("home_no_pump");
   });
 });
+
+describe("small fixes", () => {
+  it("says a code is inactive before asking a question about it", () => {
+    const old = facts({ code: "J7507", routes: ["ORAL"], dmePolicies: ["immunosuppressive"], isActive: false, oppsStatus: null });
+    expect(row(old, answers(), "home_no_pump").reason).toContain("inactive");
+    expect(row(old, answers(), "ltc").reason).toContain("inactive");
+  });
+  it("calls an ESRD drug packaged, because the dialysis payment includes it", () => {
+    expect(row(facts(), answers({ answers: { dialysisEsa: true } }), "home_no_pump").verdict).toBe("part_b_packaged");
+  });
+  it("notes that a clotting factor's furnishing fee is separate", () => {
+    expect(row(facts(), answers({ answers: { clottingFactor: true } }), "home_no_pump").notes.join(" ")).toContain("furnishing fee");
+  });
+  it("does not cite Noridian's list for an oral drug that is not on it", () => {
+    const r = row(facts({ routes: ["ORAL"] }), answers(), "hopd");
+    expect(r.verdict).toBe("not_part_b");
+    expect(r.sources).not.toContain("noridian_sad");
+    expect(r.sources).toContain("sad_hopd");
+  });
+});

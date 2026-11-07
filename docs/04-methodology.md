@@ -80,3 +80,4 @@ Part B and Part D are not interchangeable. Under Social Security Act §1860D-2(e
 - For a pump-list drug, Part D is not priced against Part B: the no-pump row is a different case, not an alternative.
 - Part D dollars use each plan's `UNIT_COST`, a retail average, converted by `UNIT_COST × packageSize ÷ billUnitsPerItem`. CMS does not label the unit, so conversion applies only to FDA dosage forms where at least 3 products converted to 0.5 to 2 times the Part B limit (October 2026 sample of 499 NDCs), and only when the result is within 0.25 to 4 times the limit.
 - A pathway is marked higher only when it beats the next by more than 1%. Smaller gaps are copay rounding.
+- Home Part B uses the coinsurance percentage in CMS's payment file. An ESRD drug is packaged into the dialysis payment, so it has no per-unit figure. A clotting factor is priced without its furnishing fee.

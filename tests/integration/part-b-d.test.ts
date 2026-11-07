@@ -165,6 +165,34 @@ describe("linking NDCs to a code", () => {
   });
 });
 
+describe("small fixes", () => {
+  it("converts Part D costs with the newest crosswalk row", async () => {
+    const [existing] = await h.db.select().from(t.ndcHcpcsCrosswalk).where(eq(t.ndcHcpcsCrosswalk.ndc11, PROXY)).limit(1);
+    await h.db.insert(t.ndcHcpcsCrosswalk).values({ ...existing, id: undefined, period: "2027-Q1", packageSize: "9" });
+    expect((await partDListing(h.db, [PROXY], "J0897"))!.costs[0].packageSize).toBe(9);
+    await h.db.delete(t.ndcHcpcsCrosswalk).where(eq(t.ndcHcpcsCrosswalk.period, "2027-Q1"));
+  });
+  it("labels each code of a drug", async () => {
+    const { slug } = await resolveBenefitQuery("aranesp", h.db);
+    const d = await benefitData({ slug: slug! }, h.db);
+    expect(d.codeLabels).toEqual(expect.arrayContaining([{ code: "J0881", label: expect.stringMatching(/darbepoetin/i) }]));
+  });
+  it("dates the data behind each data-driven source", async () => {
+    const d = await benefitData({ code: "J9312" }, h.db);
+    expect(d.sourceDates.opps).toBe("2026-Q4");
+    expect(d.sourceDates.not_payable).toBe("2026-Q4");
+    expect(d.sourceDates.noridian_sad).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(d.sourceDates.lcd_pump).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it("reports the SAD lists missing when the article release has none", async () => {
+    const empty = await seededDbWithout([]);
+    await empty.db.delete(t.mcdSadEntries);
+    await empty.db.delete(t.mcdSadLists);
+    expect((await benefitData({ code: "J9312" }, empty.db)).missingSources).toContain("cms_mcd_articles");
+    await empty.close();
+  }, 120_000);
+});
+
 describe("what counts as a drug", () => {
   it("does not treat a non-drug code as a drug", async () => {
     const [code] = await h.db.select({ code: t.hcpcsCodes.code }).from(t.hcpcsCodes).where(eq(t.hcpcsCodes.isDrug, false)).limit(1);

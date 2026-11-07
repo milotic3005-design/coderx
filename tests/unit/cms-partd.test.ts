@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { discoverPartdWa } from "@/ingest/discover";
 import { canStartPartd, partdCatalogDue } from "@/ingest/refresh";
-import { formularyCounts, parseFormularyRows, readPartdWa, summarizeCosts, washingtonPlans } from "@/ingest/parsers/cms-partd";
+import { formularyCounts, parseFormularyRows, partdProblems, readPartdWa, summarizeCosts, washingtonPlans } from "@/ingest/parsers/cms-partd";
 import { byteSourceFromBytes } from "@/ingest/remote-zip";
 import { FIXTURE_DIR, partdArchive } from "../helpers/fixtures";
 
@@ -66,11 +66,34 @@ describe("Part D formulary and cost rows", () => {
       { proxyNdc: "55513071001", rxcui: "993456", planCount: 3, unitCostMin: 1842.4988, unitCostMedian: 1846.1841, unitCostMax: 1852.0732 },
     ]);
   });
+  it("skips a blank unit cost rather than counting it as $0", async () => {
+    const blank = pricing.replace("|30|1846.1841", "|30|");
+    const [cost] = await summarizeCosts(rows(blank), plans, new Map());
+    expect(cost.planCount).toBe(2);
+    expect(cost.unitCostMin).toBe(1842.4988);
+  });
   it("averages the middle two for an even number of plans", async () => {
     const two = plans.filter((p) => p.key.startsWith("H1036"));
     const [cost] = await summarizeCosts(rows(pricing), two, new Map());
     expect(cost.unitCostMedian).toBe(1844.3415); // midpoint of 1842.4988 and 1846.1841, rounded to 4 places
     expect(cost.rxcui).toBeNull();
+  });
+});
+
+describe("Checking a Part D import", () => {
+  const plan = { key: "x", formularyId: "1", type: "PDP" as const };
+  const drug = (rxcui: string) => ({ formularyId: "1", rxcui, proxyNdc: "1", tier: 1, priorAuth: false, stepTherapy: false, quantityLimit: false, selectedDrug: false });
+  const cost = { proxyNdc: "1", rxcui: "1", planCount: 1, unitCostMin: 1, unitCostMedian: 1, unitCostMax: 1 };
+  const full = { plans: Array(60).fill(plan), drugs: Array.from({ length: 1500 }, (_, i) => drug(String(i))), costs: Array(1500).fill(cost) };
+  it("passes a full file", () => {
+    expect(partdProblems(full)).toEqual([]);
+  });
+  it("names a file with too few plans or RxCUIs", () => {
+    expect(partdProblems({ ...full, plans: [plan] }).join()).toContain("plans");
+    expect(partdProblems({ ...full, drugs: [drug("1")] }).join()).toContain("RxCUIs");
+  });
+  it("catches a layout change that loses the costs", () => {
+    expect(partdProblems({ ...full, costs: [] }).join()).toContain("cost");
   });
 });
 

@@ -150,9 +150,31 @@ describe("Comparing pathways", () => {
     const r = compareDollars({ ...base, dosesPerMonth });
     expect(r.pathways.every((p) => p.expectedPerMonth === null)).toBe(true);
   });
-  it.each([0, -5, Number.NaN, 1e9])("a bad contract rate %s falls back to the benchmark", (contractRate) => {
-    const r = key(compareDollars({ ...base, contractRate }), "home_d");
-    expect(r.source).toBe("cms");
-    expect(r.allowedPerUnit).toBe(28);
+  it.each([0, -5, Number.NaN, 1e9])("a bad contract rate %s hides the Part D dollars and says so", (contractRate) => {
+    const r = compareDollars({ ...base, contractRate });
+    expect(r.contractRateRejected).toBe(true);
+    expect(key(r, "home_d").expectedPerDose).toBeNull();
+    expect(key(r, "home_d").lawful).toBe(true);
+    expect(r.higher).toBeNull();
+  });
+  it("a blank contract rate uses the benchmark", () => {
+    const r = compareDollars({ ...base, contractRate: null });
+    expect(r.contractRateRejected).toBe(false);
+    expect(key(r, "home_d").source).toBe("cms");
+  });
+  it("uses the file's coinsurance percentage for home Part B", () => {
+    const pump = results(facts({ dmePolicies: ["pump"] }));
+    expect(key(compareDollars({ ...base, results: pump, partBCoinsurancePct: 15 }), "home_b_dme").expectedPerDose).toBeCloseTo(programNet(1800, 270, 2), 2);
+  });
+  it("prices a home clotting factor at the Part B limit", () => {
+    const clotting = decideBenefit(facts(), { route: null, answers: { clottingFactor: true }, dmeposEnrolled: false });
+    const r = compareDollars({ ...base, results: clotting });
+    expect(key(r, "home_b_dme").expectedPerDose).toBeCloseTo(programNet(1800, 360, 2), 2);
+  });
+  it("gives an ESRD drug no per-unit dollars, and leaves the case open", () => {
+    const esrd = decideBenefit(facts({ sad: { status: "listed", products: [], contractorsListing: 1, contractorsTotal: 8, displayId: "A53033" } }), { route: null, answers: { dialysisEsa: true }, dmeposEnrolled: false });
+    const r = compareDollars({ ...base, results: esrd });
+    expect(key(r, "home_b_dme").expectedPerDose).toBeNull();
+    expect(r.onlyOneLawful).toBe(false);
   });
 });

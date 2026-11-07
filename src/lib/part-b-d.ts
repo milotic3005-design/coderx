@@ -113,8 +113,8 @@ const STATUTORY: Partial<Record<QuestionKey, Outcome>> = {
   antiemetic48h: { verdict: "part_b_dme", reason: "Part B pays for an oral antiemetic within 48 hours of chemotherapy as a full replacement for an IV antiemetic, billed to the DME contractor.", sources: ["lcd_antiemetic", "coverage_table"] },
   pid: { verdict: "part_b_dme", reason: "Part B pays for IVIG at home for primary immune deficiency, drug only: not the items and services to give it.", sources: ["lcd_ivig", "ch6_appendix_c"] },
   nebulizer: { verdict: "part_b_dme", reason: "Part B pays for inhalation drugs given by a nebulizer at home, as a DME supply.", sources: ["lcd_nebulizer", "coverage_table"] },
-  clottingFactor: { verdict: "part_b", reason: "Part B pays for clotting factors for hemophilia patients who can use them without medical supervision.", sources: ["ch6_appendix_c"] },
-  dialysisEsa: { verdict: "part_b", reason: "Part B pays for this through dialysis care: drugs for ESRD are in the ESRD payment, and other uses of the drug can be Part D.", sources: ["coverage_table"] },
+  clottingFactor: { verdict: "part_b", reason: "Part B pays for clotting factors for hemophilia patients who can use them without medical supervision.", notes: ["The clotting factor furnishing fee is separate and is not in these dollars."], sources: ["ch6_appendix_c"] },
+  dialysisEsa: { verdict: "part_b_packaged", reason: "Part B pays for this through dialysis care: drugs for ESRD are in the ESRD payment, and other uses of the drug can be Part D.", sources: ["coverage_table"] },
   permanentGi: { verdict: "part_b_dme", reason: "Part B pays for parenteral nutrition for permanent dysfunction of the digestive tract, under the prosthetic benefit.", sources: ["coverage_table"] },
 };
 
@@ -195,7 +195,7 @@ function hopd(f: BenefitFacts, a: BenefitAnswers): Outcome {
     if (statutory === "unanswered") return UNANSWERED;
     if (statutory === "catch_all") return CATCH_ALL_LIST;
     if (statutory) return f.notPayable ? NOT_PAYABLE : statutory;
-    return { verdict: "not_part_b", reason: "Oral drugs are usually self-administered, so Part B does not pay. The hospital may bill the patient.", sources: ["noridian_sad", "sad_hopd"] };
+    return { verdict: "not_part_b", reason: "Oral drugs are usually self-administered, so Part B does not pay. The hospital may bill the patient.", sources: ["sad_hopd", "mbpm_sad"] };
   }
   return hopdStatus(f, null, contractors);
 }
@@ -220,18 +220,20 @@ function partD(f: BenefitFacts, reason: string, sources: RuleSourceKey[]): Outco
 function homeNoPump(f: BenefitFacts, a: BenefitAnswers): Outcome {
   if (f.dmePolicies === null) return missing("The DME policy list");
   const statutory = statutoryCase(f, a, "home");
+  if (statutory && !f.isActive) return INACTIVE;
   if (statutory === "unanswered") return UNANSWERED;
   if (statutory === "catch_all") return CATCH_ALL_LIST;
-  if (statutory) return !f.isActive ? INACTIVE : f.notPayable ? NOT_PAYABLE : statutory;
+  if (statutory) return f.notPayable ? NOT_PAYABLE : statutory;
   return partD(f, PART_D_DRUG_ONLY, ["ch6_home_infusion"]);
 }
 
 function longTermCare(f: BenefitFacts, a: BenefitAnswers): Outcome {
   if (f.dmePolicies === null) return missing("The DME policy list");
   const statutory = statutoryCase(f, a, "ltc");
+  if (statutory && !f.isActive) return INACTIVE;
   if (statutory === "unanswered") return UNANSWERED;
   if (statutory === "catch_all") return CATCH_ALL_LIST;
-  if (statutory) return !f.isActive ? INACTIVE : f.notPayable ? NOT_PAYABLE : statutory;
+  if (statutory) return f.notPayable ? NOT_PAYABLE : statutory;
   return partD(f, "Part D pays here, even for drugs given by a pump or nebulizer, because a long-term care facility is not a home for the DME benefit.", ["coverage_table"]);
 }
 

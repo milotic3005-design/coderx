@@ -12,7 +12,7 @@ import { download, streamDownload, streamFromBytes, type DownloadOptions, type D
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
 import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
-import { readPartdWa, type PartdWaParse } from "./parsers/cms-partd";
+import { partdProblems, readPartdWa, type PartdWaParse } from "./parsers/cms-partd";
 import { parseOpenFdaRxcui } from "./parsers/fda-rxcui";
 import { byteSourceFromBytes, byteSourceFromUrl } from "./remote-zip";
 import { DME_POLICIES, LCD_TABLES, parseLcdPolicies, type LcdTables } from "./parsers/cms-lcd";
@@ -703,9 +703,8 @@ function parseLcdRelease(file: Downloaded): Parsed {
 }
 
 function parsePartdRelease(p: PartdWaParse, fileName: string): Parsed {
-  assertPlausible(p.plans.length >= 50, `Part D file has only ${p.plans.length} Washington plans; expected at least 50.`);
+  for (const problem of partdProblems(p)) assertPlausible(false, problem);
   const rxcuis = new Set(p.drugs.map((d) => d.rxcui)).size;
-  assertPlausible(rxcuis >= 1000, `Part D file has only ${rxcuis} RxCUIs for Washington plans; expected at least 1,000.`);
   return {
     fileName,
     effectiveStart: null,

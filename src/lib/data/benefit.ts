@@ -11,7 +11,7 @@ import * as t from "@/lib/db/schema";
 import { todayUs } from "@/lib/dates";
 import { isCodeActive, normalizeHcpcs } from "@/lib/hcpcs";
 import { looksLikeNdc, toNdc11 } from "@/lib/ndc";
-import type { BenefitFacts, SadFact } from "@/lib/part-b-d";
+import type { BenefitFacts, RuleSourceKey, SadFact } from "@/lib/part-b-d";
 import { search } from "@/lib/search/engine";
 import { partDListing, type PartDListing } from "./part-d";
 import { loadReleases, toProvenance, type Provenance, type ReleaseRow } from "./provenance";
@@ -26,12 +26,14 @@ export interface BenefitData {
   codes: string[];
   facts: BenefitFacts;
   partD: PartDListing | null;
-  asp: { limit: number | null; dosage: string | null; period: string } | null;
+  asp: { limit: number | null; dosage: string | null; coinsurancePct: number | null; period: string } | null;
   opps: { statusIndicator: string | null; paymentRate: number | null; copayPerUnit: number | null; period: string } | null;
   inpatientDeductible: number | null;
   missingSources: SourceKey[];
   provenance: Provenance[];
-  sadArticleId: string | null;
+  /** When each data-driven source was published; the manuals carry their own dates. */
+  sourceDates: Partial<Record<RuleSourceKey, string>>;
+  codeLabels: { code: string; label: string }[];
   policyLinks: { policy: DmePolicy; displayId: string; title: string }[];
 }
 
@@ -131,14 +133,23 @@ export async function benefitData(query: { code?: string; slug?: string }, dbArg
       oppsStatus: o?.statusIndicator ?? null,
     },
     partD: latest.get("cms_partd_wa") && latest.get("fda_ndc_rxcui") ? await partDListing(db, partDNdcs, code) : null,
-    asp: p ? { limit: number(p.paymentLimit), dosage: p.dosageDescriptor, period: p.period } : null,
+    asp: p ? { limit: number(p.paymentLimit), dosage: p.dosageDescriptor, coinsurancePct: number(p.coinsurancePct), period: p.period } : null,
     opps: o ? { statusIndicator: o.statusIndicator, paymentRate: number(o.paymentRate), copayPerUnit: number(o.adjustedCopay) ?? number(o.nationalCopay) ?? number(o.minimumCopay), period: o.period } : null,
     inpatientDeductible: details?.inpatientDeductible ?? null,
-    missingSources: TOOL_SOURCES.filter((k) => !latest.get(k)),
+    // A release can exist with empty SAD tables: the first deploy after this tool, before the article export is re-imported.
+    missingSources: TOOL_SOURCES.filter((k) => !latest.get(k) || (k === "cms_mcd_articles" && !sad)),
     provenance: TOOL_SOURCES.map((k) => latest.get(k))
       .filter((r): r is ReleaseRow => !!r)
       .map((r) => toProvenance(r)),
-    sadArticleId: sad?.displayId ?? null,
+    sourceDates: Object.fromEntries(
+      [
+        ["noridian_sad", latest.get("cms_mcd_articles")],
+        ["opps", oppsRelease],
+        ["not_payable", payRelease],
+        ...(["lcd_pump", "lcd_ivig", "lcd_immunosuppressive", "lcd_antiemetic", "lcd_nebulizer"] as const).map((k) => [k, latest.get("cms_mcd_lcds")] as const),
+      ].flatMap(([key, release]) => (release && typeof release !== "string" && release.periodLabel ? [[key, release.periodLabel]] : [])),
+    ),
+    codeLabels: codes.length ? (await db.select({ code: t.hcpcsCodes.code, label: t.hcpcsCodes.shortDescription }).from(t.hcpcsCodes).where(inArray(t.hcpcsCodes.code, codes))).map((r) => ({ code: r.code, label: r.label ?? r.code })) : [],
     policyLinks: [...new Map(policies.map((r) => [r.policy, { policy: r.policy as DmePolicy, displayId: r.displayId, title: r.title }])).values()],
   };
 }

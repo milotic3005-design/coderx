@@ -49,7 +49,7 @@ export default async function PartBvsDPage({ searchParams }: { searchParams: SP 
   const code = normalizeHcpcs(param(sp.code)) ?? resolved?.code ?? null;
   const slug = (parsedSlug.success ? parsedSlug.data : null) ?? resolved?.slug ?? null;
   const data = code || slug ? await cachedBenefit(code ?? "", slug ?? "") : null;
-  const labels = new Map(resolved?.choices.map((c) => [c.code, c.label]));
+  const labels = new Map([...(data?.codeLabels ?? []), ...(resolved?.choices ?? [])].map((c) => [c.code, c.label]));
   const fromDrug = data?.found && !data.code && data.codes.length > 1 ? data.codes : [];
   const choices = !code ? (resolved?.choices.length ? resolved.choices.map((c) => c.code) : fromDrug) : [];
   const needsCode = choices.length > 0;

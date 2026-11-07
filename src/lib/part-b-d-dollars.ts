@@ -29,7 +29,7 @@ export const PART_D_RATIO_BAND = { min: 0.25, max: 4 };
 /** Products sharing a code can differ per unit, as Prolia and Xgeva do under J0897; a median of those describes neither. */
 const MAX_PRODUCT_SPREAD = 1.5;
 const SEQUESTRATION_PCT = 2;
-const PART_B_PATIENT_SHARE = 0.2;
+const PART_B_COINSURANCE_PCT = 20;
 /** A gap under 1% is copay rounding, not a difference worth marking. */
 const TIE_MARGIN = 0.01;
 /** Same ceiling as the numeric inputs on the other tools. */
@@ -77,6 +77,8 @@ export interface DollarResult {
   lawfulCount: number;
   /** One pathway is lawful and no setting row is still open, so it is safe to say so. */
   onlyOneLawful: boolean;
+  /** The user typed a contract rate that cannot be used, so Part D shows nothing rather than a figure they did not ask for. */
+  contractRateRejected: boolean;
   rawPartD: number | null;
 }
 
@@ -86,6 +88,8 @@ export interface DollarInput {
   dosesPerMonth: number | null;
   opps: { paymentRate: number | null; copayPerUnit: number | null } | null;
   paymentLimit: number | null;
+  /** CMS's coinsurance percentage for the code; 20 when the file gives none. */
+  partBCoinsurancePct?: number | null;
   inpatientDeductible: number | null;
   partDPerHcpcsUnit: number | null;
   rawPartD: number | null;
@@ -108,28 +112,30 @@ export function compareDollars(input: DollarInput): DollarResult {
   };
 
   const hopdLawful = verdict("hopd") === "part_b";
-  const dmeLawful = verdict("home_pump") === "part_b_dme" || verdict("home_no_pump") === "part_b_dme";
+  const homeBLawful = verdict("home_pump") === "part_b_dme" || verdict("home_no_pump") === "part_b_dme" || verdict("home_no_pump") === "part_b";
   // A pump drug is Part B at home, so the no-pump row's Part D answer is a different case, not an alternative to rank.
   const partDLawful = verdict("home_no_pump") === "part_d" && verdict("home_pump") !== "part_b_dme";
 
+  const coinsurance = (input.partBCoinsurancePct ?? PART_B_COINSURANCE_PCT) / 100;
   const copay = opps?.copayPerUnit ?? null;
   const hopdShare = (allowed: number) => {
-    const share = copay != null && units != null ? copay * units : allowed * PART_B_PATIENT_SHARE;
+    const share = copay != null && units != null ? copay * units : allowed * coinsurance;
     return inpatientDeductible != null ? Math.min(share, inpatientDeductible) : share;
   };
+  const contractRateRejected = input.contractRate != null && !usable(input.contractRate);
   const contract = usable(input.contractRate) ? input.contractRate : null;
 
   const pathways = [
     pathway("hopd_b", hopdLawful, opps?.paymentRate ?? null, "cms", (allowed) => programNet(allowed, hopdShare(allowed), SEQUESTRATION_PCT)),
-    pathway("home_b_dme", dmeLawful, paymentLimit, "cms", (allowed) => programNet(allowed, allowed * PART_B_PATIENT_SHARE, SEQUESTRATION_PCT)),
-    pathway("home_d", partDLawful, contract ?? input.partDPerHcpcsUnit, contract != null ? "you" : "cms", (allowed) => allowed),
+    pathway("home_b_dme", homeBLawful, paymentLimit, "cms", (allowed) => programNet(allowed, allowed * coinsurance, SEQUESTRATION_PCT)),
+    pathway("home_d", partDLawful, contractRateRejected ? null : (contract ?? input.partDPerHcpcsUnit), contract != null ? "you" : "cms", (allowed) => allowed),
   ];
 
   const priced = pathways.filter((p) => p.expectedPerDose != null);
-  const lawfulCount = [hopdLawful, dmeLawful, partDLawful].filter(Boolean).length;
+  const lawfulCount = [hopdLawful, homeBLawful, partDLawful].filter(Boolean).length;
   const top = [...priced].sort((a, b) => b.expectedPerDose! - a.expectedPerDose!);
   const clearlyHigher = priced.length >= 2 && top[0].expectedPerDose! > top[1].expectedPerDose! * (1 + TIE_MARGIN);
   const higher = lawfulCount >= 2 && clearlyHigher ? top[0].key : null;
-  const stillOpen = (["hopd", "home_pump", "home_no_pump"] as const).some((s) => verdict(s) === "check" || verdict(s) === "part_b_packaged") || verdict("home_no_pump") === "part_b";
-  return { pathways, higher, lawfulCount, onlyOneLawful: lawfulCount === 1 && !stillOpen, rawPartD: input.rawPartD };
+  const stillOpen = (["hopd", "home_pump", "home_no_pump"] as const).some((s) => verdict(s) === "check" || verdict(s) === "part_b_packaged");
+  return { pathways, higher, lawfulCount, onlyOneLawful: lawfulCount === 1 && !stillOpen, contractRateRejected, rawPartD: input.rawPartD };
 }

@@ -4,7 +4,7 @@
  * NDC, and product NDC to RxCUI. Plan counts are a union of formularies, because a plan listing
  * two strengths of a drug is still one plan. Identifiers only; nothing is matched by name.
  */
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
 import type { CostRow } from "@/lib/part-b-d-dollars";
@@ -87,7 +87,8 @@ async function costRows(db: Database, costs: (typeof t.partdWaCosts.$inferSelect
       .select({ ndc11: t.ndcHcpcsCrosswalk.ndc11, packageSize: t.ndcHcpcsCrosswalk.packageSize, billUnitsPerItem: t.ndcHcpcsCrosswalk.billUnitsPerItem })
       .from(t.ndcHcpcsCrosswalk)
       .innerJoin(t.sourceReleases, and(eq(t.sourceReleases.id, t.ndcHcpcsCrosswalk.sourceReleaseId), eq(t.sourceReleases.isCurrent, true)))
-      .where(and(inArray(t.ndcHcpcsCrosswalk.ndc11, [...new Set([...proxies, ...ndc11s])]), code ? eq(t.ndcHcpcsCrosswalk.hcpcsCode, code) : undefined)),
+      .where(and(inArray(t.ndcHcpcsCrosswalk.ndc11, [...new Set([...proxies, ...ndc11s])]), code ? eq(t.ndcHcpcsCrosswalk.hcpcsCode, code) : undefined))
+      .orderBy(desc(t.ndcHcpcsCrosswalk.period)),
     db.select({ product: t.ndcProducts.productNdc9, dosageForm: t.ndcProducts.dosageForm }).from(t.ndcProducts).where(inArray(t.ndcProducts.productNdc9, proxyProducts)),
   ]);
   const number = (v: string | null | undefined) => (v == null ? null : Number(v));

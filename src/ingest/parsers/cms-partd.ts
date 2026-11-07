@@ -136,6 +136,7 @@ export async function summarizeCosts(rows: AsyncIterable<string>, plans: PartdPl
     if (!contracts.has(line.slice(0, 5))) continue;
     const f = line.split("|");
     if (f[col.DAYS_SUPPLY] !== "30" || !keys.has(`${f[col.CONTRACT_ID]}|${f[col.PLAN_ID]}|${f[col.SEGMENT_ID]}`)) continue;
+    if (!f[col.UNIT_COST]?.trim()) continue;
     const cost = Number(f[col.UNIT_COST]);
     if (!Number.isFinite(cost)) continue;
     const ndc = f[col.NDC];
@@ -147,6 +148,16 @@ export async function summarizeCosts(rows: AsyncIterable<string>, plans: PartdPl
     values.sort((a, b) => a - b);
     return { proxyNdc, rxcui: rxcuiByNdc.get(proxyNdc) ?? null, planCount: values.length, unitCostMin: values[0], unitCostMedian: round4(median(values)), unitCostMax: values[values.length - 1] };
   });
+}
+
+/** Reasons a parsed file looks wrong, such as a layout change that lost a table. */
+export function partdProblems(p: Pick<PartdWaParse, "plans" | "drugs" | "costs">): string[] {
+  const rxcuis = new Set(p.drugs.map((d) => d.rxcui)).size;
+  return [
+    ...(p.plans.length >= 50 ? [] : [`Part D file has only ${p.plans.length} Washington plans; expected at least 50.`]),
+    ...(rxcuis >= 1000 ? [] : [`Part D file has only ${rxcuis} RxCUIs for Washington plans; expected at least 1,000.`]),
+    ...(p.costs.length >= 1000 ? [] : [`Part D file has only ${p.costs.length} unit cost rows for Washington plans; expected at least 1,000.`]),
+  ];
 }
 
 /** Reads only the four files CodeRx needs. The checksum covers their names, CRCs, and sizes, so a re-post of the same data is skipped. */

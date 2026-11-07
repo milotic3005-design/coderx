@@ -1,6 +1,6 @@
 # Part B vs Part D tool: design
 
-Date: 2026-11-05. Status: awaiting operator review.
+Date: 2026-11-05. Status: built and live; section 12 records changes after review.
 
 ## 1. Goal
 
@@ -276,3 +276,5 @@ These amend the sections above, where they differ.
 - Section 4.3: the catalog is read at most weekly once a quarter is loaded, and the Part D import runs alone.
 - Section 3: a name matching several products offers the codes rather than picking one.
 - Rules cite Part D Manual Chapter 6 Rev. 18, not the Rev. 10 copy section 10 names.
+- Section 6: an ESRD drug for a dialysis patient is `part_b_packaged`, because the ESRD payment includes it. A home clotting factor is priced at the Part B limit, without the furnishing fee.
+- Section 7: home Part B uses the file's coinsurance percentage. An unusable contract rate hides the Part D figure and says so.
