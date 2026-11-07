@@ -91,9 +91,12 @@ export async function benefitData(query: { code?: string; slug?: string }, dbArg
   ]);
 
   // Several products can share a code (Prolia and Xgeva, J0897), so a chosen drug narrows it to its own packages.
-  const ownPackages = drug ? await db.select({ ndc11: t.ndcPackages.ndc11 }).from(t.ndcPackages).innerJoin(t.ndcProducts, eq(t.ndcProducts.productId, t.ndcPackages.productId)).where(eq(t.ndcProducts.drugId, drug.id)) : [];
+  // A drug whose only code is this one owns it outright, so all its packages count even if the crosswalk lists few or none.
+  const ownerIds = drug ? [drug.id] : linkedDrugs.filter((d) => d.hcpcsCodes.length === 1).map((d) => d.id);
+  const ownPackages = ownerIds.length ? await db.select({ ndc11: t.ndcPackages.ndc11 }).from(t.ndcPackages).innerJoin(t.ndcProducts, eq(t.ndcProducts.productId, t.ndcPackages.productId)).where(inArray(t.ndcProducts.drugId, ownerIds)) : [];
   const own = new Set(ownPackages.map((p) => p.ndc11));
-  const ndc11s = codeNdcs.some((n) => own.has(n)) ? codeNdcs.filter((n) => own.has(n)) : codeNdcs;
+  const narrowed = drug ? codeNdcs.filter((n) => own.has(n)) : [];
+  const ndc11s = narrowed.length ? narrowed : [...new Set([...codeNdcs, ...(drug ? [] : own)])];
   const drugIds = linkedDrugs.map((d) => d.id);
   const drugProducts = !ndc11s.length && drugIds.length ? await db.select({ ndc11: t.ndcPackages.ndc11, routes: t.ndcProducts.routes, productType: t.ndcProducts.productType }).from(t.ndcPackages).innerJoin(t.ndcProducts, eq(t.ndcProducts.productId, t.ndcPackages.productId)).where(inArray(t.ndcProducts.drugId, drugIds)) : [];
   const codeProducts = ndc11s.length ? await db.select({ routes: t.ndcProducts.routes, productType: t.ndcProducts.productType }).from(t.ndcProducts).innerJoin(t.ndcPackages, eq(t.ndcPackages.productId, t.ndcProducts.productId)).where(inArray(t.ndcPackages.ndc11, ndc11s)) : [];
@@ -101,7 +104,9 @@ export async function benefitData(query: { code?: string; slug?: string }, dbArg
   // With a code and no crosswalk row, the drug's other packages may belong to a different code, so Part D says nothing.
   const partDNdcs = code ? ndc11s : [...new Set(drugProducts.map((p) => p.ndc11))];
   // A drug's routes span all its codes (Prograf: J7507 oral, J7525 IV), so the code's own products decide when there are any.
-  const routes = [...new Set(products.length ? products.flatMap((p) => p.routes) : linkedDrugs.flatMap((d) => d.routes))];
+  // Older crosswalk rows can point to stub products with no routes, which say nothing about the drug.
+  const productRoutes = products.flatMap((p) => p.routes);
+  const routes = [...new Set(productRoutes.length ? productRoutes : linkedDrugs.flatMap((d) => d.routes))];
   const productType = products.find((p) => p.productType === "VACCINE")?.productType ?? products[0]?.productType ?? null;
   const o = opps[0] ?? null;
   const p = payment[0] ?? null;

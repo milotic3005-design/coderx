@@ -135,6 +135,22 @@ describe("linking NDCs to a code", () => {
     expect(d.partD?.plansListing).toEqual({ pdp: 1, mapd: 2 });
     await h.db.delete(t.ndcHcpcsCrosswalk).where(eq(t.ndcHcpcsCrosswalk.hcpcsCode, "J1438"));
   });
+  it("uses all of a drug's packages when this is the drug's only code", async () => {
+    await h.db.update(t.drugs).set({ hcpcsCodes: ["J1438"] }).where(eq(t.drugs.slug, "prolia-denosumab"));
+    const d = await benefitData({ code: "J1438" }, h.db);
+    expect(d.partD?.plansListing).toEqual({ pdp: 1, mapd: 2 });
+    await h.db.update(t.drugs).set({ hcpcsCodes: ["J0897"] }).where(eq(t.drugs.slug, "prolia-denosumab"));
+  });
+  it("does not let a stub product with no routes hide the drug's routes", async () => {
+    const sourceReleaseId = await release("cms_ndc_hcpcs");
+    await h.db.update(t.drugs).set({ hcpcsCodes: ["J1438"] }).where(eq(t.drugs.slug, "prolia-denosumab"));
+    await h.db.update(t.ndcProducts).set({ routes: [] }).where(eq(t.ndcProducts.productNdc9, "555130710"));
+    await h.db.insert(t.ndcHcpcsCrosswalk).values({ sourceReleaseId, period: "2025-Q1", crosswalkType: "ASP", hcpcsCode: "J1438", ndcRaw: PROXY, ndc11: PROXY });
+    expect((await benefitData({ code: "J1438" }, h.db)).facts.routes).toContain("SUBCUTANEOUS");
+    await h.db.update(t.ndcProducts).set({ routes: ["SUBCUTANEOUS"] }).where(eq(t.ndcProducts.productNdc9, "555130710"));
+    await h.db.update(t.drugs).set({ hcpcsCodes: ["J0897"] }).where(eq(t.drugs.slug, "prolia-denosumab"));
+    await h.db.delete(t.ndcHcpcsCrosswalk).where(eq(t.ndcHcpcsCrosswalk.hcpcsCode, "J1438"));
+  });
   it("takes routes from the code's own products, not every code of the drug", async () => {
     await h.db.update(t.drugs).set({ hcpcsCodes: ["J3357", "J3358"] }).where(eq(t.drugs.slug, "stelara-ustekinumab"));
     expect((await benefitData({ code: "J3358" }, h.db)).facts.routes).toEqual(["INTRAVENOUS"]);
