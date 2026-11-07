@@ -75,6 +75,8 @@ Part B and Part D are not interchangeable. Under Social Security Act §1860D-2(e
 - Catch-all codes (J3490, J3590, C9399, J7799, and similar) do not decide by code; where Noridian lists products under one, the page shows them.
 - Part D coverage says nothing unless a drug links to RxNorm. "Not listed" is shown only when the drug's RxCUI is known and CMS's file does not list it.
 - Part D coverage is linked by exact NDC, product NDC, and RxCUI, never by name, and counted as a union of formularies.
+- A code's products come from the newest crosswalk quarter that lists it, because CMS drops codes it does not pay. Routes come from those products, not from every code of a drug, and a chosen drug narrows a shared code to its own packages.
+- Part D dollars are not compared when products under a code differ by more than 1.5 times per unit, as Prolia and Xgeva do under J0897.
 - For a pump-list drug, Part D is not priced against Part B: the no-pump row is a different case, not an alternative.
 - Part D dollars use each plan's `UNIT_COST`, a retail average, converted by `UNIT_COST × packageSize ÷ billUnitsPerItem`. CMS does not label the unit, so conversion applies only to FDA dosage forms where at least 3 products converted to 0.5 to 2 times the Part B limit (October 2026 sample of 499 NDCs), and only when the result is within 0.25 to 4 times the limit.
 - A pathway is marked higher only when it beats the next by more than 1%. Smaller gaps are copay rounding.

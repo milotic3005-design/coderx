@@ -125,6 +125,30 @@ describe("drugs CMS's current crosswalk does not link", () => {
   });
 });
 
+describe("linking NDCs to a code", () => {
+  const release = async (key: "cms_ndc_hcpcs") => (await h.db.select({ id: t.sourceReleases.id }).from(t.sourceReleases).where(eq(t.sourceReleases.sourceKey, key)))[0].id;
+  const crosswalkRow = async (hcpcsCode: string, period: string, ndc11: string) => ({ sourceReleaseId: await release("cms_ndc_hcpcs"), period, crosswalkType: "ASP", hcpcsCode, ndcRaw: ndc11, ndc11 });
+
+  it("uses the newest quarter that lists the code when the current one drops it", async () => {
+    await h.db.insert(t.ndcHcpcsCrosswalk).values(await crosswalkRow("J1438", "2025-Q1", PROXY));
+    const d = await benefitData({ code: "J1438" }, h.db);
+    expect(d.partD?.plansListing).toEqual({ pdp: 1, mapd: 2 });
+    await h.db.delete(t.ndcHcpcsCrosswalk).where(eq(t.ndcHcpcsCrosswalk.hcpcsCode, "J1438"));
+  });
+  it("takes routes from the code's own products, not every code of the drug", async () => {
+    await h.db.update(t.drugs).set({ hcpcsCodes: ["J3357", "J3358"] }).where(eq(t.drugs.slug, "stelara-ustekinumab"));
+    expect((await benefitData({ code: "J3358" }, h.db)).facts.routes).toEqual(["INTRAVENOUS"]);
+  });
+  it("narrows a shared code to the chosen drug's products", async () => {
+    await h.db.insert(t.ndcHcpcsCrosswalk).values(await crosswalkRow("J0897", "2026-Q4", "57894005427")); // another product under the same code
+    const [prolia] = await h.db.select({ slug: t.drugs.slug }).from(t.drugs).where(eq(t.drugs.slug, "prolia-denosumab"));
+    expect((await benefitData({ code: "J0897" }, h.db)).facts.routes).toContain("INTRAVENOUS");
+    const chosen = await benefitData({ code: "J0897", slug: prolia.slug }, h.db);
+    expect(chosen.facts.routes).toEqual(["SUBCUTANEOUS"]);
+    await h.db.delete(t.ndcHcpcsCrosswalk).where(eq(t.ndcHcpcsCrosswalk.ndc11, "57894005427"));
+  });
+});
+
 describe("what counts as a drug", () => {
   it("does not treat a non-drug code as a drug", async () => {
     const [code] = await h.db.select({ code: t.hcpcsCodes.code }).from(t.hcpcsCodes).where(eq(t.hcpcsCodes.isDrug, false)).limit(1);

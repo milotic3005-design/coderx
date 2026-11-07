@@ -37,6 +37,15 @@ describe("Part D unit cost conversion", () => {
     const rows = [cost({ unitCostMedian: 9 }), cost({ unitCostMedian: 10 }), cost({ unitCostMedian: 11 })];
     expect(convertUnitCost(rows, 1, forms).perHcpcsUnit).toBe(1);
   });
+  it("does not blend products that cost different amounts per unit", () => {
+    const prolia = cost({ unitCostMedian: 1847.79, packageSize: 1, billUnitsPerItem: 60 });
+    const xgeva = cost({ unitCostMedian: 1228, packageSize: 1.7, billUnitsPerItem: 120 });
+    expect(convertUnitCost([prolia, xgeva], 29.856, forms).perHcpcsUnit).toBeNull();
+    expect(convertUnitCost([prolia, xgeva], 29.856, forms).raw).not.toBeNull();
+  });
+  it("keeps products within 1.5 times of each other", () => {
+    expect(convertUnitCost([cost({ unitCostMedian: 8 }), cost({ unitCostMedian: 11 })], 1, forms).perHcpcsUnit).toBeCloseTo(0.95, 5);
+  });
   it("has no costs to convert", () => {
     expect(convertUnitCost([], 1, forms)).toEqual({ perHcpcsUnit: null, raw: null });
   });

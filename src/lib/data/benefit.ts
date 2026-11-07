@@ -2,7 +2,7 @@
  * Facts for the Part B vs Part D tool, read from CMS tables. The rules live in
  * src/lib/part-b-d.ts. MultiCare benchmark data is deliberately not loaded here.
  */
-import { and, desc, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import { NORIDIAN_JF_SAD_ARTICLE } from "@/ingest/parsers/cms-mcd";
 import type { DmePolicy } from "@/ingest/parsers/cms-lcd";
 import type { SourceKey } from "@/ingest/sources";
@@ -55,17 +55,16 @@ async function sadFact(db: Database, code: string | null, isNoc: boolean): Promi
   return { status, products, contractorsListing, contractorsTotal, displayId };
 }
 
-/** NDCs for a code from the newest crosswalk quarter. */
-async function ndcsFor(db: Database, code: string | null, crosswalkPeriod: string | null): Promise<string[]> {
-  if (code && crosswalkPeriod) {
-    const rows = await db
-      .selectDistinct({ ndc11: t.ndcHcpcsCrosswalk.ndc11 })
-      .from(t.ndcHcpcsCrosswalk)
-      .where(and(eq(t.ndcHcpcsCrosswalk.hcpcsCode, code), eq(t.ndcHcpcsCrosswalk.period, crosswalkPeriod)));
-    const ndcs = rows.flatMap((r) => (r.ndc11 ? [r.ndc11] : []));
-    if (ndcs.length) return ndcs;
-  }
-  return [];
+/** NDCs from the newest crosswalk quarter that lists the code. CMS drops codes it does not pay, such as Enbrel's J1438, from later quarters. */
+async function ndcsFor(db: Database, code: string | null): Promise<string[]> {
+  if (!code) return [];
+  const rows = await db
+    .selectDistinct({ ndc11: t.ndcHcpcsCrosswalk.ndc11, period: t.ndcHcpcsCrosswalk.period })
+    .from(t.ndcHcpcsCrosswalk)
+    .innerJoin(t.sourceReleases, and(eq(t.sourceReleases.id, t.ndcHcpcsCrosswalk.sourceReleaseId), eq(t.sourceReleases.isCurrent, true)))
+    .where(and(eq(t.ndcHcpcsCrosswalk.hcpcsCode, code), isNotNull(t.ndcHcpcsCrosswalk.ndc11)))
+    .orderBy(desc(t.ndcHcpcsCrosswalk.period));
+  return rows.filter((r) => r.period === rows[0].period).flatMap((r) => (r.ndc11 ? [r.ndc11] : []));
 }
 
 export async function benefitData(query: { code?: string; slug?: string }, dbArg?: Database): Promise<BenefitData> {
@@ -82,8 +81,8 @@ export async function benefitData(query: { code?: string; slug?: string }, dbArg
 
   // A code can be linked to a drug through an older quarter even when the current crosswalk has no row for it.
   const linkedDrugs = drug ? [drug] : code ? await db.select().from(t.drugs).where(sql`${t.drugs.hcpcsCodes} @> ARRAY[${code}]::text[]`) : [];
-  const [ndc11s, sad, policies, notPayable, payment, opps] = await Promise.all([
-    ndcsFor(db, code, latest.get("cms_ndc_hcpcs")?.periodLabel ?? null),
+  const [codeNdcs, sad, policies, notPayable, payment, opps] = await Promise.all([
+    ndcsFor(db, code),
     sadFact(db, code, isNoc),
     latest.get("cms_mcd_lcds") && code ? db.select().from(t.dmePolicyCodes).where(eq(t.dmePolicyCodes.hcpcsCode, code)) : [],
     code && payRelease?.periodLabel ? db.select({ code: t.partBNotPayable.hcpcsCode }).from(t.partBNotPayable).where(and(eq(t.partBNotPayable.hcpcsCode, code), eq(t.partBNotPayable.period, payRelease.periodLabel))) : [],
@@ -91,13 +90,18 @@ export async function benefitData(query: { code?: string; slug?: string }, dbArg
     code && oppsRelease ? db.select().from(t.oppsRates).where(and(eq(t.oppsRates.hcpcsCode, code), eq(t.oppsRates.sourceReleaseId, oppsRelease.id))) : [],
   ]);
 
+  // Several products can share a code (Prolia and Xgeva, J0897), so a chosen drug narrows it to its own packages.
+  const ownPackages = drug ? await db.select({ ndc11: t.ndcPackages.ndc11 }).from(t.ndcPackages).innerJoin(t.ndcProducts, eq(t.ndcProducts.productId, t.ndcPackages.productId)).where(eq(t.ndcProducts.drugId, drug.id)) : [];
+  const own = new Set(ownPackages.map((p) => p.ndc11));
+  const ndc11s = codeNdcs.some((n) => own.has(n)) ? codeNdcs.filter((n) => own.has(n)) : codeNdcs;
   const drugIds = linkedDrugs.map((d) => d.id);
   const drugProducts = !ndc11s.length && drugIds.length ? await db.select({ ndc11: t.ndcPackages.ndc11, routes: t.ndcProducts.routes, productType: t.ndcProducts.productType }).from(t.ndcPackages).innerJoin(t.ndcProducts, eq(t.ndcProducts.productId, t.ndcPackages.productId)).where(inArray(t.ndcProducts.drugId, drugIds)) : [];
   const codeProducts = ndc11s.length ? await db.select({ routes: t.ndcProducts.routes, productType: t.ndcProducts.productType }).from(t.ndcProducts).innerJoin(t.ndcPackages, eq(t.ndcPackages.productId, t.ndcProducts.productId)).where(inArray(t.ndcPackages.ndc11, ndc11s)) : [];
   const products = [...codeProducts, ...drugProducts];
   // With a code and no crosswalk row, the drug's other packages may belong to a different code, so Part D says nothing.
   const partDNdcs = code ? ndc11s : [...new Set(drugProducts.map((p) => p.ndc11))];
-  const routes = [...new Set([...linkedDrugs.flatMap((d) => d.routes), ...products.flatMap((p) => p.routes)])];
+  // A drug's routes span all its codes (Prograf: J7507 oral, J7525 IV), so the code's own products decide when there are any.
+  const routes = [...new Set(products.length ? products.flatMap((p) => p.routes) : linkedDrugs.flatMap((d) => d.routes))];
   const productType = products.find((p) => p.productType === "VACCINE")?.productType ?? products[0]?.productType ?? null;
   const o = opps[0] ?? null;
   const p = payment[0] ?? null;

@@ -26,6 +26,8 @@ export const UNIT_COST_CONFIRMED_FORMS: Set<string> = new Set([
 ]);
 
 export const PART_D_RATIO_BAND = { min: 0.25, max: 4 };
+/** Products sharing a code can differ per unit, as Prolia and Xgeva do under J0897; a median of those describes neither. */
+const MAX_PRODUCT_SPREAD = 1.5;
 const SEQUESTRATION_PCT = 2;
 const PART_B_PATIENT_SHARE = 0.2;
 /** A gap under 1% is copay rounding, not a difference worth marking. */
@@ -51,6 +53,7 @@ export function convertUnitCost(rows: CostRow[], paymentLimit: number | null, co
   const raw = median(rows.map((r) => r.unitCostMedian));
   const converted = rows.flatMap((r) => (r.dosageForm && confirmedForms.has(r.dosageForm) && r.packageSize && r.billUnitsPerItem ? [(r.unitCostMedian * r.packageSize) / r.billUnitsPerItem] : []));
   if (!converted.length || !paymentLimit || paymentLimit <= 0) return { perHcpcsUnit: null, raw };
+  if (Math.max(...converted) > Math.min(...converted) * MAX_PRODUCT_SPREAD) return { perHcpcsUnit: null, raw };
   const perHcpcsUnit = median(converted);
   const ratio = perHcpcsUnit / paymentLimit;
   return { perHcpcsUnit: ratio >= PART_D_RATIO_BAND.min && ratio <= PART_D_RATIO_BAND.max ? perHcpcsUnit : null, raw };
