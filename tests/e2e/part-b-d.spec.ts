@@ -76,7 +76,8 @@ test.describe("Part B vs Part D tool", () => {
     await expect(panel).toContainText("CMS's formulary file does not list this drug for Washington plans.");
     await expect(panel).not.toContainText(/denied|not covered/i);
   });
-  test("says nothing about Part D when no NDC links the code", async ({ page }) => {
+  test("says nothing about Part D when no NDC links the code", async ({ page, baseURL }) => {
+    test.skip(!baseURL?.includes("localhost"), "Fixture-only: production links J3357 through an older crosswalk quarter");
     await page.goto("/tools/part-b-vs-d?code=J3357", { waitUntil: "networkidle" });
     const panel = page.getByRole("region", { name: "Washington Part D plans" });
     await expect(panel).toContainText("No authoritative public data was located for this field.");
