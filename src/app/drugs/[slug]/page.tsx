@@ -5,13 +5,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActiveBadge, ClassBadge, DataStatusBadge, FamilyBadge, NocBadge } from "@/components/badges";
 import { RecordView } from "@/components/client-bits";
-import { BillingUnitCard, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, PerDiemCodes, PerDiemReimbursement } from "@/components/detail-blocks";
+import { BillingUnitCard, ClinicalReference, CodeHistoryTable, ExternalSourceLink, LimitationsList, PaymentHistoryTable, PerDiemCodes, PerDiemReimbursement } from "@/components/detail-blocks";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, NoData, PageHeader, Section, SectionNav, TableScroll, td, th } from "@/components/layout-bits";
 import { Icd10Groups } from "@/components/icd10-list";
 import { ProvenanceFooter } from "@/components/provenance";
 import { GlanceStrip, type GlanceAction, type GlanceItem } from "@/components/glance";
 import { StickyRecordBar } from "@/components/sticky-record-bar";
 import { CoverageLinks } from "@/components/tool-blocks";
+import { dailyMedSearchUrl } from "@/lib/clinical";
 import { cachedDrugDetail } from "@/lib/data/cached";
 import { EXCLUDE_FLAG_LABELS, formatDate, formatMoney, formatNumber, formatPeriod, PRODUCT_CLASS_LABELS, titleCase } from "@/lib/format";
 import { slugSchema } from "@/lib/api/validation";
@@ -52,6 +53,7 @@ export default async function DrugPage({ params }: { params: Params }) {
   const primaryPay = primaryCode?.payments[0] && primaryCode.payments[0].period === d.latestPaymentPeriod ? primaryCode.payments[0] : null;
   const primaryLimit = primaryPay ? (primaryPay.paymentLimit !== null ? formatMoney(primaryPay.paymentLimit) : primaryPay.paymentLimitText) : null;
   const activePackages = d.packages.filter((k) => k.isActive).length;
+  const labelUrl = dailyMedSearchUrl(d.packages[0]?.packageNdc ?? drug.genericName ?? drug.displayName);
   const glance: GlanceItem[] = [
     {
       label: currentCodes.length > 1 ? "HCPCS codes" : "HCPCS code",
@@ -91,6 +93,7 @@ export default async function DrugPage({ params }: { params: Params }) {
   const nav = [
     { id: "overview", label: "Overview" },
     { id: "hcpcs", label: "HCPCS coding" },
+    { id: "indications", label: "Indications & ICD-10" },
     { id: "ndc-packages", label: "NDC packages" },
     { id: "billing-units", label: "Billing units" },
     { id: "reimbursement", label: "Reimbursement" },
@@ -207,7 +210,7 @@ export default async function DrugPage({ params }: { params: Params }) {
               </p>
             ) : null}
             <p className="mt-3 text-sm">
-              <ExternalSourceLink href={`https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=${encodeURIComponent(d.packages[0]?.packageNdc ?? drug.genericName ?? drug.displayName)}`}>
+              <ExternalSourceLink href={labelUrl}>
                 Prescribing information on DailyMed (NLM)
               </ExternalSourceLink>
             </p>
@@ -273,7 +276,24 @@ export default async function DrugPage({ params }: { params: Params }) {
             />
           </Section>
 
-          <Section id="ndc-packages" number="03" title="NDC packages" description="Package NDCs from the FDA directory, normalized to the 11-digit 5-4-2 format used on claims.">
+          <Section
+            id="indications"
+            number="03"
+            title="Indications and ICD-10-CM codes (FDA label)"
+            description="FDA-labeled indications with common ICD-10-CM codes. Entries are drafted by an AI model and labeled as such; an entry a pharmacist has reviewed says so and also shows a typical adult dose. The codes are examples, not a covered-diagnosis list: Medicare contractors’ lists are in the ICD-10 section below."
+          >
+            <ClinicalReference entries={d.clinical} labelUrl={labelUrl} />
+            <ProvenanceFooter
+              sources={[]}
+              extra={d.clinical.map((e) =>
+                e.status === "reviewed"
+                  ? { status: "manual" as const, note: `${e.drug}: reviewed by ${e.reviewer} on ${formatDate(e.reviewedAt ?? null)} against the FDA prescribing information.` }
+                  : { status: "ai-draft" as const, note: `${e.drug}: drafted by an AI model on ${formatDate(e.draftedAt ?? null)}; not verified by a person.` },
+              )}
+            />
+          </Section>
+
+          <Section id="ndc-packages" number="04" title="NDC packages" description="Package NDCs from the FDA directory, normalized to the 11-digit 5-4-2 format used on claims.">
             {d.packages.length ? (
               <TableScroll label={`NDC packages for ${drug.displayName}`}>
                 <table className="w-full min-w-[62rem] border-collapse">
@@ -337,7 +357,7 @@ export default async function DrugPage({ params }: { params: Params }) {
             <ProvenanceFooter sources={[d.releases.fda, excluded.length ? d.releases.fdaExcluded : null, d.releases.crosswalk]} />
           </Section>
 
-          <Section id="billing-units" number="04" title="Billing units">
+          <Section id="billing-units" number="05" title="Billing units">
             {d.codes.length ? (
               <div className="space-y-3">
                 {currentCodes.length ? currentCodes.map((c) => <BillingUnitCard key={c.code} code={c.code} unit={c.billingUnit} paymentLimit={c.payments[0]?.period === d.latestPaymentPeriod ? c.payments[0]?.paymentLimit : null} period={c.payments[0]?.period} />) : formerCodes.map((c) => <BillingUnitCard key={c.code} code={c.code} unit={c.billingUnit} />)}
@@ -351,7 +371,7 @@ export default async function DrugPage({ params }: { params: Params }) {
 
           <Section
             id="reimbursement"
-            number="05"
+            number="06"
             title="Reimbursement"
             description="Medicare Part B payment limits for the codes above, then how the home infusion per diem S-codes are paid. Commercial payer rates, AWP, and WAC are not included."
           >
@@ -383,7 +403,7 @@ export default async function DrugPage({ params }: { params: Params }) {
             {d.perDiem.matches.length ? <ProvenanceFooter sources={[d.releases.hcpcs, d.releases.payment, ...d.stateFeeSchedules.map((s) => s.release)]} /> : null}
           </Section>
 
-          <Section id="related" number="06" title="Related products and codes">
+          <Section id="related" number="07" title="Related products and codes">
             {d.reference ? (
               <div className="mb-5 rounded-xl border hairline bg-surface p-4">
                 <p className="text-xs font-semibold tracking-wide text-ink-faint uppercase">Reference product (FDA Purple Book)</p>
@@ -442,7 +462,7 @@ export default async function DrugPage({ params }: { params: Params }) {
 
           <Section
             id="coverage"
-            number="07"
+            number="08"
             title="Coverage and policy"
             description="Medicare coverage is set nationally (NCDs) and by each Medicare Administrative Contractor (LCDs and Billing & Coding articles). These links open the official documents."
           >
@@ -461,7 +481,7 @@ export default async function DrugPage({ params }: { params: Params }) {
 
           <Section
             id="icd10"
-            number="08"
+            number="09"
             title="Diagnosis codes (ICD-10-CM) in Medicare billing articles"
             description="ICD-10-CM codes that Medicare contractors' Billing and Coding articles list as supporting medical necessity for this drug's HCPCS codes — covered diagnoses, not how often each is used. Washington (Noridian JF) articles come first; other contractors' articles are linked below."
           >
@@ -538,7 +558,7 @@ export default async function DrugPage({ params }: { params: Params }) {
             <ProvenanceFooter sources={[d.coverageArticles.release]} />
           </Section>
 
-          <Section id="history" number="09" title="Code history" description="Quarterly changes to the HCPCS codes linked to this drug.">
+          <Section id="history" number="10" title="Code history" description="Quarterly changes to the HCPCS codes linked to this drug.">
             {d.codeHistory.length ? (
               <div className="space-y-6">
                 {d.codes.map((c) => (
@@ -556,20 +576,21 @@ export default async function DrugPage({ params }: { params: Params }) {
             <ProvenanceFooter sources={[d.releases.hcpcs]} />
           </Section>
 
-          <Section id="sources" number="10" title="Data sources">
+          <Section id="sources" number="11" title="Data sources">
             <ProvenanceFooter sources={d.provenance} />
             <p className="mt-3 text-sm text-ink-muted">
               Every import with its checksum is listed on the <Link href="/sources" className="font-semibold text-brand hover:underline">data sources</Link> page.
             </p>
           </Section>
 
-          <Section id="limitations" number="11" title="Limitations and disclaimers">
+          <Section id="limitations" number="12" title="Limitations and disclaimers">
             <LimitationsList
               items={[
                 "FDA NDC Directory data is submitted by labelers; FDA notes that inclusion does not mean the information was verified or that a product is approved, covered, or reimbursable.",
                 "HCPCS links are derived from CMS NDC–HCPCS crosswalks, which support ASP-based Part B payment and are not a complete list of billable NDCs.",
                 "Product class (brand, generic, biosimilar) is derived from the FDA marketing category and Purple Book license type, not from a commercial compendium.",
                 "Payment limits are Medicare Part B national limits; they do not reflect payer contracts, OPPS rates, 340B pricing, or acquisition cost.",
+                "Indications and ICD-10-CM codes under “Indications and ICD-10-CM codes (FDA label)” are drafted by an AI model unless marked Manually reviewed. They are not checked against the current label or the official ICD-10-CM code set, are not a payer’s covered-diagnosis list, and leave out off-label uses. A typical dose appears only on entries a pharmacist has reviewed.",
                 "Home infusion per diem S-codes are matched by therapy category from the FDA pharmacologic class and route, not from a CMS crosswalk. Payers choose which per diem codes they accept, and the right code can depend on the dosing schedule, infusion method, or daily volume.",
               ]}
             />

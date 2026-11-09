@@ -1,5 +1,5 @@
 /** Data-status labels shared by server and client components (no database imports). */
-export type DataStatus = "official-cms" | "official-fda" | "official-state" | "hospital-published" | "derived" | "manual" | "historical" | "verification-needed";
+export type DataStatus = "official-cms" | "official-fda" | "official-state" | "hospital-published" | "derived" | "manual" | "ai-draft" | "historical" | "verification-needed";
 
 export const STATUS_LABELS: Record<DataStatus, string> = {
   "official-cms": "Official CMS",
@@ -8,6 +8,7 @@ export const STATUS_LABELS: Record<DataStatus, string> = {
   "hospital-published": "Hospital price transparency file",
   derived: "Derived calculation",
   manual: "Manually reviewed",
+  "ai-draft": "AI-drafted, not verified",
   historical: "Historical",
   "verification-needed": "Verification needed",
 };

@@ -78,6 +78,7 @@ export default function MethodologyPage() {
               <li><DataStatusBadge status="official-fda" /> <strong>Biosimilar → reference:</strong> FDA Purple Book license type and reference product, matched to NDC products by BLA number.</li>
               <li><DataStatusBadge status="official-cms" /> <strong>HCPCS cross-references:</strong> the CMS cross-reference field, shown verbatim; not presented as a guaranteed replacement.</li>
               <li><DataStatusBadge status="manual" /> <strong>Manual reviews:</strong> supported through a reviewed file that requires evidence, reviewer, and date. None are published yet.</li>
+              <li><DataStatusBadge status="ai-draft" /> <strong>Drug → indications and example ICD-10-CM codes (FDA label):</strong> written by an AI model from its knowledge of the FDA prescribing information and keyed by HCPCS code. No person has checked them against the current label or the official ICD-10-CM code set, so they carry the AI-drafted badge, are examples rather than a payer’s covered-diagnosis list, leave out off-label uses, and show <em>no dose</em>. A typical adult dose appears only on an entry a named pharmacist has reviewed; that entry replaces the draft and carries the Manually reviewed badge with the reviewer’s name and date. The diagnoses Medicare contractors actually list as covered come from the CMS Billing and Coding articles in the ICD-10 section and are official CMS data.</li>
               <li><strong>NOC drugs:</strong> the CMS NOC code list flags NOC/NOS codes; the 2025 CMS NOC crosswalk identifies NDCs billed under a NOC code without naming which one. CodeRx never assigns a specific NOC code.</li>
             </ul>
           </Section>
@@ -142,7 +143,8 @@ export default function MethodologyPage() {
               <li><DataStatusBadge status="official-state" /> Value published by a state Medicaid agency (Washington HCA), shown as published.</li>
               <li><DataStatusBadge status="hospital-published" /> From a hospital&apos;s federally required price transparency file (45 CFR 180.50), shown as anonymized ranges without payer or plan names.</li>
               <li><DataStatusBadge status="derived" /> Calculated by CodeRx from official values; the formula is shown.</li>
-              <li><DataStatusBadge status="manual" /> Relationship approved by a named reviewer with cited evidence.</li>
+              <li><DataStatusBadge status="manual" /> Relationship or clinical summary approved by a named reviewer with cited evidence.</li>
+              <li><DataStatusBadge status="ai-draft" /> Written by an AI model and not checked by a person; shown without doses and treated as a starting point, not as fact.</li>
               <li><DataStatusBadge status="historical" /> No longer in the most recent source file.</li>
               <li><DataStatusBadge status="verification-needed" /> Incomplete or conflicting; confirm with the publisher.</li>
             </ul>

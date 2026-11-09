@@ -1,0 +1,2147 @@
+{
+  "$comment": "AI-drafted (not reviewed by a person). Batch 1: home infusion drugs. Written by an AI model from its knowledge of the FDA labels, which could not be re-checked against the live labels or the official ICD-10-CM code file when this was drafted. Published on drug pages with the AI-drafted badge and WITHOUT doses; doses and the Manually reviewed badge come only from data/clinical-reference.json after a named reviewer approves an entry (npm run clinical -- export, then import). Add a batch by saving a file here and listing it in src/lib/clinical.ts.",
+  "draftedAt": "2026-11-09",
+  "entries": [
+    {
+      "id": "vancomycin-iv",
+      "drug": "Vancomycin (IV)",
+      "hcpcs": [
+        "J3373",
+        "J3374",
+        "J3375",
+        "J3376"
+      ],
+      "indications": [
+        {
+          "condition": "Septicemia, infective endocarditis, skin and skin structure, bone, and lower respiratory tract infections caused by susceptible MRSA or other gram-positive bacteria",
+          "icd10": [
+            {
+              "code": "A41.02",
+              "description": "Sepsis due to methicillin resistant Staphylococcus aureus"
+            },
+            {
+              "code": "R78.81",
+              "description": "Bacteremia"
+            },
+            {
+              "code": "I33.0",
+              "description": "Acute and subacute infective endocarditis"
+            },
+            {
+              "code": "J15.212",
+              "description": "Pneumonia due to Methicillin resistant Staphylococcus aureus"
+            },
+            {
+              "code": "L03.90",
+              "description": "Cellulitis, unspecified"
+            },
+            {
+              "code": "B95.62",
+              "description": "Methicillin resistant Staphylococcus aureus infection as the cause of diseases classified elsewhere"
+            },
+            {
+              "code": "M86.9",
+              "description": "Osteomyelitis, unspecified"
+            }
+          ],
+          "dose": "Adults: 2 g/day IV, as 500 mg q6h or 1 g q12h; newer labels: 15–20 mg/kg q8–12h. Adjust to renal function and serum levels."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Vancomycin (IV)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=vancomycin%20injection"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. J3370 and J3372 were terminated 2025-06-30; J3373–J3376 are the current product-specific codes — confirm which products each covers. Oral vancomycin (C. difficile) is not billed with these codes."
+    },
+    {
+      "id": "ceftriaxone",
+      "drug": "Ceftriaxone",
+      "hcpcs": [
+        "J0696"
+      ],
+      "indications": [
+        {
+          "condition": "Lower respiratory tract, skin and skin structure, urinary tract, bone and joint, and intra-abdominal infections; bacterial septicemia; meningitis",
+          "icd10": [
+            {
+              "code": "J18.9",
+              "description": "Pneumonia, unspecified organism"
+            },
+            {
+              "code": "L03.90",
+              "description": "Cellulitis, unspecified"
+            },
+            {
+              "code": "N39.0",
+              "description": "Urinary tract infection, site not specified"
+            },
+            {
+              "code": "N10",
+              "description": "Acute pyelonephritis"
+            },
+            {
+              "code": "M86.9",
+              "description": "Osteomyelitis, unspecified"
+            },
+            {
+              "code": "M00.9",
+              "description": "Pyogenic arthritis, unspecified"
+            },
+            {
+              "code": "K65.9",
+              "description": "Peritonitis, unspecified"
+            },
+            {
+              "code": "A41.9",
+              "description": "Sepsis, unspecified organism"
+            },
+            {
+              "code": "G00.9",
+              "description": "Bacterial meningitis, unspecified"
+            }
+          ],
+          "dose": "Adults: 1–2 g IV once daily (or divided q12h); maximum 4 g/day."
+        },
+        {
+          "condition": "Uncomplicated gonorrhea",
+          "icd10": [
+            {
+              "code": "A54.00",
+              "description": "Gonococcal infection of lower genitourinary tract, unspecified"
+            }
+          ],
+          "dose": "250 mg IM single dose (label); CDC STI guidelines now recommend 500 mg IM."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Ceftriaxone",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ceftriaxone"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Meningitis dosing in the label is pediatric (100 mg/kg/day, max 4 g); confirm the adult wording."
+    },
+    {
+      "id": "cefazolin",
+      "drug": "Cefazolin",
+      "hcpcs": [
+        "J0690",
+        "J0687",
+        "J0688",
+        "J0689"
+      ],
+      "indications": [
+        {
+          "condition": "Respiratory tract, urinary tract, skin and skin structure, biliary tract, bone and joint, and genital infections",
+          "icd10": [
+            {
+              "code": "J18.9",
+              "description": "Pneumonia, unspecified organism"
+            },
+            {
+              "code": "N39.0",
+              "description": "Urinary tract infection, site not specified"
+            },
+            {
+              "code": "L03.90",
+              "description": "Cellulitis, unspecified"
+            },
+            {
+              "code": "B95.61",
+              "description": "Methicillin susceptible Staphylococcus aureus infection as the cause of diseases classified elsewhere"
+            },
+            {
+              "code": "M86.9",
+              "description": "Osteomyelitis, unspecified"
+            },
+            {
+              "code": "M00.9",
+              "description": "Pyogenic arthritis, unspecified"
+            }
+          ],
+          "dose": "Adults: 500 mg–1 g IV q6–8h (mild gram-positive infections 250–500 mg q8h); maximum 12 g/day."
+        },
+        {
+          "condition": "Septicemia and endocarditis",
+          "icd10": [
+            {
+              "code": "A41.01",
+              "description": "Sepsis due to methicillin susceptible Staphylococcus aureus"
+            },
+            {
+              "code": "R78.81",
+              "description": "Bacteremia"
+            },
+            {
+              "code": "I33.0",
+              "description": "Acute and subacute infective endocarditis"
+            }
+          ],
+          "dose": "Adults: 1–1.5 g IV q6h; maximum 12 g/day."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Cefazolin",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=cefazolin"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Perioperative prophylaxis omitted (no single diagnosis code). J0687–J0689 are product-specific codes; confirm which products each covers."
+    },
+    {
+      "id": "ertapenem",
+      "drug": "Ertapenem",
+      "hcpcs": [
+        "J1335"
+      ],
+      "indications": [
+        {
+          "condition": "Complicated intra-abdominal infections",
+          "icd10": [
+            {
+              "code": "K65.9",
+              "description": "Peritonitis, unspecified"
+            },
+            {
+              "code": "K65.1",
+              "description": "Peritoneal abscess"
+            }
+          ],
+          "dose": "1 g IV or IM once daily for 5–14 days."
+        },
+        {
+          "condition": "Complicated skin and skin structure infections, including diabetic foot infections without osteomyelitis",
+          "icd10": [
+            {
+              "code": "L03.90",
+              "description": "Cellulitis, unspecified"
+            },
+            {
+              "code": "E11.621",
+              "description": "Type 2 diabetes mellitus with foot ulcer"
+            }
+          ],
+          "dose": "1 g IV or IM once daily for 7–14 days."
+        },
+        {
+          "condition": "Community-acquired pneumonia",
+          "icd10": [
+            {
+              "code": "J18.9",
+              "description": "Pneumonia, unspecified organism"
+            }
+          ],
+          "dose": "1 g IV or IM once daily for 10–14 days."
+        },
+        {
+          "condition": "Complicated urinary tract infections, including pyelonephritis",
+          "icd10": [
+            {
+              "code": "N39.0",
+              "description": "Urinary tract infection, site not specified"
+            },
+            {
+              "code": "N10",
+              "description": "Acute pyelonephritis"
+            }
+          ],
+          "dose": "1 g IV or IM once daily for 10–14 days."
+        },
+        {
+          "condition": "Acute pelvic infections",
+          "icd10": [
+            {
+              "code": "N73.9",
+              "description": "Female pelvic inflammatory disease, unspecified"
+            }
+          ],
+          "dose": "1 g IV or IM once daily for 3–10 days."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Ertapenem",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ertapenem"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. All doses: 500 mg once daily when CrCl ≤ 30 mL/min/1.73 m². Colorectal surgery prophylaxis omitted."
+    },
+    {
+      "id": "meropenem",
+      "drug": "Meropenem",
+      "hcpcs": [
+        "J2185",
+        "J2183",
+        "J2184"
+      ],
+      "indications": [
+        {
+          "condition": "Complicated skin and skin structure infections",
+          "icd10": [
+            {
+              "code": "L03.90",
+              "description": "Cellulitis, unspecified"
+            },
+            {
+              "code": "L08.9",
+              "description": "Local infection of the skin and subcutaneous tissue, unspecified"
+            }
+          ],
+          "dose": "Adults: 500 mg IV q8h; 1 g q8h if P. aeruginosa is suspected or confirmed."
+        },
+        {
+          "condition": "Complicated intra-abdominal infections",
+          "icd10": [
+            {
+              "code": "K65.9",
+              "description": "Peritonitis, unspecified"
+            },
+            {
+              "code": "K65.1",
+              "description": "Peritoneal abscess"
+            }
+          ],
+          "dose": "Adults: 1 g IV q8h."
+        },
+        {
+          "condition": "Bacterial meningitis (pediatric patients 3 months and older)",
+          "icd10": [
+            {
+              "code": "G00.9",
+              "description": "Bacterial meningitis, unspecified"
+            }
+          ],
+          "dose": "40 mg/kg IV q8h; maximum 2 g q8h."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Meropenem",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=meropenem"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Reduce dose when CrCl ≤ 50 mL/min. J2183 and J2184 are product-specific codes; confirm."
+    },
+    {
+      "id": "daptomycin",
+      "drug": "Daptomycin",
+      "hcpcs": [
+        "J0878",
+        "J0871",
+        "J0872",
+        "J0873",
+        "J0874",
+        "J0877"
+      ],
+      "indications": [
+        {
+          "condition": "Complicated skin and skin structure infections",
+          "icd10": [
+            {
+              "code": "L03.90",
+              "description": "Cellulitis, unspecified"
+            },
+            {
+              "code": "B95.61",
+              "description": "Methicillin susceptible Staphylococcus aureus infection as the cause of diseases classified elsewhere"
+            },
+            {
+              "code": "B95.62",
+              "description": "Methicillin resistant Staphylococcus aureus infection as the cause of diseases classified elsewhere"
+            }
+          ],
+          "dose": "Adults: 4 mg/kg IV once every 24 hours for 7–14 days."
+        },
+        {
+          "condition": "Staphylococcus aureus bloodstream infections (bacteremia), including right-sided infective endocarditis",
+          "icd10": [
+            {
+              "code": "R78.81",
+              "description": "Bacteremia"
+            },
+            {
+              "code": "A41.01",
+              "description": "Sepsis due to methicillin susceptible Staphylococcus aureus"
+            },
+            {
+              "code": "A41.02",
+              "description": "Sepsis due to methicillin resistant Staphylococcus aureus"
+            },
+            {
+              "code": "I33.0",
+              "description": "Acute and subacute infective endocarditis"
+            }
+          ],
+          "dose": "Adults: 6 mg/kg IV once every 24 hours for 2–6 weeks."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Daptomycin",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=daptomycin"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. CrCl < 30 mL/min (including dialysis): same mg/kg dose every 48 hours. Not for pneumonia. J0871–J0877 are product-specific codes; confirm."
+    },
+    {
+      "id": "piperacillin-tazobactam",
+      "drug": "Piperacillin and tazobactam",
+      "hcpcs": [
+        "J2543"
+      ],
+      "indications": [
+        {
+          "condition": "Intra-abdominal infections, skin and skin structure infections, female pelvic infections, community-acquired pneumonia",
+          "icd10": [
+            {
+              "code": "K65.9",
+              "description": "Peritonitis, unspecified"
+            },
+            {
+              "code": "K65.1",
+              "description": "Peritoneal abscess"
+            },
+            {
+              "code": "L03.90",
+              "description": "Cellulitis, unspecified"
+            },
+            {
+              "code": "N73.9",
+              "description": "Female pelvic inflammatory disease, unspecified"
+            },
+            {
+              "code": "J18.9",
+              "description": "Pneumonia, unspecified organism"
+            }
+          ],
+          "dose": "Adults: 3.375 g IV q6h (13.5 g/day) for 7–10 days."
+        },
+        {
+          "condition": "Nosocomial pneumonia",
+          "icd10": [
+            {
+              "code": "J15.1",
+              "description": "Pneumonia due to Pseudomonas"
+            },
+            {
+              "code": "J18.9",
+              "description": "Pneumonia, unspecified organism"
+            }
+          ],
+          "dose": "Adults: 4.5 g IV q6h (18 g/day) for 7–14 days."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Piperacillin and tazobactam",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=piperacillin%20and%20tazobactam"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Reduce dose when CrCl ≤ 40 mL/min."
+    },
+    {
+      "id": "cefepime",
+      "drug": "Cefepime",
+      "hcpcs": [
+        "J0692",
+        "J0701",
+        "J0703"
+      ],
+      "indications": [
+        {
+          "condition": "Pneumonia",
+          "icd10": [
+            {
+              "code": "J18.9",
+              "description": "Pneumonia, unspecified organism"
+            }
+          ],
+          "dose": "Adults: 1–2 g IV q8–12h for 10 days."
+        },
+        {
+          "condition": "Empiric therapy for febrile neutropenia",
+          "icd10": [
+            {
+              "code": "D70.9",
+              "description": "Neutropenia, unspecified"
+            },
+            {
+              "code": "R50.81",
+              "description": "Fever presenting with conditions classified elsewhere"
+            },
+            {
+              "code": "D70.1",
+              "description": "Agranulocytosis secondary to cancer chemotherapy"
+            }
+          ],
+          "dose": "Adults: 2 g IV q8h for 7 days or until neutropenia resolves."
+        },
+        {
+          "condition": "Urinary tract infections, including pyelonephritis",
+          "icd10": [
+            {
+              "code": "N39.0",
+              "description": "Urinary tract infection, site not specified"
+            },
+            {
+              "code": "N10",
+              "description": "Acute pyelonephritis"
+            }
+          ],
+          "dose": "Adults: 0.5–1 g IV q12h (mild to moderate); 2 g q12h (severe)."
+        },
+        {
+          "condition": "Skin and skin structure infections",
+          "icd10": [
+            {
+              "code": "L03.90",
+              "description": "Cellulitis, unspecified"
+            }
+          ],
+          "dose": "Adults: 2 g IV q12h for 10 days."
+        },
+        {
+          "condition": "Complicated intra-abdominal infections (with metronidazole)",
+          "icd10": [
+            {
+              "code": "K65.9",
+              "description": "Peritonitis, unspecified"
+            },
+            {
+              "code": "K65.1",
+              "description": "Peritoneal abscess"
+            }
+          ],
+          "dose": "Adults: 2 g IV q8–12h for 7–10 days."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Cefepime",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=cefepime"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Adjust for CrCl ≤ 60 mL/min. J0701 and J0703 are product-specific codes; confirm."
+    },
+    {
+      "id": "micafungin",
+      "drug": "Micafungin",
+      "hcpcs": [
+        "J2248",
+        "J2247",
+        "J2246"
+      ],
+      "indications": [
+        {
+          "condition": "Candidemia, acute disseminated candidiasis, Candida peritonitis and abscesses",
+          "icd10": [
+            {
+              "code": "B37.7",
+              "description": "Candidal sepsis"
+            },
+            {
+              "code": "B37.89",
+              "description": "Other sites of candidiasis"
+            }
+          ],
+          "dose": "Adults: 100 mg IV once daily."
+        },
+        {
+          "condition": "Esophageal candidiasis",
+          "icd10": [
+            {
+              "code": "B37.81",
+              "description": "Candidal esophagitis"
+            }
+          ],
+          "dose": "Adults: 150 mg IV once daily."
+        },
+        {
+          "condition": "Prophylaxis of Candida infections in hematopoietic stem cell transplant recipients",
+          "icd10": [
+            {
+              "code": "Z94.84",
+              "description": "Stem cells transplant status"
+            }
+          ],
+          "dose": "Adults: 50 mg IV once daily."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Micafungin",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=micafungin"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. J2247 and J2246 are product-specific codes; confirm."
+    },
+    {
+      "id": "acyclovir-iv",
+      "drug": "Acyclovir (IV)",
+      "hcpcs": [
+        "J0133"
+      ],
+      "indications": [
+        {
+          "condition": "Mucosal and cutaneous herpes simplex in immunocompromised patients",
+          "icd10": [
+            {
+              "code": "B00.9",
+              "description": "Herpesviral infection, unspecified"
+            }
+          ],
+          "dose": "5 mg/kg IV q8h for 7 days."
+        },
+        {
+          "condition": "Severe initial genital herpes",
+          "icd10": [
+            {
+              "code": "A60.00",
+              "description": "Herpesviral infection of urogenital system, unspecified"
+            }
+          ],
+          "dose": "5 mg/kg IV q8h for 5 days."
+        },
+        {
+          "condition": "Herpes simplex encephalitis",
+          "icd10": [
+            {
+              "code": "B00.4",
+              "description": "Herpesviral encephalitis"
+            }
+          ],
+          "dose": "10 mg/kg IV q8h for 10 days."
+        },
+        {
+          "condition": "Neonatal herpes simplex",
+          "icd10": [
+            {
+              "code": "P35.2",
+              "description": "Congenital herpesviral [herpes simplex] infection"
+            }
+          ],
+          "dose": "10 mg/kg IV q8h for 10 days (label)."
+        },
+        {
+          "condition": "Varicella-zoster infections in immunocompromised patients",
+          "icd10": [
+            {
+              "code": "B02.9",
+              "description": "Zoster without complications"
+            },
+            {
+              "code": "B01.9",
+              "description": "Varicella without complication"
+            }
+          ],
+          "dose": "10 mg/kg IV q8h for 7 days."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Acyclovir (IV)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=acyclovir%20sodium%20injection"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Dose obese patients on ideal body weight; adjust for CrCl < 50 mL/min. Neonatal dosing in practice is often 20 mg/kg; the label may differ."
+    },
+    {
+      "id": "ganciclovir-iv",
+      "drug": "Ganciclovir (IV)",
+      "hcpcs": [
+        "J1570",
+        "J1574"
+      ],
+      "indications": [
+        {
+          "condition": "Cytomegalovirus retinitis in immunocompromised patients, including AIDS",
+          "icd10": [
+            {
+              "code": "B25.8",
+              "description": "Other cytomegaloviral diseases"
+            },
+            {
+              "code": "H32",
+              "description": "Chorioretinal disorders in diseases classified elsewhere"
+            },
+            {
+              "code": "B20",
+              "description": "Human immunodeficiency virus [HIV] disease"
+            }
+          ],
+          "dose": "Induction 5 mg/kg IV q12h for 14–21 days; maintenance 5 mg/kg once daily 7 days/week or 6 mg/kg once daily 5 days/week."
+        },
+        {
+          "condition": "Prevention of CMV disease in transplant recipients at risk",
+          "icd10": [
+            {
+              "code": "Z94.0",
+              "description": "Kidney transplant status"
+            },
+            {
+              "code": "Z94.81",
+              "description": "Bone marrow transplant status"
+            },
+            {
+              "code": "Z94.84",
+              "description": "Stem cells transplant status"
+            }
+          ],
+          "dose": "5 mg/kg IV q12h for 7–14 days, then 5 mg/kg once daily 7 days/week or 6 mg/kg once daily 5 days/week."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Ganciclovir (IV)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ganciclovir%20injection"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Adjust for CrCl < 70 mL/min. Hazardous drug handling applies. J1574 is a product-specific code; confirm."
+    },
+    {
+      "id": "infliximab",
+      "drug": "Infliximab (IV) and biosimilars",
+      "hcpcs": [
+        "J1745",
+        "Q5103",
+        "Q5104",
+        "Q5121"
+      ],
+      "indications": [
+        {
+          "condition": "Crohn's disease (adult and pediatric)",
+          "icd10": [
+            {
+              "code": "K50.90",
+              "description": "Crohn's disease, unspecified, without complications"
+            }
+          ],
+          "dose": "5 mg/kg IV at weeks 0, 2, and 6, then every 8 weeks; adults who lose response may increase to 10 mg/kg."
+        },
+        {
+          "condition": "Ulcerative colitis (adult and pediatric)",
+          "icd10": [
+            {
+              "code": "K51.90",
+              "description": "Ulcerative colitis, unspecified, without complications"
+            }
+          ],
+          "dose": "5 mg/kg IV at weeks 0, 2, and 6, then every 8 weeks."
+        },
+        {
+          "condition": "Rheumatoid arthritis (with methotrexate)",
+          "icd10": [
+            {
+              "code": "M06.9",
+              "description": "Rheumatoid arthritis, unspecified"
+            }
+          ],
+          "dose": "3 mg/kg IV at weeks 0, 2, and 6, then every 8 weeks; may increase to 10 mg/kg or every 4 weeks."
+        },
+        {
+          "condition": "Ankylosing spondylitis",
+          "icd10": [
+            {
+              "code": "M45.9",
+              "description": "Ankylosing spondylitis of unspecified sites in spine"
+            }
+          ],
+          "dose": "5 mg/kg IV at weeks 0, 2, and 6, then every 6 weeks."
+        },
+        {
+          "condition": "Psoriatic arthritis and chronic severe plaque psoriasis",
+          "icd10": [
+            {
+              "code": "L40.50",
+              "description": "Arthropathic psoriasis, unspecified"
+            },
+            {
+              "code": "L40.0",
+              "description": "Psoriasis vulgaris"
+            }
+          ],
+          "dose": "5 mg/kg IV at weeks 0, 2, and 6, then every 8 weeks."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Infliximab (IV) and biosimilars",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=infliximab"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Confirm each biosimilar (Q5103 Inflectra, Q5104 Renflexis, Q5121 Avsola) carries every listed indication. Subcutaneous infliximab-dyyb (Zymfentra) is billed differently."
+    },
+    {
+      "id": "rituximab",
+      "drug": "Rituximab (Rituxan)",
+      "hcpcs": [
+        "J9312"
+      ],
+      "indications": [
+        {
+          "condition": "Non-Hodgkin's lymphoma (CD20-positive B-cell)",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            },
+            {
+              "code": "C82.90",
+              "description": "Follicular lymphoma, unspecified, unspecified site"
+            }
+          ],
+          "dose": "375 mg/m² IV once weekly for 4 or 8 doses, or on day 1 of each chemotherapy cycle (up to 8 doses)."
+        },
+        {
+          "condition": "Chronic lymphocytic leukemia (with fludarabine and cyclophosphamide)",
+          "icd10": [
+            {
+              "code": "C91.10",
+              "description": "Chronic lymphocytic leukemia of B-cell type not having achieved remission"
+            }
+          ],
+          "dose": "375 mg/m² IV in cycle 1, then 500 mg/m² on day 1 of cycles 2–6 (every 28 days)."
+        },
+        {
+          "condition": "Rheumatoid arthritis (with methotrexate)",
+          "icd10": [
+            {
+              "code": "M06.9",
+              "description": "Rheumatoid arthritis, unspecified"
+            }
+          ],
+          "dose": "Two 1,000 mg IV infusions 2 weeks apart; repeat every 24 weeks or based on clinical evaluation (not sooner than every 16 weeks)."
+        },
+        {
+          "condition": "Granulomatosis with polyangiitis and microscopic polyangiitis",
+          "icd10": [
+            {
+              "code": "M31.30",
+              "description": "Wegener's granulomatosis without renal involvement"
+            },
+            {
+              "code": "M31.7",
+              "description": "Microscopic polyangiitis"
+            }
+          ],
+          "dose": "Induction 375 mg/m² IV once weekly for 4 weeks; follow-up 500 mg ×2 two weeks apart, then 500 mg every 6 months."
+        },
+        {
+          "condition": "Pemphigus vulgaris",
+          "icd10": [
+            {
+              "code": "L10.0",
+              "description": "Pemphigus vulgaris"
+            }
+          ],
+          "dose": "Two 1,000 mg IV infusions 2 weeks apart; maintenance 500 mg at month 12, then every 6 months."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Rituximab (Rituxan)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=rituximab"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Premedicate (acetaminophen, antihistamine; glucocorticoid for RA, GPA/MPA, PV)."
+    },
+    {
+      "id": "rituximab-biosimilars",
+      "drug": "Rituximab biosimilars (Truxima, Ruxience, Riabni)",
+      "hcpcs": [
+        "Q5115",
+        "Q5119",
+        "Q5123"
+      ],
+      "indications": [
+        {
+          "condition": "Non-Hodgkin's lymphoma (CD20-positive B-cell)",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            },
+            {
+              "code": "C82.90",
+              "description": "Follicular lymphoma, unspecified, unspecified site"
+            }
+          ],
+          "dose": "375 mg/m² IV once weekly for 4 or 8 doses, or on day 1 of each chemotherapy cycle (up to 8 doses)."
+        },
+        {
+          "condition": "Chronic lymphocytic leukemia (with fludarabine and cyclophosphamide)",
+          "icd10": [
+            {
+              "code": "C91.10",
+              "description": "Chronic lymphocytic leukemia of B-cell type not having achieved remission"
+            }
+          ],
+          "dose": "375 mg/m² IV in cycle 1, then 500 mg/m² on day 1 of cycles 2–6 (every 28 days)."
+        },
+        {
+          "condition": "Rheumatoid arthritis (with methotrexate)",
+          "icd10": [
+            {
+              "code": "M06.9",
+              "description": "Rheumatoid arthritis, unspecified"
+            }
+          ],
+          "dose": "Two 1,000 mg IV infusions 2 weeks apart; repeat every 24 weeks or based on clinical evaluation."
+        },
+        {
+          "condition": "Granulomatosis with polyangiitis and microscopic polyangiitis",
+          "icd10": [
+            {
+              "code": "M31.30",
+              "description": "Wegener's granulomatosis without renal involvement"
+            },
+            {
+              "code": "M31.7",
+              "description": "Microscopic polyangiitis"
+            }
+          ],
+          "dose": "Induction 375 mg/m² IV once weekly for 4 weeks."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Rituximab biosimilars (Truxima, Ruxience, Riabni)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=rituximab%20biosimilar"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Separate from J9312 because the biosimilars are not labeled for pemphigus vulgaris. Confirm each product's indications."
+    },
+    {
+      "id": "ocrelizumab-iv",
+      "drug": "Ocrelizumab (Ocrevus IV)",
+      "hcpcs": [
+        "J2350"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsing forms of multiple sclerosis",
+          "icd10": [
+            {
+              "code": "G35.A",
+              "description": "Relapsing-remitting multiple sclerosis"
+            },
+            {
+              "code": "G35.C0",
+              "description": "Secondary progressive multiple sclerosis, unspecified"
+            },
+            {
+              "code": "G35.D",
+              "description": "Multiple sclerosis, unspecified"
+            }
+          ],
+          "dose": "300 mg IV, then 300 mg 2 weeks later; then 600 mg IV every 6 months."
+        },
+        {
+          "condition": "Primary progressive multiple sclerosis",
+          "icd10": [
+            {
+              "code": "G35.B0",
+              "description": "Primary progressive multiple sclerosis, unspecified"
+            }
+          ],
+          "dose": "300 mg IV, then 300 mg 2 weeks later; then 600 mg IV every 6 months."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Ocrelizumab (Ocrevus IV)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ocrelizumab"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Premedicate with methylprednisolone 100 mg IV and an antihistamine. The G35 subcodes (G35.A–G35.D) replaced G35 on 2025-10-01; confirm them against the current CMS ICD-10-CM code file."
+    },
+    {
+      "id": "natalizumab",
+      "drug": "Natalizumab (Tysabri) and biosimilar",
+      "hcpcs": [
+        "J2323",
+        "Q5134"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsing forms of multiple sclerosis (monotherapy)",
+          "icd10": [
+            {
+              "code": "G35.A",
+              "description": "Relapsing-remitting multiple sclerosis"
+            },
+            {
+              "code": "G35.C0",
+              "description": "Secondary progressive multiple sclerosis, unspecified"
+            },
+            {
+              "code": "G35.D",
+              "description": "Multiple sclerosis, unspecified"
+            }
+          ],
+          "dose": "300 mg IV over 1 hour every 4 weeks."
+        },
+        {
+          "condition": "Moderately to severely active Crohn's disease",
+          "icd10": [
+            {
+              "code": "K50.90",
+              "description": "Crohn's disease, unspecified, without complications"
+            }
+          ],
+          "dose": "300 mg IV over 1 hour every 4 weeks; stop if no benefit by 12 weeks."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Natalizumab (Tysabri) and biosimilar",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=natalizumab"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Available only through a REMS program (PML risk). Confirm Q5134 (Tyruko) carries both indications. The G35 subcodes (G35.A–G35.D) replaced G35 on 2025-10-01; confirm them against the current CMS ICD-10-CM code file."
+    },
+    {
+      "id": "vedolizumab-iv",
+      "drug": "Vedolizumab (Entyvio IV)",
+      "hcpcs": [
+        "J3380"
+      ],
+      "indications": [
+        {
+          "condition": "Moderately to severely active ulcerative colitis",
+          "icd10": [
+            {
+              "code": "K51.90",
+              "description": "Ulcerative colitis, unspecified, without complications"
+            }
+          ],
+          "dose": "300 mg IV at weeks 0, 2, and 6, then every 8 weeks."
+        },
+        {
+          "condition": "Moderately to severely active Crohn's disease",
+          "icd10": [
+            {
+              "code": "K50.90",
+              "description": "Crohn's disease, unspecified, without complications"
+            }
+          ],
+          "dose": "300 mg IV at weeks 0, 2, and 6, then every 8 weeks; stop if no benefit by week 14."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Vedolizumab (Entyvio IV)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=vedolizumab"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Subcutaneous Entyvio maintenance is billed differently."
+    },
+    {
+      "id": "ig-privigen",
+      "drug": "Immune globulin IV (Privigen)",
+      "hcpcs": [
+        "J1459"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "200–800 mg/kg IV every 3–4 weeks."
+        },
+        {
+          "condition": "Chronic immune thrombocytopenic purpura (age 15+)",
+          "icd10": [
+            {
+              "code": "D69.3",
+              "description": "Immune thrombocytopenic purpura"
+            }
+          ],
+          "dose": "1 g/kg IV daily for 2 consecutive days (total 2 g/kg)."
+        },
+        {
+          "condition": "Chronic inflammatory demyelinating polyneuropathy (adults)",
+          "icd10": [
+            {
+              "code": "G61.81",
+              "description": "Chronic inflammatory demyelinating polyneuritis"
+            }
+          ],
+          "dose": "Loading 2 g/kg IV over 2–5 days; maintenance 1 g/kg every 3 weeks."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin IV (Privigen)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=privigen"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product."
+    },
+    {
+      "id": "ig-gamunex-c",
+      "drug": "Immune globulin (Gamunex-C)",
+      "hcpcs": [
+        "J1561"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "300–600 mg/kg IV every 3–4 weeks, adjusted to trough IgG and clinical response. Subcutaneous: weekly dose = IV dose × 1.37 ÷ weeks between IV doses."
+        },
+        {
+          "condition": "Idiopathic thrombocytopenic purpura",
+          "icd10": [
+            {
+              "code": "D69.3",
+              "description": "Immune thrombocytopenic purpura"
+            }
+          ],
+          "dose": "2 g/kg IV total, as 1 g/kg daily for 2 days or 0.4 g/kg daily for 5 days."
+        },
+        {
+          "condition": "Chronic inflammatory demyelinating polyneuropathy",
+          "icd10": [
+            {
+              "code": "G61.81",
+              "description": "Chronic inflammatory demyelinating polyneuritis"
+            }
+          ],
+          "dose": "Loading 2 g/kg IV; maintenance 1 g/kg every 3 weeks."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin (Gamunex-C)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=gamunex-c"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product."
+    },
+    {
+      "id": "ig-panzyga",
+      "drug": "Immune globulin IV (Panzyga)",
+      "hcpcs": [
+        "J1576"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency (age 2+)",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "300–600 mg/kg IV every 3–4 weeks, adjusted to trough IgG and clinical response."
+        },
+        {
+          "condition": "Chronic immune thrombocytopenia (adults)",
+          "icd10": [
+            {
+              "code": "D69.3",
+              "description": "Immune thrombocytopenic purpura"
+            }
+          ],
+          "dose": "1 g/kg IV daily for 2 consecutive days."
+        },
+        {
+          "condition": "Chronic inflammatory demyelinating polyneuropathy (adults)",
+          "icd10": [
+            {
+              "code": "G61.81",
+              "description": "Chronic inflammatory demyelinating polyneuritis"
+            }
+          ],
+          "dose": "Loading 2 g/kg IV; maintenance 1–2 g/kg every 3 weeks."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin IV (Panzyga)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=panzyga"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product."
+    },
+    {
+      "id": "ig-gammagard-liquid",
+      "drug": "Immune globulin (Gammagard Liquid)",
+      "hcpcs": [
+        "J1569"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "300–600 mg/kg IV every 3–4 weeks, adjusted to trough IgG and clinical response. Subcutaneous: weekly dose = IV dose × 1.37 ÷ weeks between IV doses."
+        },
+        {
+          "condition": "Multifocal motor neuropathy (adults)",
+          "icd10": [
+            {
+              "code": "G61.82",
+              "description": "Multifocal motor neuropathy"
+            }
+          ],
+          "dose": "0.5–2.4 g/kg IV per month, adjusted to response."
+        },
+        {
+          "condition": "Chronic inflammatory demyelinating polyneuropathy (adults)",
+          "icd10": [
+            {
+              "code": "G61.81",
+              "description": "Chronic inflammatory demyelinating polyneuritis"
+            }
+          ],
+          "dose": "Induction 2 g/kg IV; maintenance per label every 2–4 weeks."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin (Gammagard Liquid)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=gammagard%20liquid"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product. CIDP indication added 2024; confirm the maintenance dose wording."
+    },
+    {
+      "id": "ig-octagam",
+      "drug": "Immune globulin IV (Octagam)",
+      "hcpcs": [
+        "J1568"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency (Octagam 5%)",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "300–600 mg/kg IV every 3–4 weeks, adjusted to trough IgG and clinical response."
+        },
+        {
+          "condition": "Chronic immune thrombocytopenic purpura in adults (Octagam 10%)",
+          "icd10": [
+            {
+              "code": "D69.3",
+              "description": "Immune thrombocytopenic purpura"
+            }
+          ],
+          "dose": "1 g/kg IV daily for 2 consecutive days."
+        },
+        {
+          "condition": "Dermatomyositis in adults (Octagam 10%)",
+          "icd10": [
+            {
+              "code": "M33.10",
+              "description": "Other dermatomyositis, organ involvement unspecified"
+            }
+          ],
+          "dose": "2 g/kg IV every 4 weeks, given over 2–5 consecutive days."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin IV (Octagam)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=octagam"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product. Indications differ between the 5% and 10% products."
+    },
+    {
+      "id": "ig-gammaplex",
+      "drug": "Immune globulin IV (Gammaplex)",
+      "hcpcs": [
+        "J1557"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "300–800 mg/kg IV every 3–4 weeks."
+        },
+        {
+          "condition": "Chronic immune thrombocytopenic purpura",
+          "icd10": [
+            {
+              "code": "D69.3",
+              "description": "Immune thrombocytopenic purpura"
+            }
+          ],
+          "dose": "1 g/kg IV daily for 2 consecutive days."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin IV (Gammaplex)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=gammaplex"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product."
+    },
+    {
+      "id": "ig-flebogamma",
+      "drug": "Immune globulin IV (Flebogamma DIF)",
+      "hcpcs": [
+        "J1572"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "300–600 mg/kg IV every 3–4 weeks, adjusted to trough IgG and clinical response."
+        },
+        {
+          "condition": "Chronic primary immune thrombocytopenia (Flebogamma 10% DIF)",
+          "icd10": [
+            {
+              "code": "D69.3",
+              "description": "Immune thrombocytopenic purpura"
+            }
+          ],
+          "dose": "1 g/kg IV daily for 2 consecutive days."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin IV (Flebogamma DIF)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=flebogamma"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product. ITP is labeled for the 10% product only."
+    },
+    {
+      "id": "ig-iv-pi-only",
+      "drug": "Immune globulin IV, primary immunodeficiency only (brand-specific codes)",
+      "hcpcs": [
+        "J1552",
+        "J1553",
+        "J1554",
+        "J1556",
+        "J1577"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "300–800 mg/kg IV every 3–4 weeks per the brand's label, adjusted to trough IgG and clinical response."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin IV, primary immunodeficiency only (brand-specific codes)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=immune%20globulin%20intravenous"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product. Confirm each code's brand and that PI is its only labeled indication; dose ranges vary by brand."
+    },
+    {
+      "id": "ig-sc-pi",
+      "drug": "Immune globulin subcutaneous (Cutaquig, Cuvitru, Xembify)",
+      "hcpcs": [
+        "J1551",
+        "J1555",
+        "J1558"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "Weekly SC dose = previous IV dose × the brand's conversion factor ÷ weeks between IV doses; adjust to trough IgG."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin subcutaneous (Cutaquig, Cuvitru, Xembify)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=immune%20globulin%20subcutaneous"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product. Conversion factors differ by brand (e.g., Cuvitru 1.30, Xembify 1.37); confirm each."
+    },
+    {
+      "id": "ig-hizentra",
+      "drug": "Immune globulin subcutaneous (Hizentra)",
+      "hcpcs": [
+        "J1559"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "Weekly SC dose = previous IV dose × 1.37 ÷ weeks between IV doses; adjust to trough IgG."
+        },
+        {
+          "condition": "Maintenance therapy of chronic inflammatory demyelinating polyneuropathy",
+          "icd10": [
+            {
+              "code": "G61.81",
+              "description": "Chronic inflammatory demyelinating polyneuritis"
+            }
+          ],
+          "dose": "0.2–0.4 g/kg SC weekly, starting 1 week after the last IVIG infusion."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin subcutaneous (Hizentra)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=hizentra"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product."
+    },
+    {
+      "id": "ig-hyqvia",
+      "drug": "Immune globulin with hyaluronidase (HyQvia)",
+      "hcpcs": [
+        "J1575"
+      ],
+      "indications": [
+        {
+          "condition": "Primary humoral immunodeficiency",
+          "icd10": [
+            {
+              "code": "D80.0",
+              "description": "Hereditary hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.1",
+              "description": "Nonfamilial hypogammaglobulinemia"
+            },
+            {
+              "code": "D80.3",
+              "description": "Selective deficiency of immunoglobulin G [IgG] subclasses"
+            },
+            {
+              "code": "D81.9",
+              "description": "Combined immunodeficiency, unspecified"
+            },
+            {
+              "code": "D82.0",
+              "description": "Wiskott-Aldrich syndrome"
+            },
+            {
+              "code": "D83.9",
+              "description": "Common variable immunodeficiency, unspecified"
+            }
+          ],
+          "dose": "Same dose and interval as prior IVIG (every 3–4 weeks) after a ramp-up period."
+        },
+        {
+          "condition": "Maintenance therapy of chronic inflammatory demyelinating polyneuropathy (adults)",
+          "icd10": [
+            {
+              "code": "G61.81",
+              "description": "Chronic inflammatory demyelinating polyneuritis"
+            }
+          ],
+          "dose": "Same total dose as prior IVIG, every 2–4 weeks, after a ramp-up period."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Immune globulin with hyaluronidase (HyQvia)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=hyqvia"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. One entry per brand: immune globulin indications differ by product. Confirm the ramp-up schedule wording."
+    },
+    {
+      "id": "milrinone",
+      "drug": "Milrinone",
+      "hcpcs": [
+        "J2260"
+      ],
+      "indications": [
+        {
+          "condition": "Short-term IV treatment of acute decompensated heart failure",
+          "icd10": [
+            {
+              "code": "I50.23",
+              "description": "Acute on chronic systolic (congestive) heart failure"
+            },
+            {
+              "code": "I50.43",
+              "description": "Acute on chronic combined systolic and diastolic heart failure"
+            },
+            {
+              "code": "I50.84",
+              "description": "End stage heart failure"
+            },
+            {
+              "code": "I50.22",
+              "description": "Chronic systolic (congestive) heart failure"
+            }
+          ],
+          "dose": "Loading dose 50 mcg/kg over 10 minutes, then 0.375–0.75 mcg/kg/min; reduce the infusion rate in renal impairment."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Milrinone",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=milrinone"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Home inotrope use in end-stage heart failure is off-label beyond the short-term indication; the reviewer decides whether to list I50.84."
+    },
+    {
+      "id": "dobutamine",
+      "drug": "Dobutamine",
+      "hcpcs": [
+        "J1250"
+      ],
+      "indications": [
+        {
+          "condition": "Inotropic support in short-term treatment of cardiac decompensation due to depressed contractility",
+          "icd10": [
+            {
+              "code": "I50.23",
+              "description": "Acute on chronic systolic (congestive) heart failure"
+            },
+            {
+              "code": "I50.43",
+              "description": "Acute on chronic combined systolic and diastolic heart failure"
+            },
+            {
+              "code": "I50.84",
+              "description": "End stage heart failure"
+            },
+            {
+              "code": "I50.22",
+              "description": "Chronic systolic (congestive) heart failure"
+            }
+          ],
+          "dose": "Usually 2.5–15 mcg/kg/min, titrated to response (rarely up to 40 mcg/kg/min)."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Dobutamine",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=dobutamine"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Confirm the infusion range wording; labels vary by manufacturer."
+    },
+    {
+      "id": "epoprostenol",
+      "drug": "Epoprostenol",
+      "hcpcs": [
+        "J1325"
+      ],
+      "indications": [
+        {
+          "condition": "Pulmonary arterial hypertension (WHO Group 1)",
+          "icd10": [
+            {
+              "code": "I27.0",
+              "description": "Primary pulmonary hypertension"
+            },
+            {
+              "code": "I27.21",
+              "description": "Secondary pulmonary arterial hypertension"
+            }
+          ],
+          "dose": "Start 2 ng/kg/min by continuous IV infusion; increase by 2 ng/kg/min every ≥15 minutes to tolerance, then adjust chronically."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Epoprostenol",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=epoprostenol"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label."
+    },
+    {
+      "id": "treprostinil-injection",
+      "drug": "Treprostinil injection (Remodulin)",
+      "hcpcs": [
+        "J3285"
+      ],
+      "indications": [
+        {
+          "condition": "Pulmonary arterial hypertension (WHO Group 1), including transition from epoprostenol",
+          "icd10": [
+            {
+              "code": "I27.0",
+              "description": "Primary pulmonary hypertension"
+            },
+            {
+              "code": "I27.21",
+              "description": "Secondary pulmonary arterial hypertension"
+            }
+          ],
+          "dose": "Start 1.25 ng/kg/min SC or IV (0.625 in mild to moderate hepatic impairment); increase by ≤1.25 ng/kg/min per week for 4 weeks, then ≤2.5 ng/kg/min per week."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Treprostinil injection (Remodulin)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=treprostinil%20injection"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label."
+    },
+    {
+      "id": "methylprednisolone-succinate",
+      "drug": "Methylprednisolone sodium succinate",
+      "hcpcs": [
+        "J2919"
+      ],
+      "indications": [
+        {
+          "condition": "Corticosteroid-responsive conditions, including acute exacerbations of asthma, COPD, rheumatic disorders, and lupus",
+          "icd10": [
+            {
+              "code": "J45.901",
+              "description": "Unspecified asthma with (acute) exacerbation"
+            },
+            {
+              "code": "J44.1",
+              "description": "Chronic obstructive pulmonary disease with (acute) exacerbation"
+            },
+            {
+              "code": "M06.9",
+              "description": "Rheumatoid arthritis, unspecified"
+            },
+            {
+              "code": "M32.9",
+              "description": "Systemic lupus erythematosus, unspecified"
+            }
+          ],
+          "dose": "10–40 mg IV initially, depending on the condition; high-dose therapy 30 mg/kg IV over ≥30 minutes, may repeat every 4–6 hours for up to 48 hours."
+        },
+        {
+          "condition": "Acute exacerbations of multiple sclerosis",
+          "icd10": [
+            {
+              "code": "G35.A",
+              "description": "Relapsing-remitting multiple sclerosis"
+            },
+            {
+              "code": "G35.D",
+              "description": "Multiple sclerosis, unspecified"
+            }
+          ],
+          "dose": "160 mg daily for 1 week, then 64 mg every other day for 1 month."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Methylprednisolone sodium succinate",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=methylprednisolone%20sodium%20succinate"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. J2919 is billed per 5 mg. The G35 subcodes (G35.A–G35.D) replaced G35 on 2025-10-01; confirm them against the current CMS ICD-10-CM code file."
+    },
+    {
+      "id": "ondansetron-injection",
+      "drug": "Ondansetron injection",
+      "hcpcs": [
+        "J2405"
+      ],
+      "indications": [
+        {
+          "condition": "Prevention of chemotherapy-induced nausea and vomiting",
+          "icd10": [
+            {
+              "code": "R11.2",
+              "description": "Nausea with vomiting, unspecified"
+            },
+            {
+              "code": "T45.1X5A",
+              "description": "Adverse effect of antineoplastic and immunosuppressive drugs, initial encounter"
+            }
+          ],
+          "dose": "0.15 mg/kg IV for 3 doses: 30 minutes before chemotherapy, then 4 and 8 hours after; maximum 16 mg per dose."
+        },
+        {
+          "condition": "Prevention and treatment of postoperative nausea and vomiting",
+          "icd10": [
+            {
+              "code": "R11.2",
+              "description": "Nausea with vomiting, unspecified"
+            },
+            {
+              "code": "R11.0",
+              "description": "Nausea"
+            }
+          ],
+          "dose": "4 mg IV or IM as a single dose."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Ondansetron injection",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ondansetron%20injection"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label."
+    },
+    {
+      "id": "enoxaparin",
+      "drug": "Enoxaparin",
+      "hcpcs": [
+        "J1650"
+      ],
+      "indications": [
+        {
+          "condition": "Treatment of acute deep vein thrombosis with or without pulmonary embolism",
+          "icd10": [
+            {
+              "code": "I82.401",
+              "description": "Acute embolism and thrombosis of unspecified deep veins of right lower extremity"
+            },
+            {
+              "code": "I82.402",
+              "description": "Acute embolism and thrombosis of unspecified deep veins of left lower extremity"
+            },
+            {
+              "code": "I82.409",
+              "description": "Acute embolism and thrombosis of unspecified deep veins of unspecified lower extremity"
+            },
+            {
+              "code": "I26.99",
+              "description": "Other pulmonary embolism without acute cor pulmonale"
+            }
+          ],
+          "dose": "1 mg/kg SC q12h, or 1.5 mg/kg SC once daily (inpatient), with warfarin until INR 2–3."
+        },
+        {
+          "condition": "Unstable angina and non-Q-wave myocardial infarction (with aspirin)",
+          "icd10": [
+            {
+              "code": "I20.0",
+              "description": "Unstable angina"
+            },
+            {
+              "code": "I21.4",
+              "description": "Non-ST elevation (NSTEMI) myocardial infarction"
+            }
+          ],
+          "dose": "1 mg/kg SC q12h."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Enoxaparin",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=enoxaparin"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. DVT prophylaxis (40 mg once daily or 30 mg q12h) omitted: no single diagnosis code. CrCl < 30 mL/min: 1 mg/kg once daily for treatment. J1650 is billed per 10 mg."
+    },
+    {
+      "id": "furosemide-injection",
+      "drug": "Furosemide injection",
+      "hcpcs": [
+        "J1938"
+      ],
+      "indications": [
+        {
+          "condition": "Edema associated with heart failure, cirrhosis, and renal disease including nephrotic syndrome",
+          "icd10": [
+            {
+              "code": "I50.9",
+              "description": "Heart failure, unspecified"
+            },
+            {
+              "code": "K74.60",
+              "description": "Unspecified cirrhosis of liver"
+            },
+            {
+              "code": "R18.8",
+              "description": "Other ascites"
+            },
+            {
+              "code": "N04.9",
+              "description": "Nephrotic syndrome with unspecified morphologic changes"
+            },
+            {
+              "code": "R60.9",
+              "description": "Edema, unspecified"
+            }
+          ],
+          "dose": "20–40 mg IV (over 1–2 minutes) or IM; if needed, repeat 2 hours later, increasing by 20 mg until the desired effect."
+        },
+        {
+          "condition": "Acute pulmonary edema",
+          "icd10": [
+            {
+              "code": "J81.0",
+              "description": "Acute pulmonary edema"
+            }
+          ],
+          "dose": "40 mg IV over 1–2 minutes; 80 mg IV if response is unsatisfactory within 1 hour."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Furosemide injection",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=furosemide%20injection"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. J1938 is billed per 1 mg. Subcutaneous furosemide (Furoscix) has its own code."
+    },
+    {
+      "id": "filgrastim",
+      "drug": "Filgrastim and biosimilars",
+      "hcpcs": [
+        "J1442",
+        "Q5101",
+        "Q5110",
+        "Q5125",
+        "Q5148",
+        "Q5172"
+      ],
+      "indications": [
+        {
+          "condition": "Decrease infection in patients receiving myelosuppressive chemotherapy for non-myeloid malignancies",
+          "icd10": [
+            {
+              "code": "D70.1",
+              "description": "Agranulocytosis secondary to cancer chemotherapy"
+            }
+          ],
+          "dose": "5 mcg/kg/day SC or IV, starting ≥24 hours after chemotherapy, until ANC recovers."
+        },
+        {
+          "condition": "Severe chronic neutropenia (congenital, cyclic, or idiopathic)",
+          "icd10": [
+            {
+              "code": "D70.0",
+              "description": "Congenital agranulocytosis"
+            },
+            {
+              "code": "D70.4",
+              "description": "Cyclic neutropenia"
+            }
+          ],
+          "dose": "Congenital: 6 mcg/kg SC twice daily; idiopathic or cyclic: 5 mcg/kg SC once daily."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Filgrastim and biosimilars",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=filgrastim"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Confirm each biosimilar's indications (bone marrow transplant, stem cell mobilization, and acute radiation syndrome are labeled for some products only)."
+    },
+    {
+      "id": "iron-sucrose",
+      "drug": "Iron sucrose (Venofer)",
+      "hcpcs": [
+        "J1756"
+      ],
+      "indications": [
+        {
+          "condition": "Iron deficiency anemia in chronic kidney disease",
+          "icd10": [
+            {
+              "code": "D63.1",
+              "description": "Anemia in chronic kidney disease"
+            },
+            {
+              "code": "D50.9",
+              "description": "Iron deficiency anemia, unspecified"
+            },
+            {
+              "code": "N18.4",
+              "description": "Chronic kidney disease, stage 4 (severe)"
+            },
+            {
+              "code": "N18.5",
+              "description": "Chronic kidney disease, stage 5"
+            },
+            {
+              "code": "N18.6",
+              "description": "End stage renal disease"
+            }
+          ],
+          "dose": "Hemodialysis: 100 mg IV per dialysis session, up to 1,000 mg per course. Non-dialysis: 200 mg IV on 5 occasions within 14 days. Peritoneal dialysis: 300 mg ×2 14 days apart, then 400 mg 14 days later."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Iron sucrose (Venofer)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=iron%20sucrose"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. Code D63.1 with the N18 stage code first."
+    },
+    {
+      "id": "alpha-1-proteinase-inhibitor",
+      "drug": "Alpha-1 proteinase inhibitor (human), NOS",
+      "hcpcs": [
+        "J0256"
+      ],
+      "indications": [
+        {
+          "condition": "Chronic augmentation and maintenance therapy in emphysema due to severe alpha-1 antitrypsin deficiency",
+          "icd10": [
+            {
+              "code": "E88.01",
+              "description": "Alpha-1-antitrypsin deficiency"
+            },
+            {
+              "code": "J43.9",
+              "description": "Emphysema, unspecified"
+            }
+          ],
+          "dose": "60 mg/kg IV once weekly."
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Alpha-1 proteinase inhibitor (human), NOS",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=alpha-1%20proteinase%20inhibitor"
+        }
+      ],
+      "notes": "DRAFT from the FDA label. Reviewer: confirm each indication, ICD-10-CM code, and dose against the current label. J0256 is billed per 10 mg. Glassia has its own code (J0257)."
+    }
+  ]
+}

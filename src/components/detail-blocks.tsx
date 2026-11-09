@@ -338,6 +338,83 @@ export function LimitationsList({ items }: { items: string[] }) {
 }
 
 /** Home infusion per diem S-codes for a drug, with the official values that selected them. */
+/** Label indications with common ICD-10-CM codes: reviewed entries (with dose) and AI-drafted ones (no dose), each labeled as what it is. */
+export function ClinicalReference({ entries, labelUrl }: { entries: DrugDetail["clinical"]; labelUrl: string }) {
+  if (!entries.length) {
+    return (
+      <NoData>
+        No indications summary has been written for this drug yet. See its{" "}
+        <ExternalSourceLink href={labelUrl}>prescribing information on DailyMed</ExternalSourceLink>. For diagnoses that Medicare contractors list as covered, see{" "}
+        <a href="#icd10" className="font-semibold text-brand hover:underline">
+          Diagnosis codes in Medicare billing articles
+        </a>
+        .
+      </NoData>
+    );
+  }
+  return (
+    <ul className="space-y-4">
+      {entries.map((e) => {
+        const draft = e.status === "ai-draft";
+        return (
+          <li key={e.id} className="rounded-xl border hairline bg-surface p-4 sm:p-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold text-ink">{e.drug}</h3>
+              <DataStatusBadge status={draft ? "ai-draft" : "manual"} />
+              <span className="code-chip text-xs text-ink-muted">{e.hcpcs.join(", ")}</span>
+            </div>
+            {draft ? (
+              <p className="mt-2 text-sm text-ink-muted">
+                Drafted by an AI model from its knowledge of the FDA label. No person has checked these indications or codes against the current label or the official ICD-10-CM code set, so confirm them before
+                using them on a claim. No dose is shown.
+              </p>
+            ) : null}
+            <ul className="mt-3">
+              {e.indications.map((ind) => (
+                <li key={ind.condition} className="border-t hairline py-3">
+                  <p className="font-semibold text-ink">{ind.condition}</p>
+                  <dl className="mt-2 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[9.5rem_1fr]">
+                    <dt className="text-xs font-semibold tracking-wide text-ink-faint uppercase sm:pt-0.5">ICD-10-CM</dt>
+                    <dd>
+                      <ul className="flex flex-col gap-1">
+                        {ind.icd10.map((c) => (
+                          <li key={c.code}>
+                            <span className="code-chip font-semibold text-ink">{c.code}</span>
+                            {c.description ? <span className="text-ink-muted"> {c.description}</span> : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </dd>
+                    {ind.dose ? (
+                      <>
+                        <dt className="text-xs font-semibold tracking-wide text-ink-faint uppercase sm:pt-0.5">Typical adult dose</dt>
+                        <dd className="text-ink">{ind.dose}</dd>
+                      </>
+                    ) : null}
+                  </dl>
+                </li>
+              ))}
+            </ul>
+            {e.notes ? (
+              <p className="mt-1 text-sm text-ink-muted">
+                <span className="font-semibold text-ink">Reviewer note: </span>
+                {e.notes}
+              </p>
+            ) : null}
+            <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {e.evidence.map((x) => (
+                <ExternalSourceLink key={x.url} href={x.url}>
+                  {x.label}
+                </ExternalSourceLink>
+              ))}
+            </p>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function PerDiemCodes({ perDiem }: { perDiem: DrugDetail["perDiem"] }) {
   if (perDiem.status === "not-applicable") return <NoData>{perDiem.reason}</NoData>;
   return (
