@@ -59,6 +59,14 @@ curl -sS -X POST "https://<domain>/api/admin/import" \
 
 `src/proxy.ts` applies per-IP fixed windows per instance (suggest 240/min, search 120/min, other reads 180/min, admin/cron 10/min). For global enforcement add a Vercel Firewall rule, e.g. rate-limit `/api/*` to 300 requests per minute per IP.
 
+### Scripted lookups
+
+`/calculator` and `/tools/*` URLs that carry `?code=` read the database on every cache miss. On 2026-11-08 a script walking them one code at a time, every ~5 seconds around the clock, kept the Neon database awake until it used its free monthly compute (100 CU-hours), and every data page then failed. `src/proxy.ts` now answers such a request with a 403 before it reaches the page unless it looks like a browser: it sends `Sec-Fetch-Site`, or asks for `text/html` with an `Accept-Language`. Scripts should use `/api/hcpcs/{code}`, which is rate limited. `/robots.txt` also disallows these query URLs.
+
+The proxy logs one `proxy.script-lookup` line a minute per instance with the path and user agent (no address, no query), so the sender can be identified; find it in the Vercel runtime logs and, if it is a known bot, block it by user agent in Vercel Firewall as well. A sender that copies browser headers is not stopped by this check.
+
+If real users are ever stopped, remove the `isScriptedLookup` branch in `src/proxy.ts`. When the database is unavailable, pages fall back to cached copies and the build continues without migrating (see step 1 of Initial load).
+
 ## Monitoring
 
 - `/api/health`: database latency, record counts, latest release per source.
