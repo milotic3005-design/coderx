@@ -1,0 +1,4 @@
+{
+  "$comment": "Pharmacist-reviewed indications, common ICD-10-CM codes, and typical adult doses, keyed by HCPCS code. Only entries approved by a named reviewer belong here; they are shown on drug pages with the Manually reviewed badge. Add entries with `npm run clinical -- import <reviewed.csv>`; never edit drafts in by hand. See docs/05-operations.md#clinical-reference.",
+  "entries": []
+}

@@ -56,6 +56,18 @@ test.describe("required user journeys", () => {
     await expect(page.getByLabel("Data provenance").first()).toContainText("Official CMS");
   });
 
+  test("drug page labels AI-drafted indications and shows no dose", async ({ page }) => {
+    await page.goto("/drugs/rituxan-rituximab");
+    const section = page.locator("#indications");
+    await expect(section).toContainText("Indications and ICD-10-CM codes");
+    await expect(section.getByText("AI-drafted, not verified").first()).toBeVisible();
+    await expect(section).toContainText("Non-Hodgkin");
+    await expect(section).toContainText("C83.30");
+    await expect(section).not.toContainText("Typical adult dose");
+    await expect(section).not.toContainText("Manually reviewed");
+    await expect(page.getByRole("navigation", { name: "On this page" }).getByRole("link", { name: /Indications/ })).toBeVisible();
+  });
+
   test("9. view an inactive historical record", async ({ page }) => {
     await page.goto("/hcpcs/S0189");
     await expect(page.getByRole("alert").filter({ hasText: "terminated" })).toContainText("Dec 31, 2025");

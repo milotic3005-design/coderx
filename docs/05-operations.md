@@ -55,6 +55,28 @@ curl -sS -X POST "https://<domain>/api/admin/import" \
 
 `data/manual-relationships.json` holds manually reviewed NDC→HCPCS or drug→HCPCS relationships. Each entry requires `kind`, `hcpcsCode`, `ndc11` or `drugSlug`, `evidenceUrl`, `reviewer`, `reviewedAt`, and `notes` (≥ 10 characters); invalid entries are rejected with a warning in the import report. Approved entries appear with the “Manually reviewed” badge. The file ships empty.
 
+## Clinical reference
+
+Drug pages show FDA-labeled indications with common ICD-10-CM codes (section 03). The data is keyed by HCPCS code and has two tiers that the page never mixes up:
+
+| Tier | Source file | Badge | Dose shown |
+| --- | --- | --- | --- |
+| **AI-drafted** | `data/clinical-drafts/batch-NN.json` (listed in `src/lib/clinical.ts`) | AI-drafted, not verified | **No.** The dose is removed in `clinicalFor`, so the page and `/api/drugs/{slug}` never carry it. |
+| **Reviewed** | `data/clinical-reference.json` | Manually reviewed, with reviewer and date | Yes |
+
+A reviewed entry replaces the draft with the same `id`. The drafts are written by an AI model from its knowledge of the FDA labels; every HCPCS code in a draft is checked against the current CMS HCPCS file before it is committed, but the labels and the official ICD-10-CM file could not be re-read when batch 1 was drafted (the CMS, FDA, and CDC hosts are blocked from the cloud session). Spot checks of the riskiest codes (the 2025 multiple sclerosis G35 codes, M31.30, M33.10, G61.81) were made against public code references.
+
+To review (this adds doses and the reviewer's name):
+
+1. `npm run clinical -- export` writes `clinical-review.csv`, one row per indication (entries already reviewed are left out unless `--all`). The reviewer opens it in Excel, corrects any cell, and for each row enters `APPROVE` or `REJECT`, their name and credentials, and the date. Rows left blank are not imported. Save as **CSV UTF-8**.
+2. `npm run clinical -- import clinical-review.csv` adds every approved row to `data/clinical-reference.json`. Any invalid row (missing reviewer, bad date, a code that is not ICD-10-CM or HCPCS shaped, an Entry ID not in a draft) stops the whole import and nothing is written; `--dry-run` checks without writing. Commit the file; the next deploy publishes it.
+
+With the CMS ICD-10-CM code file (`icd10cm-codes-YYYY.txt` or `icd10cm-order-YYYY.txt` from the CMS ICD-10 page), add `--icd10-file <path>` to `export`, `import`, or `check` to reject any code that is not a billable code in that release. Run `npm run clinical -- check --icd10-file <path>` after each October 1 ICD-10-CM update to catch retired codes.
+
+To add a batch: save `data/clinical-drafts/batch-NN.json` (same shape as batch 1, with `draftedAt`), import it in `src/lib/clinical.ts`, and add it to `DRAFT_FILES`. The unit tests check that every file in the folder is registered, that every HCPCS code and ICD-10-CM code has a valid shape, and that no dose reaches a draft entry.
+
+These are example diagnoses for the labeled indications, not a payer's covered-diagnosis list. The diagnoses Medicare contractors list as covered are official CMS data in the ICD-10 section (source 13, `cms_mcd_articles`).
+
 ## Rate limiting and firewall
 
 `src/proxy.ts` applies per-IP fixed windows per instance (suggest 240/min, search 120/min, other reads 180/min, admin/cron 10/min). For global enforcement add a Vercel Firewall rule, e.g. rate-limit `/api/*` to 300 requests per minute per IP.

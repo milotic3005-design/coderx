@@ -21,6 +21,7 @@
     "refresh:price-benchmark": "tsx scripts/refresh-price-benchmark.ts",
     "fixtures": "tsx scripts/make-fixtures.ts",
     "e2e:db": "tsx scripts/seed-e2e.ts",
+    "clinical": "tsx scripts/clinical-review.ts",
     "audit": "npm audit --omit=dev",
     "test:e2e:prod": "playwright test -c playwright.prod.config.ts"
   },
