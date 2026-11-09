@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSitemapEntries } from "@/lib/data/queries";
+import { cachedSitemapEntries } from "@/lib/data/cached";
 import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: p === "" ? 1 : 0.6,
   }));
   try {
-    const e = await getSitemapEntries();
+    const e = await cachedSitemapEntries();
     return [
       ...fixed,
       ...e.codes.map((c) => ({ url: `${SITE.url}/hcpcs/${c}`, changeFrequency: "monthly" as const, priority: 0.8 })),

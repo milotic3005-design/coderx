@@ -2,6 +2,7 @@
  * Consistent JSON envelope for every API response:
  *   { data, meta: { requestId, generatedAt, pagination?, match?, provenance? }, error }
  */
+import { isDatabaseUnavailable } from "@/lib/db/availability";
 import type { Provenance } from "@/lib/data/provenance";
 
 export interface Pagination {
@@ -73,8 +74,7 @@ export async function handle(request: Request, scope: string, fn: () => Promise<
     return await fn();
   } catch (error) {
     logError(scope, error);
-    const message = error instanceof Error ? error.message : "";
-    if (/DATABASE_URL|ECONNREFUSED|connect|timeout/i.test(message)) {
+    if (isDatabaseUnavailable(error)) {
       return fail("SERVICE_UNAVAILABLE", "The data service is temporarily unavailable. Please try again shortly.", { request });
     }
     return fail("INTERNAL_ERROR", "An unexpected error occurred.", { request });
