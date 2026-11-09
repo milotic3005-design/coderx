@@ -1,6 +1,7 @@
 /**
  * Runs before every page and API request:
  *  - API routes: per-IP fixed-window rate limiting (best effort per instance).
+ *  - Calculator and tool lookups (?code=…): refused for scripts, which have no use for the HTML pages (see below).
  *  - Pages: a fresh nonce and a strict Content-Security-Policy.
  */
 import { NextResponse, type NextRequest } from "next/server";
@@ -31,6 +32,30 @@ function canonicalRedirect(request: NextRequest): NextResponse | null {
 
 function clientKey(request: NextRequest): string {
   return request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous";
+}
+
+/** Pages that take a code in the URL and read the database on a cache miss. */
+const LOOKUP_PAGE = /^\/(calculator|tools\/[a-z-]+)\/?$/;
+
+/**
+ * Browsers always send Fetch Metadata (Sec-Fetch-Site); the few that predate it still ask for HTML in a language.
+ * A script that walks lookup URLs one code at a time sends neither. Such a script requested /calculator and
+ * /tools/site-of-care every few seconds around the clock, kept the database awake, and used up Neon's free monthly
+ * compute (2026-11-08). The same data is available from /api/hcpcs/{code}, which is rate limited.
+ */
+export function isScriptedLookup(pathname: string, searchParams: URLSearchParams, headers: Headers): boolean {
+  if (!LOOKUP_PAGE.test(pathname) || !searchParams.has("code")) return false;
+  if (headers.has("sec-fetch-site")) return false;
+  return !((headers.get("accept") ?? "").includes("text/html") && headers.has("accept-language"));
+}
+
+let lastScriptLog = 0;
+
+/** One line a minute per instance (path and user agent only, no address or query) so the sender can be identified. */
+function logScript(pathname: string, userAgent: string | null, now = Date.now()) {
+  if (now - lastScriptLog < 60_000) return;
+  lastScriptLog = now;
+  console.warn(JSON.stringify({ level: "warn", scope: "proxy.script-lookup", path: pathname, userAgent: (userAgent ?? "").slice(0, 120), at: new Date(now).toISOString() }));
 }
 
 export function buildCsp(nonce: string, isDev: boolean): string {
@@ -75,6 +100,14 @@ export function proxy(request: NextRequest) {
     const response = NextResponse.next();
     for (const [k, v] of Object.entries(rateHeaders)) response.headers.set(k, v);
     return response;
+  }
+
+  if (isScriptedLookup(pathname, request.nextUrl.searchParams, request.headers)) {
+    logScript(pathname, request.headers.get("user-agent"));
+    return new NextResponse("Automated requests to this page are not allowed. Use the API instead: /api/hcpcs/{code} (see /methodology).\n", {
+      status: 403,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
   }
 
   const redirect = canonicalRedirect(request);
