@@ -10,7 +10,7 @@
 
 ## Initial load
 
-1. Apply migrations: they run automatically in the Vercel build (`npm run vercel-build`), or locally with `npm run db:migrate`.
+1. Apply migrations: they run automatically in the Vercel build (`npm run vercel-build`), or locally with `npm run db:migrate`. If the database is down or over its plan quota during a build, the step prints `migrate: SKIPPED` and the build continues so the site can still deploy; migration errors of any other kind still fail the build. After a skipped build, redeploy once the database is back if that commit added a migration (`drizzle/`).
 2. Import all sources (every CMS quarter from `CODERX_MIN_PERIOD`, default 2021-Q1, that the publisher still posts):
    - CLI (any machine with `DATABASE_URL`): `npm run ingest -- --source all`
    - Or the admin endpoint, one source per request (see README).

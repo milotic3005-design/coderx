@@ -10,6 +10,7 @@
  * are identical everywhere.
  */
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
+import { DatabaseUnavailableError, databasePaused } from "./availability";
 import * as schema from "./schema";
 
 export type Schema = typeof schema;
@@ -83,6 +84,8 @@ export function getDbHandle(): Promise<DbHandle> {
 }
 
 export async function getDb(): Promise<Database> {
+  // After a quota or connection failure, fail fast for a few seconds (see src/lib/data/cached.ts).
+  if (databasePaused()) throw new DatabaseUnavailableError();
   return (await getDbHandle()).db;
 }
 
