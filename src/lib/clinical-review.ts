@@ -74,7 +74,7 @@ export function toReviewCsv(drafts: DraftEntry[]): string {
         hcpcs: e.hcpcs.join(", "),
         condition: ind.condition,
         icd10: formatIcd10List(ind.icd10),
-        dose: ind.dose,
+        dose: ind.dose ?? "",
         draftNotes: e.notes ?? "",
         evidence: e.evidence.map((x) => x.url).join(" "),
         decision: "",
@@ -140,6 +140,7 @@ export function fromReviewCsv(text: string, drafts: DraftEntry[], today: string)
       return void result.errors.push(`Row ${line}: ${(err as Error).message}.`);
     }
     if (!icd10.length) return void result.errors.push(`Row ${line}: at least one ICD-10-CM code is required.`);
+    if (get("dose").length < 5) return void result.errors.push(`Row ${line}: an approved row needs the typical adult dose (this draft has none, so type it in).`);
     const evidence = get("evidence");
     if (!/^https:\/\/\S+$/.test(evidence.split(/\s+/)[0] ?? "")) return void result.errors.push(`Row ${line}: evidence must be an https URL.`);
 

@@ -366,7 +366,7 @@ export function ClinicalReference({ entries, labelUrl }: { entries: DrugDetail["
             {draft ? (
               <p className="mt-2 text-sm text-ink-muted">
                 Drafted by an AI model from its knowledge of the FDA label. No person has checked these indications or codes against the current label or the official ICD-10-CM code set, so confirm them before
-                using them on a claim. No dose is shown.
+                using them on a claim. The list may not include every indication on the label. No dose is shown.
               </p>
             ) : null}
             <ul className="mt-3">

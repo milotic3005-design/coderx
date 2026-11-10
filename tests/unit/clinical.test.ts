@@ -32,6 +32,15 @@ function reviewed(drafts: DraftEntry[], edits: Record<number, Partial<Record<key
 
 const approve = { decision: "APPROVE", reviewer: "Pat Lee, PharmD", reviewedOn: "2026-11-02" };
 
+/** A reviewed entry built from a draft, with the dose the reviewer approved (a draft's dose is optional). */
+const asReviewed = (d: DraftEntry, extra: Partial<ClinicalEntry> = {}): ClinicalEntry => ({
+  ...d,
+  indications: d.indications.map((i) => ({ ...i, dose: i.dose ?? "Dose entered by the reviewer" })),
+  reviewer: "Pat Lee, PharmD",
+  reviewedAt: "2026-11-02",
+  ...extra,
+});
+
 describe("clinical reference files", () => {
   it("every draft file validates, with unique entry IDs, a draft date, and only ICD-10-CM-shaped codes", () => {
     expect(draftFiles.length).toBeGreaterThan(0);
@@ -61,7 +70,7 @@ describe("clinical reference files", () => {
 
 describe("what the site and the API publish", () => {
   const drafted = { ...draft, draftedAt: "2026-11-09" };
-  const reviewedEntry: ClinicalEntry = { ...draft, reviewer: "Pat Lee, PharmD", reviewedAt: "2026-11-10", notes: "Check renal dosing." };
+  const reviewedEntry = asReviewed(draft, { reviewedAt: "2026-11-10", notes: "Check renal dosing." });
 
   it("publishes a draft as AI-drafted, without doses or the internal notes", () => {
     const [e] = clinicalFor(["J0696", "J3490"], [], [drafted]);
@@ -171,8 +180,22 @@ describe("review CSV round trip", () => {
     expect(r.errors[0]).toMatch(/^Missing column\(s\): “HCPCS codes”/);
   });
 
+  it("lets a draft leave the dose out, and then needs the reviewer to type one before it can be approved", () => {
+    const noDose: DraftEntry = { ...draft, indications: draft.indications.map(({ condition, icd10 }) => ({ condition, icd10 })) };
+    expect(draftFileSchema.safeParse({ draftedAt: "2026-11-10", entries: [noDose] }).success).toBe(true);
+    expect(referenceFileSchema.safeParse({ entries: [{ ...noDose, reviewer: "Pat Lee, PharmD", reviewedAt: "2026-11-10" }] }).success).toBe(false);
+    // The review sheet has an empty dose cell for the reviewer to fill in.
+    const rows = Papa.parse<string[]>(toReviewCsv([noDose]).slice(1)).data;
+    expect(rows[1][5]).toBe("");
+    const blank = fromReviewCsv(reviewed([noDose], { 0: approve }), [noDose], "2026-11-03");
+    expect(blank.errors[0]).toMatch(/^Row 2: an approved row needs the typical adult dose/);
+    const filled = fromReviewCsv(reviewed([noDose], { 0: { ...approve, dose: "1 g IV once daily" } }), [noDose], "2026-11-03");
+    expect(filled.errors).toEqual([]);
+    expect(filled.entries[0].indications[0].dose).toBe("1 g IV once daily");
+  });
+
   it("merges by entry ID, replacing an earlier review", () => {
-    const a: ClinicalEntry = { ...draft, id: "a", reviewer: "Pat Lee, PharmD", reviewedAt: "2026-01-01" };
+    const a = asReviewed(draft, { id: "a", reviewedAt: "2026-01-01" });
     const b: ClinicalEntry = { ...a, id: "b" };
     const a2: ClinicalEntry = { ...a, reviewedAt: "2026-11-02" };
     expect(mergeReviewed([b, a], [a2])).toEqual([a2, b]);

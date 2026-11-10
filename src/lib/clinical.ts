@@ -12,6 +12,7 @@
 import { z } from "zod";
 import reference from "../../data/clinical-reference.json";
 import batch01 from "../../data/clinical-drafts/batch-01.json";
+import batch02 from "../../data/clinical-drafts/batch-02.json";
 import { HCPCS_LEVEL2_RE } from "./hcpcs";
 
 /** ICD-10-CM shape: letter, digit, alphanumeric, then an optional dot and 1–4 characters (e.g. A41.9, T84.50XA). */
@@ -24,23 +25,27 @@ const icd10 = z.object({
   description: z.string().optional(),
 });
 
-const indication = z.object({
+const indicationBase = z.object({
   condition: z.string().min(3),
   icd10: z.array(icd10).min(1),
-  dose: z.string().min(5),
 });
+/** A draft may leave the dose out (newer batches do): it is never published unreviewed, and the reviewer fills it in. */
+const draftIndication = indicationBase.extend({ dose: z.string().min(5).optional() });
+/** A reviewed entry always carries the dose the reviewer approved. */
+const reviewedIndication = indicationBase.extend({ dose: z.string().min(5) });
 
 export const draftEntrySchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/, "lowercase letters, digits, and dashes"),
   drug: z.string().min(2),
   hcpcs: z.array(z.string().regex(HCPCS_LEVEL2_RE, "not a HCPCS Level II code")).min(1),
-  indications: z.array(indication).min(1),
+  indications: z.array(draftIndication).min(1),
   evidence: z.array(z.object({ label: z.string().min(3), url: z.string().url() })).min(1),
   /** Internal to-verify notes for the reviewer; never published. */
   notes: z.string().optional(),
 });
 
 export const reviewedEntrySchema = draftEntrySchema.extend({
+  indications: z.array(reviewedIndication).min(1),
   reviewer: z.string().min(3),
   reviewedAt: z.string().regex(DATE_RE, "YYYY-MM-DD"),
 });
@@ -68,7 +73,7 @@ export interface PublishedEntry {
 export type DraftWithDate = DraftEntry & { draftedAt: string };
 
 /** Every draft batch; add a file to data/clinical-drafts/ and to this list. Validated once, so a bad file fails the build. */
-export const DRAFT_FILES: unknown[] = [batch01];
+export const DRAFT_FILES: unknown[] = [batch01, batch02];
 
 export function loadDrafts(files: unknown[] = DRAFT_FILES): DraftWithDate[] {
   return files.flatMap((f) => {

@@ -1,0 +1,2192 @@
+{
+  "$comment": "AI-drafted (not reviewed by a person). Batch 2: cancer immunotherapy and targeted antibodies. Written by an AI model from its knowledge of the FDA labels, which could not be re-read when this was drafted; HCPCS codes were checked against the live CMS code list. No doses (they are never published without a pharmacist's review). Published on drug pages with the AI-drafted badge. See batch-01.json for the review workflow.",
+  "draftedAt": "2026-11-10",
+  "entries": [
+    {
+      "id": "pembrolizumab",
+      "drug": "Pembrolizumab (Keytruda)",
+      "hcpcs": [
+        "J9271"
+      ],
+      "indications": [
+        {
+          "condition": "Melanoma (unresectable, metastatic, or adjuvant)",
+          "icd10": [
+            {
+              "code": "C43.9",
+              "description": "Malignant melanoma of skin, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Non-small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Head and neck squamous cell carcinoma",
+          "icd10": [
+            {
+              "code": "C76.0",
+              "description": "Malignant neoplasm of head, face and neck"
+            }
+          ]
+        },
+        {
+          "condition": "Classical Hodgkin lymphoma",
+          "icd10": [
+            {
+              "code": "C81.90",
+              "description": "Hodgkin lymphoma, unspecified, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Primary mediastinal large B-cell lymphoma",
+          "icd10": [
+            {
+              "code": "C85.20",
+              "description": "Mediastinal (thymic) large B-cell lymphoma, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Urothelial carcinoma",
+          "icd10": [
+            {
+              "code": "C67.9",
+              "description": "Malignant neoplasm of bladder, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "MSI-H, dMMR, or TMB-H solid tumors",
+          "icd10": [
+            {
+              "code": "C80.1",
+              "description": "Malignant (primary) neoplasm, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "MSI-H or dMMR colorectal cancer",
+          "icd10": [
+            {
+              "code": "C18.9",
+              "description": "Malignant neoplasm of colon, unspecified"
+            },
+            {
+              "code": "C20",
+              "description": "Malignant neoplasm of rectum"
+            }
+          ]
+        },
+        {
+          "condition": "Gastric or gastroesophageal junction adenocarcinoma",
+          "icd10": [
+            {
+              "code": "C16.9",
+              "description": "Malignant neoplasm of stomach, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Esophageal cancer",
+          "icd10": [
+            {
+              "code": "C15.9",
+              "description": "Malignant neoplasm of esophagus, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Cervical cancer",
+          "icd10": [
+            {
+              "code": "C53.9",
+              "description": "Malignant neoplasm of cervix uteri, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Hepatocellular carcinoma",
+          "icd10": [
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            }
+          ]
+        },
+        {
+          "condition": "Biliary tract cancer",
+          "icd10": [
+            {
+              "code": "C24.9",
+              "description": "Malignant neoplasm of biliary tract, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Merkel cell carcinoma",
+          "icd10": [
+            {
+              "code": "C4A.9",
+              "description": "Merkel cell carcinoma, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Renal cell carcinoma",
+          "icd10": [
+            {
+              "code": "C64.9",
+              "description": "Malignant neoplasm of unspecified kidney, except renal pelvis"
+            }
+          ]
+        },
+        {
+          "condition": "Endometrial carcinoma",
+          "icd10": [
+            {
+              "code": "C54.1",
+              "description": "Malignant neoplasm of endometrium"
+            }
+          ]
+        },
+        {
+          "condition": "Cutaneous squamous cell carcinoma",
+          "icd10": [
+            {
+              "code": "C44.92",
+              "description": "Squamous cell carcinoma of skin, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Triple-negative breast cancer",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        },
+        {
+          "condition": "Malignant pleural mesothelioma",
+          "icd10": [
+            {
+              "code": "C45.0",
+              "description": "Mesothelioma of pleura"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Pembrolizumab (Keytruda)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=pembrolizumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Many indications, each tied to specific biomarkers or combinations; the label is the authority."
+    },
+    {
+      "id": "pembrolizumab-sc",
+      "drug": "Pembrolizumab and berahyaluronidase alfa (Keytruda Qlex, subcutaneous)",
+      "hcpcs": [
+        "J9277"
+      ],
+      "indications": [
+        {
+          "condition": "Adult solid tumors for which intravenous pembrolizumab is indicated (for example melanoma, non-small cell lung, head and neck, urothelial, and renal cancers)",
+          "icd10": [
+            {
+              "code": "C43.9",
+              "description": "Malignant melanoma of skin, unspecified"
+            },
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            },
+            {
+              "code": "C76.0",
+              "description": "Malignant neoplasm of head, face and neck"
+            },
+            {
+              "code": "C67.9",
+              "description": "Malignant neoplasm of bladder, unspecified"
+            },
+            {
+              "code": "C64.9",
+              "description": "Malignant neoplasm of unspecified kidney, except renal pelvis"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Pembrolizumab and berahyaluronidase alfa (Keytruda Qlex, subcutaneous)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=pembrolizumab%20berahyaluronidase"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Confirm which intravenous indications the subcutaneous product carries."
+    },
+    {
+      "id": "nivolumab",
+      "drug": "Nivolumab (Opdivo)",
+      "hcpcs": [
+        "J9299"
+      ],
+      "indications": [
+        {
+          "condition": "Melanoma",
+          "icd10": [
+            {
+              "code": "C43.9",
+              "description": "Malignant melanoma of skin, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Non-small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Malignant pleural mesothelioma",
+          "icd10": [
+            {
+              "code": "C45.0",
+              "description": "Mesothelioma of pleura"
+            }
+          ]
+        },
+        {
+          "condition": "Renal cell carcinoma",
+          "icd10": [
+            {
+              "code": "C64.9",
+              "description": "Malignant neoplasm of unspecified kidney, except renal pelvis"
+            }
+          ]
+        },
+        {
+          "condition": "Classical Hodgkin lymphoma",
+          "icd10": [
+            {
+              "code": "C81.90",
+              "description": "Hodgkin lymphoma, unspecified, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Head and neck squamous cell carcinoma",
+          "icd10": [
+            {
+              "code": "C76.0",
+              "description": "Malignant neoplasm of head, face and neck"
+            }
+          ]
+        },
+        {
+          "condition": "Urothelial carcinoma",
+          "icd10": [
+            {
+              "code": "C67.9",
+              "description": "Malignant neoplasm of bladder, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "MSI-H or dMMR colorectal cancer",
+          "icd10": [
+            {
+              "code": "C18.9",
+              "description": "Malignant neoplasm of colon, unspecified"
+            },
+            {
+              "code": "C20",
+              "description": "Malignant neoplasm of rectum"
+            }
+          ]
+        },
+        {
+          "condition": "Hepatocellular carcinoma",
+          "icd10": [
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            }
+          ]
+        },
+        {
+          "condition": "Esophageal cancer",
+          "icd10": [
+            {
+              "code": "C15.9",
+              "description": "Malignant neoplasm of esophagus, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Gastric or gastroesophageal junction adenocarcinoma",
+          "icd10": [
+            {
+              "code": "C16.9",
+              "description": "Malignant neoplasm of stomach, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Nivolumab (Opdivo)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=nivolumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "nivolumab-sc",
+      "drug": "Nivolumab and hyaluronidase (Opdivo Qvantig, subcutaneous)",
+      "hcpcs": [
+        "J9289"
+      ],
+      "indications": [
+        {
+          "condition": "Adult solid tumors for which intravenous nivolumab is indicated (for example melanoma, non-small cell lung, renal, head and neck, urothelial, colorectal, hepatocellular, esophageal, and gastric cancers)",
+          "icd10": [
+            {
+              "code": "C43.9",
+              "description": "Malignant melanoma of skin, unspecified"
+            },
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            },
+            {
+              "code": "C64.9",
+              "description": "Malignant neoplasm of unspecified kidney, except renal pelvis"
+            },
+            {
+              "code": "C76.0",
+              "description": "Malignant neoplasm of head, face and neck"
+            },
+            {
+              "code": "C67.9",
+              "description": "Malignant neoplasm of bladder, unspecified"
+            },
+            {
+              "code": "C18.9",
+              "description": "Malignant neoplasm of colon, unspecified"
+            },
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            },
+            {
+              "code": "C15.9",
+              "description": "Malignant neoplasm of esophagus, unspecified"
+            },
+            {
+              "code": "C16.9",
+              "description": "Malignant neoplasm of stomach, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Nivolumab and hyaluronidase (Opdivo Qvantig, subcutaneous)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=nivolumab%20hyaluronidase"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Confirm which intravenous indications the subcutaneous product carries."
+    },
+    {
+      "id": "nivolumab-relatlimab",
+      "drug": "Nivolumab and relatlimab (Opdualag)",
+      "hcpcs": [
+        "J9298"
+      ],
+      "indications": [
+        {
+          "condition": "Unresectable or metastatic melanoma",
+          "icd10": [
+            {
+              "code": "C43.9",
+              "description": "Malignant melanoma of skin, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Nivolumab and relatlimab (Opdualag)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=nivolumab%20relatlimab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "atezolizumab",
+      "drug": "Atezolizumab (Tecentriq, intravenous and subcutaneous)",
+      "hcpcs": [
+        "J9022",
+        "J9024"
+      ],
+      "indications": [
+        {
+          "condition": "Non-small cell lung cancer (including adjuvant)",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Small cell lung cancer (extensive stage)",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Hepatocellular carcinoma",
+          "icd10": [
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            }
+          ]
+        },
+        {
+          "condition": "Melanoma (BRAF V600 mutation-positive, with cobimetinib and vemurafenib)",
+          "icd10": [
+            {
+              "code": "C43.9",
+              "description": "Malignant melanoma of skin, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Alveolar soft part sarcoma",
+          "icd10": [
+            {
+              "code": "C80.1",
+              "description": "Malignant (primary) neoplasm, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Atezolizumab (Tecentriq, intravenous and subcutaneous)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=atezolizumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Small cell lung cancer has no separate ICD-10-CM code; it is coded to lung (C34.-). Confirm the alveolar soft part sarcoma code."
+    },
+    {
+      "id": "durvalumab",
+      "drug": "Durvalumab (Imfinzi)",
+      "hcpcs": [
+        "J9173"
+      ],
+      "indications": [
+        {
+          "condition": "Non-small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Biliary tract cancer",
+          "icd10": [
+            {
+              "code": "C24.9",
+              "description": "Malignant neoplasm of biliary tract, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Hepatocellular carcinoma",
+          "icd10": [
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            }
+          ]
+        },
+        {
+          "condition": "Endometrial cancer (dMMR)",
+          "icd10": [
+            {
+              "code": "C54.1",
+              "description": "Malignant neoplasm of endometrium"
+            }
+          ]
+        },
+        {
+          "condition": "Muscle-invasive bladder cancer",
+          "icd10": [
+            {
+              "code": "C67.9",
+              "description": "Malignant neoplasm of bladder, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Durvalumab (Imfinzi)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=durvalumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "avelumab",
+      "drug": "Avelumab (Bavencio)",
+      "hcpcs": [
+        "J9023"
+      ],
+      "indications": [
+        {
+          "condition": "Merkel cell carcinoma",
+          "icd10": [
+            {
+              "code": "C4A.9",
+              "description": "Merkel cell carcinoma, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Urothelial carcinoma (maintenance)",
+          "icd10": [
+            {
+              "code": "C67.9",
+              "description": "Malignant neoplasm of bladder, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Renal cell carcinoma (with axitinib)",
+          "icd10": [
+            {
+              "code": "C64.9",
+              "description": "Malignant neoplasm of unspecified kidney, except renal pelvis"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Avelumab (Bavencio)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=avelumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "cemiplimab",
+      "drug": "Cemiplimab (Libtayo)",
+      "hcpcs": [
+        "J9119"
+      ],
+      "indications": [
+        {
+          "condition": "Cutaneous squamous cell carcinoma",
+          "icd10": [
+            {
+              "code": "C44.92",
+              "description": "Squamous cell carcinoma of skin, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Basal cell carcinoma",
+          "icd10": [
+            {
+              "code": "C44.91",
+              "description": "Basal cell carcinoma of skin, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Non-small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Cemiplimab (Libtayo)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=cemiplimab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "dostarlimab",
+      "drug": "Dostarlimab (Jemperli)",
+      "hcpcs": [
+        "J9272"
+      ],
+      "indications": [
+        {
+          "condition": "Endometrial cancer (dMMR)",
+          "icd10": [
+            {
+              "code": "C54.1",
+              "description": "Malignant neoplasm of endometrium"
+            }
+          ]
+        },
+        {
+          "condition": "dMMR solid tumors",
+          "icd10": [
+            {
+              "code": "C80.1",
+              "description": "Malignant (primary) neoplasm, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Dostarlimab (Jemperli)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=dostarlimab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "ipilimumab",
+      "drug": "Ipilimumab (Yervoy)",
+      "hcpcs": [
+        "J9228"
+      ],
+      "indications": [
+        {
+          "condition": "Melanoma",
+          "icd10": [
+            {
+              "code": "C43.9",
+              "description": "Malignant melanoma of skin, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Renal cell carcinoma (with nivolumab)",
+          "icd10": [
+            {
+              "code": "C64.9",
+              "description": "Malignant neoplasm of unspecified kidney, except renal pelvis"
+            }
+          ]
+        },
+        {
+          "condition": "MSI-H or dMMR colorectal cancer (with nivolumab)",
+          "icd10": [
+            {
+              "code": "C18.9",
+              "description": "Malignant neoplasm of colon, unspecified"
+            },
+            {
+              "code": "C20",
+              "description": "Malignant neoplasm of rectum"
+            }
+          ]
+        },
+        {
+          "condition": "Hepatocellular carcinoma (with nivolumab)",
+          "icd10": [
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            }
+          ]
+        },
+        {
+          "condition": "Non-small cell lung cancer (with nivolumab)",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Malignant pleural mesothelioma (with nivolumab)",
+          "icd10": [
+            {
+              "code": "C45.0",
+              "description": "Mesothelioma of pleura"
+            }
+          ]
+        },
+        {
+          "condition": "Esophageal cancer (with nivolumab)",
+          "icd10": [
+            {
+              "code": "C15.9",
+              "description": "Malignant neoplasm of esophagus, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Ipilimumab (Yervoy)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ipilimumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "tremelimumab",
+      "drug": "Tremelimumab (Imjudo)",
+      "hcpcs": [
+        "J9347"
+      ],
+      "indications": [
+        {
+          "condition": "Unresectable hepatocellular carcinoma (with durvalumab)",
+          "icd10": [
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            }
+          ]
+        },
+        {
+          "condition": "Non-small cell lung cancer (with durvalumab and chemotherapy)",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Tremelimumab (Imjudo)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=tremelimumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "tislelizumab",
+      "drug": "Tislelizumab (Tevimbra)",
+      "hcpcs": [
+        "J9329"
+      ],
+      "indications": [
+        {
+          "condition": "Esophageal squamous cell carcinoma",
+          "icd10": [
+            {
+              "code": "C15.9",
+              "description": "Malignant neoplasm of esophagus, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Gastric or gastroesophageal junction adenocarcinoma",
+          "icd10": [
+            {
+              "code": "C16.9",
+              "description": "Malignant neoplasm of stomach, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Tislelizumab (Tevimbra)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=tislelizumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "retifanlimab",
+      "drug": "Retifanlimab (Zynyz)",
+      "hcpcs": [
+        "J9345"
+      ],
+      "indications": [
+        {
+          "condition": "Merkel cell carcinoma",
+          "icd10": [
+            {
+              "code": "C4A.9",
+              "description": "Merkel cell carcinoma, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Squamous cell carcinoma of the anal canal",
+          "icd10": [
+            {
+              "code": "C21.0",
+              "description": "Malignant neoplasm of anus, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Retifanlimab (Zynyz)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=retifanlimab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "cosibelimab",
+      "drug": "Cosibelimab (Unloxcyt)",
+      "hcpcs": [
+        "J9275"
+      ],
+      "indications": [
+        {
+          "condition": "Cutaneous squamous cell carcinoma",
+          "icd10": [
+            {
+              "code": "C44.92",
+              "description": "Squamous cell carcinoma of skin, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Cosibelimab (Unloxcyt)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=cosibelimab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "bevacizumab",
+      "drug": "Bevacizumab (Avastin) and biosimilars",
+      "hcpcs": [
+        "J9035",
+        "Q5107",
+        "Q5118",
+        "Q5126",
+        "Q5129",
+        "Q5160"
+      ],
+      "indications": [
+        {
+          "condition": "Metastatic colorectal cancer",
+          "icd10": [
+            {
+              "code": "C18.9",
+              "description": "Malignant neoplasm of colon, unspecified"
+            },
+            {
+              "code": "C20",
+              "description": "Malignant neoplasm of rectum"
+            }
+          ]
+        },
+        {
+          "condition": "Non-small cell lung cancer (nonsquamous)",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Glioblastoma",
+          "icd10": [
+            {
+              "code": "C71.9",
+              "description": "Malignant neoplasm of brain, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Renal cell carcinoma",
+          "icd10": [
+            {
+              "code": "C64.9",
+              "description": "Malignant neoplasm of unspecified kidney, except renal pelvis"
+            }
+          ]
+        },
+        {
+          "condition": "Cervical cancer",
+          "icd10": [
+            {
+              "code": "C53.9",
+              "description": "Malignant neoplasm of cervix uteri, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Epithelial ovarian, fallopian tube, or primary peritoneal cancer",
+          "icd10": [
+            {
+              "code": "C56.9",
+              "description": "Malignant neoplasm of unspecified ovary"
+            },
+            {
+              "code": "C57.00",
+              "description": "Malignant neoplasm of unspecified fallopian tube"
+            },
+            {
+              "code": "C48.2",
+              "description": "Malignant neoplasm of peritoneum, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Hepatocellular carcinoma (with atezolizumab)",
+          "icd10": [
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Bevacizumab (Avastin) and biosimilars",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=bevacizumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Confirm each biosimilar (Q5107 Mvasi, Q5118 Zirabev, Q5126 Alymsys, Q5129 Vegzelma, Q5160 Jobevne) carries every indication."
+    },
+    {
+      "id": "trastuzumab",
+      "drug": "Trastuzumab (Herceptin) and biosimilars",
+      "hcpcs": [
+        "J9355",
+        "Q5112",
+        "Q5113",
+        "Q5114",
+        "Q5116",
+        "Q5117",
+        "Q5146"
+      ],
+      "indications": [
+        {
+          "condition": "HER2-overexpressing breast cancer",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        },
+        {
+          "condition": "HER2-overexpressing metastatic gastric or gastroesophageal junction adenocarcinoma",
+          "icd10": [
+            {
+              "code": "C16.9",
+              "description": "Malignant neoplasm of stomach, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Trastuzumab (Herceptin) and biosimilars",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=trastuzumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Confirm each biosimilar carries both indications."
+    },
+    {
+      "id": "trastuzumab-hyaluronidase",
+      "drug": "Trastuzumab and hyaluronidase (Herceptin Hylecta)",
+      "hcpcs": [
+        "J9356"
+      ],
+      "indications": [
+        {
+          "condition": "HER2-overexpressing breast cancer",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Trastuzumab and hyaluronidase (Herceptin Hylecta)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=trastuzumab%20hyaluronidase"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "pertuzumab",
+      "drug": "Pertuzumab (Perjeta)",
+      "hcpcs": [
+        "J9306"
+      ],
+      "indications": [
+        {
+          "condition": "HER2-positive breast cancer (metastatic, neoadjuvant, and adjuvant)",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Pertuzumab (Perjeta)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=pertuzumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "pertuzumab-trastuzumab-hyaluronidase",
+      "drug": "Pertuzumab, trastuzumab, and hyaluronidase (Phesgo)",
+      "hcpcs": [
+        "J9316"
+      ],
+      "indications": [
+        {
+          "condition": "HER2-positive breast cancer (metastatic, neoadjuvant, and adjuvant)",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Pertuzumab, trastuzumab, and hyaluronidase (Phesgo)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=pertuzumab%20trastuzumab%20hyaluronidase"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "ado-trastuzumab-emtansine",
+      "drug": "Ado-trastuzumab emtansine (Kadcyla)",
+      "hcpcs": [
+        "J9354"
+      ],
+      "indications": [
+        {
+          "condition": "HER2-positive breast cancer (metastatic, and early disease with residual invasive disease)",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Ado-trastuzumab emtansine (Kadcyla)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ado-trastuzumab%20emtansine"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "fam-trastuzumab-deruxtecan",
+      "drug": "Fam-trastuzumab deruxtecan (Enhertu)",
+      "hcpcs": [
+        "J9358"
+      ],
+      "indications": [
+        {
+          "condition": "HER2-positive and HER2-low breast cancer",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        },
+        {
+          "condition": "HER2-mutant non-small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "HER2-positive gastric or gastroesophageal junction adenocarcinoma",
+          "icd10": [
+            {
+              "code": "C16.9",
+              "description": "Malignant neoplasm of stomach, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Fam-trastuzumab deruxtecan (Enhertu)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=fam-trastuzumab%20deruxtecan"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "margetuximab",
+      "drug": "Margetuximab (Margenza)",
+      "hcpcs": [
+        "J9353"
+      ],
+      "indications": [
+        {
+          "condition": "HER2-positive metastatic breast cancer",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Margetuximab (Margenza)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=margetuximab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "cetuximab",
+      "drug": "Cetuximab (Erbitux)",
+      "hcpcs": [
+        "J9055"
+      ],
+      "indications": [
+        {
+          "condition": "Head and neck squamous cell carcinoma",
+          "icd10": [
+            {
+              "code": "C76.0",
+              "description": "Malignant neoplasm of head, face and neck"
+            }
+          ]
+        },
+        {
+          "condition": "RAS wild-type metastatic colorectal cancer",
+          "icd10": [
+            {
+              "code": "C18.9",
+              "description": "Malignant neoplasm of colon, unspecified"
+            },
+            {
+              "code": "C20",
+              "description": "Malignant neoplasm of rectum"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Cetuximab (Erbitux)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=cetuximab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "panitumumab",
+      "drug": "Panitumumab (Vectibix)",
+      "hcpcs": [
+        "J9303"
+      ],
+      "indications": [
+        {
+          "condition": "RAS wild-type metastatic colorectal cancer",
+          "icd10": [
+            {
+              "code": "C18.9",
+              "description": "Malignant neoplasm of colon, unspecified"
+            },
+            {
+              "code": "C20",
+              "description": "Malignant neoplasm of rectum"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Panitumumab (Vectibix)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=panitumumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "necitumumab",
+      "drug": "Necitumumab (Portrazza)",
+      "hcpcs": [
+        "J9295"
+      ],
+      "indications": [
+        {
+          "condition": "Metastatic squamous non-small cell lung cancer (with gemcitabine and cisplatin)",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Necitumumab (Portrazza)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=necitumumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "ramucirumab",
+      "drug": "Ramucirumab (Cyramza)",
+      "hcpcs": [
+        "J9308"
+      ],
+      "indications": [
+        {
+          "condition": "Gastric or gastroesophageal junction adenocarcinoma",
+          "icd10": [
+            {
+              "code": "C16.9",
+              "description": "Malignant neoplasm of stomach, unspecified"
+            }
+          ]
+        },
+        {
+          "condition": "Non-small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "Metastatic colorectal cancer",
+          "icd10": [
+            {
+              "code": "C18.9",
+              "description": "Malignant neoplasm of colon, unspecified"
+            },
+            {
+              "code": "C20",
+              "description": "Malignant neoplasm of rectum"
+            }
+          ]
+        },
+        {
+          "condition": "Hepatocellular carcinoma",
+          "icd10": [
+            {
+              "code": "C22.0",
+              "description": "Liver cell carcinoma"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Ramucirumab (Cyramza)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ramucirumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "amivantamab",
+      "drug": "Amivantamab (Rybrevant, intravenous and subcutaneous)",
+      "hcpcs": [
+        "J9061",
+        "J9062"
+      ],
+      "indications": [
+        {
+          "condition": "EGFR-mutated non-small cell lung cancer (exon 20 insertion; exon 19 deletion or L858R)",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Amivantamab (Rybrevant, intravenous and subcutaneous)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=amivantamab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Confirm which product carries which indication and whether J9062 (with hyaluronidase) is the subcutaneous product."
+    },
+    {
+      "id": "datopotamab-deruxtecan",
+      "drug": "Datopotamab deruxtecan (Datroway)",
+      "hcpcs": [
+        "J9011"
+      ],
+      "indications": [
+        {
+          "condition": "Hormone receptor-positive, HER2-negative breast cancer",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        },
+        {
+          "condition": "EGFR-mutated non-small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Datopotamab deruxtecan (Datroway)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=datopotamab%20deruxtecan"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "telisotuzumab-vedotin",
+      "drug": "Telisotuzumab vedotin (Emrelis)",
+      "hcpcs": [
+        "J9326"
+      ],
+      "indications": [
+        {
+          "condition": "Non-squamous non-small cell lung cancer with high c-Met protein overexpression",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Telisotuzumab vedotin (Emrelis)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=telisotuzumab%20vedotin"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "zenocutuzumab",
+      "drug": "Zenocutuzumab (Bizengri)",
+      "hcpcs": [
+        "J9382"
+      ],
+      "indications": [
+        {
+          "condition": "NRG1 fusion-positive non-small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        },
+        {
+          "condition": "NRG1 fusion-positive pancreatic adenocarcinoma",
+          "icd10": [
+            {
+              "code": "C25.9",
+              "description": "Malignant neoplasm of pancreas, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Zenocutuzumab (Bizengri)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=zenocutuzumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "zanidatamab",
+      "drug": "Zanidatamab (Ziihera)",
+      "hcpcs": [
+        "J9276"
+      ],
+      "indications": [
+        {
+          "condition": "HER2-positive biliary tract cancer",
+          "icd10": [
+            {
+              "code": "C24.9",
+              "description": "Malignant neoplasm of biliary tract, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Zanidatamab (Ziihera)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=zanidatamab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "sacituzumab-govitecan",
+      "drug": "Sacituzumab govitecan (Trodelvy)",
+      "hcpcs": [
+        "J9317"
+      ],
+      "indications": [
+        {
+          "condition": "Triple-negative breast cancer",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        },
+        {
+          "condition": "Hormone receptor-positive, HER2-negative breast cancer",
+          "icd10": [
+            {
+              "code": "C50.919",
+              "description": "Malignant neoplasm of unspecified site of unspecified female breast"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Sacituzumab govitecan (Trodelvy)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=sacituzumab%20govitecan"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "enfortumab-vedotin",
+      "drug": "Enfortumab vedotin (Padcev)",
+      "hcpcs": [
+        "J9177"
+      ],
+      "indications": [
+        {
+          "condition": "Locally advanced or metastatic urothelial cancer",
+          "icd10": [
+            {
+              "code": "C67.9",
+              "description": "Malignant neoplasm of bladder, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Enfortumab vedotin (Padcev)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=enfortumab%20vedotin"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "mirvetuximab-soravtansine",
+      "drug": "Mirvetuximab soravtansine (Elahere)",
+      "hcpcs": [
+        "J9063"
+      ],
+      "indications": [
+        {
+          "condition": "Folate receptor alpha-positive, platinum-resistant epithelial ovarian, fallopian tube, or primary peritoneal cancer",
+          "icd10": [
+            {
+              "code": "C56.9",
+              "description": "Malignant neoplasm of unspecified ovary"
+            },
+            {
+              "code": "C57.00",
+              "description": "Malignant neoplasm of unspecified fallopian tube"
+            },
+            {
+              "code": "C48.2",
+              "description": "Malignant neoplasm of peritoneum, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Mirvetuximab soravtansine (Elahere)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=mirvetuximab%20soravtansine"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "tisotumab-vedotin",
+      "drug": "Tisotumab vedotin (Tivdak)",
+      "hcpcs": [
+        "J9273"
+      ],
+      "indications": [
+        {
+          "condition": "Recurrent or metastatic cervical cancer",
+          "icd10": [
+            {
+              "code": "C53.9",
+              "description": "Malignant neoplasm of cervix uteri, unspecified"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Tisotumab vedotin (Tivdak)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=tisotumab%20vedotin"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "daratumumab",
+      "drug": "Daratumumab (Darzalex) and daratumumab with hyaluronidase (Darzalex Faspro)",
+      "hcpcs": [
+        "J9145",
+        "J9144"
+      ],
+      "indications": [
+        {
+          "condition": "Multiple myeloma",
+          "icd10": [
+            {
+              "code": "C90.00",
+              "description": "Multiple myeloma not having achieved remission"
+            }
+          ]
+        },
+        {
+          "condition": "Light chain (AL) amyloidosis (subcutaneous Darzalex Faspro)",
+          "icd10": [
+            {
+              "code": "E85.81",
+              "description": "Light chain (AL) amyloidosis"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Daratumumab (Darzalex) and daratumumab with hyaluronidase (Darzalex Faspro)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=daratumumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Confirm that the amyloidosis indication belongs to the subcutaneous product only (J9144)."
+    },
+    {
+      "id": "isatuximab",
+      "drug": "Isatuximab (Sarclisa)",
+      "hcpcs": [
+        "J9227"
+      ],
+      "indications": [
+        {
+          "condition": "Multiple myeloma",
+          "icd10": [
+            {
+              "code": "C90.00",
+              "description": "Multiple myeloma not having achieved remission"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Isatuximab (Sarclisa)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=isatuximab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "elotuzumab",
+      "drug": "Elotuzumab (Empliciti)",
+      "hcpcs": [
+        "J9176"
+      ],
+      "indications": [
+        {
+          "condition": "Multiple myeloma",
+          "icd10": [
+            {
+              "code": "C90.00",
+              "description": "Multiple myeloma not having achieved remission"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Elotuzumab (Empliciti)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=elotuzumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "teclistamab",
+      "drug": "Teclistamab (Tecvayli)",
+      "hcpcs": [
+        "J9380"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsed or refractory multiple myeloma",
+          "icd10": [
+            {
+              "code": "C90.00",
+              "description": "Multiple myeloma not having achieved remission"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Teclistamab (Tecvayli)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=teclistamab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "brentuximab-vedotin",
+      "drug": "Brentuximab vedotin (Adcetris)",
+      "hcpcs": [
+        "J9042"
+      ],
+      "indications": [
+        {
+          "condition": "Classical Hodgkin lymphoma",
+          "icd10": [
+            {
+              "code": "C81.90",
+              "description": "Hodgkin lymphoma, unspecified, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Systemic anaplastic large cell lymphoma",
+          "icd10": [
+            {
+              "code": "C84.60",
+              "description": "Anaplastic large cell lymphoma, ALK-positive, unspecified site"
+            },
+            {
+              "code": "C84.70",
+              "description": "Anaplastic large cell lymphoma, ALK-negative, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Primary cutaneous anaplastic large cell lymphoma or CD30-expressing mycosis fungoides",
+          "icd10": [
+            {
+              "code": "C86.6",
+              "description": "Primary cutaneous CD30-positive T-cell proliferations"
+            },
+            {
+              "code": "C84.00",
+              "description": "Mycosis fungoides, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "CD30-expressing peripheral T-cell lymphoma",
+          "icd10": [
+            {
+              "code": "C84.40",
+              "description": "Peripheral T-cell lymphoma, not classified, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Large B-cell lymphoma (with lenalidomide and rituximab)",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Brentuximab vedotin (Adcetris)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=brentuximab%20vedotin"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "polatuzumab-vedotin",
+      "drug": "Polatuzumab vedotin (Polivy)",
+      "hcpcs": [
+        "J9309"
+      ],
+      "indications": [
+        {
+          "condition": "Diffuse large B-cell lymphoma (with a rituximab-containing regimen)",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Polatuzumab vedotin (Polivy)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=polatuzumab%20vedotin"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "rituximab-hyaluronidase",
+      "drug": "Rituximab and hyaluronidase (Rituxan Hycela)",
+      "hcpcs": [
+        "J9311"
+      ],
+      "indications": [
+        {
+          "condition": "Follicular lymphoma",
+          "icd10": [
+            {
+              "code": "C82.90",
+              "description": "Follicular lymphoma, unspecified, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Diffuse large B-cell lymphoma",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Chronic lymphocytic leukemia",
+          "icd10": [
+            {
+              "code": "C91.10",
+              "description": "Chronic lymphocytic leukemia of B-cell type not having achieved remission"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Rituximab and hyaluronidase (Rituxan Hycela)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=rituximab%20hyaluronidase"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "obinutuzumab",
+      "drug": "Obinutuzumab (Gazyva)",
+      "hcpcs": [
+        "J9301"
+      ],
+      "indications": [
+        {
+          "condition": "Chronic lymphocytic leukemia",
+          "icd10": [
+            {
+              "code": "C91.10",
+              "description": "Chronic lymphocytic leukemia of B-cell type not having achieved remission"
+            }
+          ]
+        },
+        {
+          "condition": "Follicular lymphoma",
+          "icd10": [
+            {
+              "code": "C82.90",
+              "description": "Follicular lymphoma, unspecified, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Obinutuzumab (Gazyva)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=obinutuzumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Newer lupus nephritis indication omitted (outside oncology coding)."
+    },
+    {
+      "id": "blinatumomab",
+      "drug": "Blinatumomab (Blincyto)",
+      "hcpcs": [
+        "J9039"
+      ],
+      "indications": [
+        {
+          "condition": "B-cell precursor acute lymphoblastic leukemia",
+          "icd10": [
+            {
+              "code": "C91.00",
+              "description": "Acute lymphoblastic leukemia not having achieved remission"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Blinatumomab (Blincyto)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=blinatumomab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "inotuzumab-ozogamicin",
+      "drug": "Inotuzumab ozogamicin (Besponsa)",
+      "hcpcs": [
+        "J9229"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsed or refractory B-cell precursor acute lymphoblastic leukemia",
+          "icd10": [
+            {
+              "code": "C91.00",
+              "description": "Acute lymphoblastic leukemia not having achieved remission"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Inotuzumab ozogamicin (Besponsa)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=inotuzumab%20ozogamicin"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "gemtuzumab-ozogamicin",
+      "drug": "Gemtuzumab ozogamicin (Mylotarg)",
+      "hcpcs": [
+        "J9203"
+      ],
+      "indications": [
+        {
+          "condition": "CD33-positive acute myeloid leukemia",
+          "icd10": [
+            {
+              "code": "C92.00",
+              "description": "Acute myeloblastic leukemia, not having achieved remission"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Gemtuzumab ozogamicin (Mylotarg)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=gemtuzumab%20ozogamicin"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "epcoritamab",
+      "drug": "Epcoritamab (Epkinly)",
+      "hcpcs": [
+        "J9321"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsed or refractory diffuse large B-cell lymphoma",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Relapsed or refractory follicular lymphoma",
+          "icd10": [
+            {
+              "code": "C82.90",
+              "description": "Follicular lymphoma, unspecified, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Epcoritamab (Epkinly)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=epcoritamab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "glofitamab",
+      "drug": "Glofitamab (Columvi)",
+      "hcpcs": [
+        "J9286"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsed or refractory diffuse large B-cell lymphoma",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Glofitamab (Columvi)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=glofitamab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "mosunetuzumab",
+      "drug": "Mosunetuzumab (Lunsumio)",
+      "hcpcs": [
+        "J9350"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsed or refractory follicular lymphoma",
+          "icd10": [
+            {
+              "code": "C82.90",
+              "description": "Follicular lymphoma, unspecified, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Mosunetuzumab (Lunsumio)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=mosunetuzumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "tafasitamab",
+      "drug": "Tafasitamab (Monjuvi)",
+      "hcpcs": [
+        "J9349"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsed or refractory diffuse large B-cell lymphoma (with lenalidomide)",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            }
+          ]
+        },
+        {
+          "condition": "Relapsed or refractory follicular lymphoma",
+          "icd10": [
+            {
+              "code": "C82.90",
+              "description": "Follicular lymphoma, unspecified, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Tafasitamab (Monjuvi)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=tafasitamab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "loncastuximab-tesirine",
+      "drug": "Loncastuximab tesirine (Zynlonta)",
+      "hcpcs": [
+        "J9359"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsed or refractory large B-cell lymphoma",
+          "icd10": [
+            {
+              "code": "C83.30",
+              "description": "Diffuse large B-cell lymphoma, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Loncastuximab tesirine (Zynlonta)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=loncastuximab%20tesirine"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "mogamulizumab",
+      "drug": "Mogamulizumab (Poteligeo)",
+      "hcpcs": [
+        "J9204"
+      ],
+      "indications": [
+        {
+          "condition": "Relapsed or refractory mycosis fungoides or Sezary syndrome",
+          "icd10": [
+            {
+              "code": "C84.00",
+              "description": "Mycosis fungoides, unspecified site"
+            },
+            {
+              "code": "C84.10",
+              "description": "Sezary disease, unspecified site"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Mogamulizumab (Poteligeo)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=mogamulizumab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    },
+    {
+      "id": "tarlatamab",
+      "drug": "Tarlatamab (Imdelltra)",
+      "hcpcs": [
+        "J9026"
+      ],
+      "indications": [
+        {
+          "condition": "Extensive-stage small cell lung cancer",
+          "icd10": [
+            {
+              "code": "C34.90",
+              "description": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Tarlatamab (Imdelltra)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=tarlatamab"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing). Small cell lung cancer has no separate ICD-10-CM code; it is coded to lung (C34.-)."
+    },
+    {
+      "id": "tebentafusp",
+      "drug": "Tebentafusp (Kimmtrak)",
+      "hcpcs": [
+        "J9274"
+      ],
+      "indications": [
+        {
+          "condition": "HLA-A*02:01-positive unresectable or metastatic uveal melanoma",
+          "icd10": [
+            {
+              "code": "C69.30",
+              "description": "Malignant neoplasm of unspecified choroid"
+            }
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "label": "FDA prescribing information on DailyMed (NLM): Tebentafusp (Kimmtrak)",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=tebentafusp"
+        }
+      ],
+      "notes": "AI-drafted from memory of the FDA label; the label was not re-read. Not a complete list of indications (newer indications and combination partners may be missing)."
+    }
+  ]
+}
