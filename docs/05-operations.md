@@ -126,10 +126,14 @@ Same token handling, Node selection, network wait, and failure notification as t
 2. Uploads each dataset gzip-compressed to `POST /api/admin/wa-coverage` with `CODERX_ADMIN_TOKEN` (from the environment or `.env.production.local`). The site keeps one current release per dataset (per insurer for exchange files), deletes the rows it replaces, and skips data it already has unless `--force`.
 
 ```bash
-npm run refresh:wa-coverage                      # refresh and upload to production
-npm run refresh:wa-coverage -- --dry-run         # build and check the uploads, send nothing
-npm run refresh:wa-coverage -- --skip-refresh --only exchange   # re-upload what is in wa-coverage-check/cache/
+scripts/wa-coverage-launchd.sh install     # weekly: Saturdays 07:30 local time
+scripts/wa-coverage-launchd.sh status
+scripts/wa-coverage-launchd.sh run         # run now (add --dry-run, --force, --skip-refresh, or --only apple_health,exchange,nadac)
+scripts/wa-coverage-launchd.sh uninstall
+npm run refresh:wa-coverage -- --dry-run   # by hand: build and check the uploads, send nothing
 ```
+
+Same token handling, Node selection, network wait, and failure notification as the price benchmark job. Log: `~/Library/Logs/coderx-wa-coverage-refresh.log`. HCA's PDL takes effect each Saturday, so the job runs Saturday morning; a run missed while the Mac sleeps happens at the next wake.
 
 Medicare Part D on the page comes from `cms_partd_wa`, which the daily cron already imports. The UMP (PEBB/SEBB) list is a PDF without drug codes, so the page links to it rather than reading it. Drug names are looked up in NLM's RxNav at request time (cached a week); scripts that walk `?q=` URLs are refused like `?code=` lookups.
 
