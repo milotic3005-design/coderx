@@ -1,7 +1,7 @@
 /**
  * Runs before every page and API request:
  *  - API routes: per-IP fixed-window rate limiting (best effort per instance).
- *  - Calculator and tool lookups (?code=…): refused for scripts, which have no use for the HTML pages (see below).
+ *  - Calculator and tool lookups (?code=… or ?q=…): refused for scripts, which have no use for the HTML pages (see below).
  *  - Pages: a fresh nonce and a strict Content-Security-Policy.
  */
 import { NextResponse, type NextRequest } from "next/server";
@@ -34,7 +34,7 @@ function clientKey(request: NextRequest): string {
   return request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous";
 }
 
-/** Pages that take a code in the URL and read the database on a cache miss. */
+/** Pages that take a code or drug name in the URL and read the database (and, for /tools/wa-coverage, RxNav) on a cache miss. */
 const LOOKUP_PAGE = /^\/(calculator|tools\/[a-z-]+)\/?$/;
 
 /**
@@ -44,7 +44,7 @@ const LOOKUP_PAGE = /^\/(calculator|tools\/[a-z-]+)\/?$/;
  * compute (2026-11-08). The same data is available from /api/hcpcs/{code}, which is rate limited.
  */
 export function isScriptedLookup(pathname: string, searchParams: URLSearchParams, headers: Headers): boolean {
-  if (!LOOKUP_PAGE.test(pathname) || !searchParams.has("code")) return false;
+  if (!LOOKUP_PAGE.test(pathname) || !(searchParams.has("code") || searchParams.has("q"))) return false;
   if (headers.has("sec-fetch-site")) return false;
   return !((headers.get("accept") ?? "").includes("text/html") && headers.has("accept-language"));
 }

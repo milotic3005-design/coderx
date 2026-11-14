@@ -1,4 +1,4 @@
-import { Calculator, ChartColumn, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, Scale, ScanLine, Waypoints } from "lucide-react";
+import { Calculator, ChartColumn, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, ListChecks, Scale, ScanLine, Waypoints } from "lucide-react";
 
 /** The Tools section, in the order shown on /tools and in the footer. */
 export const TOOLS = [
@@ -43,6 +43,13 @@ export const TOOLS = [
     title: "Part B vs Part D",
     who: "Pharmacists, billers, and intake",
     body: "Which Medicare benefit pays for a drug in each setting, with the CMS source for every answer: Noridian's self-administered drug list, DME policies, Washington Part D plan coverage, and the dollars for each lawful pathway.",
+  },
+  {
+    href: "/tools/wa-coverage",
+    icon: ListChecks,
+    title: "Washington drug coverage",
+    who: "Pharmacists, intake, and prior-authorization staff",
+    body: "Any drug's formulary status on Washington Apple Health, Medicare Part D plans in Washington, and exchange plans (Ambetter, Regence/BridgeSpan): tier, PA, step therapy, quantity limits, and each plan's cost-sharing rule, matched by RxNorm codes, plus the NADAC reference price.",
   },
   {
     href: "/tools/price-benchmark",

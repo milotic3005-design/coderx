@@ -1,4 +1,4 @@
-import { BadgeCheck, Calculator, CircleAlert, FileClock, Hospital, Landmark, ShieldCheck, Sparkles } from "lucide-react";
+import { BadgeCheck, Calculator, CircleAlert, FileClock, FileText, Hospital, Landmark, ShieldCheck, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { STATUS_LABELS, type DataStatus } from "@/lib/data/status";
 import { PRODUCT_CLASS_LABELS } from "@/lib/format";
@@ -60,6 +60,7 @@ const STATUS_STYLE: Record<DataStatus, { className: string; icon: ReactNode }> =
   "official-fda": { className: "bg-[var(--fam-c-bg)] text-[var(--fam-c)]", icon: <ShieldCheck aria-hidden="true" className="h-3 w-3" /> },
   "official-state": { className: "bg-[var(--fam-p-bg)] text-[var(--fam-p)]", icon: <Landmark aria-hidden="true" className="h-3 w-3" /> },
   "hospital-published": { className: "bg-[var(--fam-c-bg)] text-[var(--fam-c)]", icon: <Hospital aria-hidden="true" className="h-3 w-3" /> },
+  "insurer-published": { className: "bg-[var(--fam-p-bg)] text-[var(--fam-p)]", icon: <FileText aria-hidden="true" className="h-3 w-3" /> },
   derived: { className: "bg-surface text-ink-muted ring-1 ring-dashed ring-rule-strong ring-inset border border-dashed border-rule-strong", icon: <Calculator aria-hidden="true" className="h-3 w-3" /> },
   manual: { className: "bg-ok-tint text-ok", icon: <BadgeCheck aria-hidden="true" className="h-3 w-3" /> },
   "ai-draft": { className: "bg-accent-tint text-accent", icon: <Sparkles aria-hidden="true" className="h-3 w-3" /> },

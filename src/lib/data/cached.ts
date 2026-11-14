@@ -13,6 +13,8 @@ import { isDatabaseUnavailable, pauseDatabase } from "@/lib/db/availability";
 import { getCoverageArticle, getDrugDetail, getFamilyCounts, getFamilyListing, getHcpcsDetail, getHomeData, getManufacturerDetail, getNdcDetail, getSitemapEntries, getSourcesOverview } from "./queries";
 import { benefitData } from "./benefit";
 import { biosimilarGroups, quarterlyChanges, siteOfCareData } from "./tools";
+import { matchRxNorm, RXNAV_CACHE_SECONDS } from "@/lib/rxnorm";
+import { waCoverage } from "./wa-coverage";
 
 export const DATA_TAG = "coderx-data";
 const SIX_HOURS = 6 * 60 * 60;
@@ -71,3 +73,6 @@ export const cachedSiteOfCare = cached((code: string) => siteOfCareData(code), "
 export const cachedBenefit = cached((code: string, slug: string) => benefitData({ code: code || undefined, slug: slug || undefined }), "benefit");
 export const cachedSitemapEntries = cached(() => getSitemapEntries(), "sitemap");
 export const cachedCoverageArticle = cached((displayId: string) => getCoverageArticle(displayId), "coverage-article");
+/** RxNorm answers, cached for a day on their own (NLM's guidance) so that outage fallbacks for earlier days do not call RxNav again. */
+const cachedRxNorm = !process.env.NEXT_RUNTIME || process.env.CODERX_DISABLE_DATA_CACHE === "1" ? matchRxNorm : unstable_cache(matchRxNorm, ["coderx:rxnorm:v1"], { revalidate: RXNAV_CACHE_SECONDS });
+export const cachedWaCoverage = cached((query: string) => waCoverage(query, { lookup: cachedRxNorm }), "wa-coverage");

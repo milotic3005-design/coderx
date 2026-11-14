@@ -118,6 +118,21 @@ scripts/price-benchmark-launchd.sh uninstall
 
 Same token handling, Node selection, network wait, and failure notification as the Purple Book job below. Log: `~/Library/Logs/coderx-price-benchmark-refresh.log`. When MultiCare reposts a file under a new path, update its URL in `src/ingest/hospitals.ts` (the upload endpoint accepts only the listed hospitals and the file host).
 
+## Washington drug coverage (operator's Mac, weekly)
+
+`/tools/wa-coverage` reads three datasets built on the operator's Mac, because Cambia's exchange formulary files are about 400 MB and the refresh peaks near 2.6 GB of memory. `scripts/refresh-wa-coverage.ts` (`npm run refresh:wa-coverage`):
+
+1. Runs the checker in `wa-coverage-check/` (`npm ci` the first time, then `npm run refresh`), which downloads and checks the Apple Health PDL (HCA, weekly), the Washington exchange formularies of Ambetter and Regence/BridgeSpan (CMS machine-readable format), and NADAC (newest week), and stops if any file looks wrong.
+2. Uploads each dataset gzip-compressed to `POST /api/admin/wa-coverage` with `CODERX_ADMIN_TOKEN` (from the environment or `.env.production.local`). The site keeps one current release per dataset (per insurer for exchange files), deletes the rows it replaces, and skips data it already has unless `--force`.
+
+```bash
+npm run refresh:wa-coverage                      # refresh and upload to production
+npm run refresh:wa-coverage -- --dry-run         # build and check the uploads, send nothing
+npm run refresh:wa-coverage -- --skip-refresh --only exchange   # re-upload what is in wa-coverage-check/cache/
+```
+
+Medicare Part D on the page comes from `cms_partd_wa`, which the daily cron already imports. The UMP (PEBB/SEBB) list is a PDF without drug codes, so the page links to it rather than reading it. Drug names are looked up in NLM's RxNav at request time (cached a week); scripts that walk `?q=` URLs are refused like `?code=` lookups.
+
 ## Publisher files blocked from cloud egress (Purple Book)
 
 FDA's bot defense blocks the Purple Book CSV for cloud networks: Vercel gets a 404, and GitHub-hosted Actions runners get a 302 to `/apology_objects/abuse-detection-apology.html` for both the downloads page and the file (checked 2026-10-15 from two Azure regions). Ordinary networks are not blocked. The Vercel cron records its failure; the import is done from an operator's Mac by `scripts/refresh-purple-book.ts` (`npm run refresh:purple-book`):

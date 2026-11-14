@@ -19,6 +19,7 @@
     "ingest:discover": "tsx scripts/ingest.ts --discover",
     "refresh:purple-book": "tsx scripts/refresh-purple-book.ts",
     "refresh:price-benchmark": "tsx scripts/refresh-price-benchmark.ts",
+    "refresh:wa-coverage": "tsx scripts/refresh-wa-coverage.ts",
     "fixtures": "tsx scripts/make-fixtures.ts",
     "e2e:db": "tsx scripts/seed-e2e.ts",
     "clinical": "tsx scripts/clinical-review.ts",

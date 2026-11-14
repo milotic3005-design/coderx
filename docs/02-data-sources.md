@@ -29,6 +29,11 @@ files that were current on that date.
 | 14 | `cms_mcd_lcds` | CMS | Medicare Coverage Database — Current LCD Data (DME MAC drug policies) | Weekly | **Ingested** (HCPCS Level II drug codes of 5 policies only; license accepted by the operator on 2026-11-05) |
 | 15 | `cms_partd_wa` | CMS | Quarterly Prescription Drug Plan Formulary, Pharmacy Network, and Pricing Information | Quarterly | **Ingested** (Washington plans only; no plan names; pharmacy network files never downloaded) |
 | 16 | `fda_ndc_rxcui` | FDA | openFDA NDC bulk download | As published (7-day interval) | **Ingested** (product NDC to RxCUI link only) |
+| 17 | `wa_hca_pdl` | Washington State HCA | Apple Health (Medicaid) Preferred Drug List (XLSX, by NDC) | Weekly (operator's Mac) | **Ingested** (coverage, preferred status, PA flags, PA policy per NDC) |
+| 18 | `wa_exchange_formularies` | Exchange insurers (Ambetter; Regence/BridgeSpan) | Exchange plan formularies in CMS's machine-readable format, Washington plans | As published (operator's Mac) | **Ingested** (plan names, tier cost-sharing rules, tier and PA/step/QL flags per RxCUI) |
+| 19 | `cms_nadac` | CMS | NADAC (National Average Drug Acquisition Cost), data.medicaid.gov | Weekly (operator's Mac) | **Ingested** (newest week; shown as a reference price, never as patient cost) |
+| — | — | NLM | RxNav (RxNorm API) | At request time | Used by `/tools/wa-coverage` to turn a drug name into RxCUIs and NDCs; no name is guessed |
+| — | — | HCA | UMP (PEBB/SEBB) Preferred Drug List PDF | Monthly | Link-out only: the PDF lists names without drug codes |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime; the bulk file supplies source 16 |
 | — | — | NLM | DailyMed | Daily | Link-out only |
 

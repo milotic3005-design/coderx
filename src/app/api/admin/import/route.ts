@@ -7,7 +7,7 @@ import { getDb } from "@/lib/db/client";
 import { refreshSources } from "@/ingest/refresh";
 import { sha256 } from "@/ingest/fetch";
 import { importRelease, runDerive } from "@/ingest/pipeline";
-import { SOURCE_KEYS, SOURCES } from "@/ingest/sources";
+import { SOURCE_KEYS, SOURCES, UPLOADED_SOURCES } from "@/ingest/sources";
 import type { SourceKey } from "@/ingest/sources";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       } catch {}
       // The URL must be on the source's own publisher: CMS/FDA for federal sources, the state agency for state fee schedules.
       const officialHosts = SOURCES[source]?.organization === "Washington State HCA" ? ["www.hca.wa.gov"] : ["www.cms.gov", "www.accessdata.fda.gov"];
-      if (!SOURCE_KEYS.includes(source) || !officialHosts.includes(host)) {
+      if (!SOURCE_KEYS.includes(source) || UPLOADED_SOURCES.has(source) || !officialHosts.includes(host)) {
         return fail("INVALID_PARAMETER", "source must be a known key and url an official file URL from that source's publisher.", { request });
       }
       const bytes = new Uint8Array(await request.arrayBuffer());

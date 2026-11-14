@@ -142,6 +142,7 @@ export default function MethodologyPage() {
               <li><DataStatusBadge status="official-fda" /> Value published by FDA, shown as published.</li>
               <li><DataStatusBadge status="official-state" /> Value published by a state Medicaid agency (Washington HCA), shown as published.</li>
               <li><DataStatusBadge status="hospital-published" /> From a hospital&apos;s federally required price transparency file (45 CFR 180.50), shown as anonymized ranges without payer or plan names.</li>
+              <li><DataStatusBadge status="insurer-published" /> From a formulary file an insurer publishes for public use in CMS&apos;s machine-readable format, as the insurer states it.</li>
               <li><DataStatusBadge status="derived" /> Calculated by CodeRx from official values; the formula is shown.</li>
               <li><DataStatusBadge status="manual" /> Relationship or clinical summary approved by a named reviewer with cited evidence.</li>
               <li><DataStatusBadge status="ai-draft" /> Written by an AI model and not checked by a person; shown without doses and treated as a starting point, not as fact.</li>

@@ -1,6 +1,6 @@
 /** zod schemas for every API and page parameter. */
 import { z } from "zod";
-import { SOURCE_KEYS } from "@/ingest/sources";
+import { SOURCE_KEYS, UPLOADED_SOURCES } from "@/ingest/sources";
 import { CODE_FAMILIES, normalizeHcpcs } from "@/lib/hcpcs";
 import { parseNdc } from "@/lib/ndc";
 import { MAX_QUERY_LENGTH } from "@/lib/search/parse";
@@ -102,7 +102,7 @@ export const ndcSchema = z
 export const manufacturerIdSchema = z.string().min(1).max(160).regex(/^([0-9]+|[a-z0-9-]+)$/, "Use a numeric id or a slug.");
 
 export const importBodySchema = z.object({
-  source: z.enum(["all", ...SOURCE_KEYS] as [string, ...string[]]).default("all"),
+  source: z.enum(["all", ...SOURCE_KEYS.filter((k) => !UPLOADED_SOURCES.has(k))] as [string, ...string[]]).default("all"),
   force: z.boolean().default(false),
   /** Only the newest release of each quarterly source (faster). */
   latestOnly: z.boolean().default(true),

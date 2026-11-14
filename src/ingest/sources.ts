@@ -25,7 +25,10 @@ export type SourceKey =
   | "cms_mcd_articles"
   | "cms_mcd_lcds"
   | "cms_partd_wa"
-  | "fda_ndc_rxcui";
+  | "fda_ndc_rxcui"
+  | "wa_hca_pdl"
+  | "wa_exchange_formularies"
+  | "cms_nadac";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -47,7 +50,16 @@ export const SOURCE_KEYS: SourceKey[] = [
   "cms_mcd_lcds",
   "cms_partd_wa",
   "fda_ndc_rxcui",
+  "wa_hca_pdl",
+  "wa_exchange_formularies",
+  "cms_nadac",
 ];
+
+/**
+ * Sources built on the operator's computer and posted to their own endpoints (/api/admin/hospital-rates,
+ * /api/admin/wa-coverage). The general import and refresh endpoints refuse them.
+ */
+export const UPLOADED_SOURCES: ReadonlySet<SourceKey> = new Set(["hpt_multicare", "wa_hca_pdl", "wa_exchange_formularies", "cms_nadac"]);
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
 export const MUE_SOURCES = {
@@ -88,13 +100,13 @@ export type StateFeeSourceKey = keyof typeof STATE_FEE_SOURCES;
 
 export interface SourceDefinition {
   key: SourceKey;
-  organization: "CMS" | "FDA" | "Washington State HCA" | "MultiCare Health System";
+  organization: "CMS" | "FDA" | "Washington State HCA" | "MultiCare Health System" | "Washington exchange insurers";
   dataset: string;
   shortName: string;
   landingPageUrl: string;
   cadence: "quarterly" | "daily" | "weekly" | "monthly" | "as published";
   /** Badge used for data from this source. */
-  badge: "official-cms" | "official-fda" | "official-state" | "hospital-published";
+  badge: "official-cms" | "official-fda" | "official-state" | "hospital-published" | "insurer-published";
   licenseNote: string;
 }
 
@@ -287,6 +299,37 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     cadence: "as published",
     badge: "official-state",
     licenseNote: "Washington State government publication. Maximum allowable fees; HCA pays the lesser of the provider's usual charge and the schedule (WAC 182-553). Only HCPCS Level II rows are stored.",
+  },
+  wa_hca_pdl: {
+    key: "wa_hca_pdl",
+    organization: "Washington State HCA",
+    dataset: "Apple Health (Medicaid) Preferred Drug List, by NDC",
+    shortName: "Washington Apple Health Preferred Drug List",
+    landingPageUrl: "https://www.hca.wa.gov/billers-providers-partners/program-information-providers/apple-health-preferred-drug-list-pdl",
+    cadence: "weekly",
+    badge: "official-state",
+    licenseNote: "Washington State government publication. Processed on the operator's computer; CodeRx keeps each NDC's coverage, preferred status, prior-authorization flags, and PA policy number, as coded in the PDL.",
+  },
+  wa_exchange_formularies: {
+    key: "wa_exchange_formularies",
+    organization: "Washington exchange insurers",
+    dataset: "Exchange plan formularies in CMS's machine-readable format (Washington plans)",
+    shortName: "Insurers' machine-readable exchange formularies",
+    landingPageUrl: "https://github.com/CMSgov/QHP-provider-formulary-APIs",
+    cadence: "as published",
+    badge: "insurer-published",
+    licenseNote:
+      "Formulary files that insurers publish for public and third-party use in the format CMS defines. Washington runs its own exchange, so only insurers that publish Washington plans this way are included (Ambetter and Regence/BridgeSpan as of 2026-11). Processed on the operator's computer; CodeRx keeps each Washington plan's name, tier cost-sharing rules, and each drug's tier and PA, step therapy, and quantity limit flags by RxCUI.",
+  },
+  cms_nadac: {
+    key: "cms_nadac",
+    organization: "CMS",
+    dataset: "NADAC (National Average Drug Acquisition Cost), weekly",
+    shortName: "CMS NADAC",
+    landingPageUrl: "https://data.medicaid.gov/datasets?fulltext=NADAC",
+    cadence: "weekly",
+    badge: "official-cms",
+    licenseNote: "U.S. Government data. The average price retail community pharmacies pay to buy a drug, per pricing unit. It is not what a patient or a plan pays, and drugs bought mainly by clinics, hospitals, or specialty pharmacies are often not surveyed.",
   },
   fda_purple_book: {
     key: "fda_purple_book",

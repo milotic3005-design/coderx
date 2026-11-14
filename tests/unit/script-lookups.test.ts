@@ -9,7 +9,7 @@ const SCRIPTS: Record<string, string>[] = [{}, { accept: "*/*", "user-agent": "p
 const get = (path: string, headers: Record<string, string> = {}) => new NextRequest(`https://coderxnsl.vercel.app${path}`, { headers });
 
 describe("scripted lookups of calculator and tool pages", () => {
-  it.each(["/calculator?code=J9312", "/tools/site-of-care?code=J9312&units=50", "/tools/part-b-vs-d?code=J0129", "/tools/intake?code=J9312", "/calculator/?code=J9312"])("refuses a script on %s", (path) => {
+  it.each(["/calculator?code=J9312", "/tools/site-of-care?code=J9312&units=50", "/tools/part-b-vs-d?code=J0129", "/tools/intake?code=J9312", "/calculator/?code=J9312", "/tools/wa-coverage?q=Ozempic", "/tools/part-b-vs-d?q=Benlysta"])("refuses a script on %s", (path) => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     for (const headers of SCRIPTS) {
       const res = proxy(get(path, headers));
@@ -20,7 +20,7 @@ describe("scripted lookups of calculator and tool pages", () => {
     vi.restoreAllMocks();
   });
 
-  it.each(["/calculator?code=J9312", "/tools/site-of-care?code=J9312", "/tools/part-b-vs-d?code=J0129"])("lets browsers through on %s, including ones without Fetch Metadata", (path) => {
+  it.each(["/calculator?code=J9312", "/tools/site-of-care?code=J9312", "/tools/part-b-vs-d?code=J0129", "/tools/wa-coverage?q=Ozempic"])("lets browsers through on %s, including ones without Fetch Metadata", (path) => {
     for (const headers of [BROWSER, OLD_BROWSER, { "sec-fetch-site": "none" }]) {
       const res = proxy(get(path, headers));
       expect(res.status).toBe(200);
@@ -29,7 +29,7 @@ describe("scripted lookups of calculator and tool pages", () => {
   });
 
   it("only guards lookups: pages without a code, record pages, tool landing pages, and the API are untouched", () => {
-    for (const path of ["/calculator", "/tools", "/tools/site-of-care", "/hcpcs/J9312", "/drugs/rituxan-rituximab", "/ndc/00006-3026-02", "/search?q=x", "/tools/biosimilars?ref=rituxan-rituximab", "/api/hcpcs/J9312?code=J9312"]) {
+    for (const path of ["/calculator", "/tools", "/tools/site-of-care", "/hcpcs/J9312", "/drugs/rituxan-rituximab", "/ndc/00006-3026-02", "/search?q=x", "/tools/wa-coverage", "/tools/biosimilars?ref=rituxan-rituximab", "/api/hcpcs/J9312?code=J9312"]) {
       expect(isScriptedLookup(new URL(`https://x.test${path}`).pathname, new URL(`https://x.test${path}`).searchParams, new Headers())).toBe(false);
     }
     expect(proxy(get("/hcpcs/J9312")).status).toBe(200);

@@ -456,6 +456,83 @@ export const ndcRxcui = pgTable(
   (t) => [uniqueIndex("ndc_rxcui_pair_uq").on(t.productNdc9, t.rxcui), index("ndc_rxcui_rxcui_idx").on(t.rxcui), index("ndc_rxcui_release_idx").on(t.sourceReleaseId)],
 );
 
+/* ------------------------------------------------------------------ */
+/* Washington formularies (uploaded from the operator's Mac)            */
+/* ------------------------------------------------------------------ */
+
+/** Apple Health (Medicaid) Preferred Drug List, one row per NDC. Codes are the PDL's own (its KEY sheet). */
+export const waPdlNdcs = pgTable(
+  "wa_pdl_ndcs",
+  {
+    id: serial("id").primaryKey(),
+    ndc11: text("ndc11").notNull(),
+    label: text("label").notNull(),
+    /** CP pharmacy only, CM medical only, CA both, NC not covered, blank when the PDL leaves it empty. */
+    coverage: text("coverage").notNull(),
+    nonCoveredReason: text("non_covered_reason").notNull(),
+    pharmacyPreferred: text("pharmacy_preferred").notNull(),
+    pharmacyPa: text("pharmacy_pa").notNull(),
+    medicalPreferred: text("medical_preferred").notNull(),
+    medicalPa: text("medical_pa").notNull(),
+    paPolicy: text("pa_policy").notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("wa_pdl_ndcs_ndc_idx").on(t.ndc11), index("wa_pdl_ndcs_release_idx").on(t.sourceReleaseId)],
+);
+
+/** Washington exchange plans from an insurer's CMS-format machine-readable files, with each tier's cost-sharing rule. */
+export const waExchangePlans = pgTable(
+  "wa_exchange_plans",
+  {
+    id: serial("id").primaryKey(),
+    insurerKey: text("insurer_key").notNull(),
+    planId: text("plan_id").notNull(),
+    name: text("name").notNull(),
+    /** Tier name -> the plan's cost-sharing rule in words, as the file states it. */
+    costs: jsonb("costs").$type<Record<string, string>>().notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("wa_exchange_plans_insurer_idx").on(t.insurerKey), index("wa_exchange_plans_release_idx").on(t.sourceReleaseId)],
+);
+
+/** One row per insurer and RxCUI: every Washington plan of that insurer that lists the drug. */
+export const waExchangeDrugs = pgTable(
+  "wa_exchange_drugs",
+  {
+    id: serial("id").primaryKey(),
+    insurerKey: text("insurer_key").notNull(),
+    rxcui: text("rxcui").notNull(),
+    listings: jsonb("listings").$type<{ planId: string; tier: string; pa: boolean; st: boolean; ql: boolean }[]>().notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("wa_exchange_drugs_rxcui_idx").on(t.rxcui), index("wa_exchange_drugs_release_idx").on(t.sourceReleaseId)],
+);
+
+/** One week of NADAC, per NDC: what retail pharmacies pay on average. Not a patient's or a plan's price. */
+export const nadacPrices = pgTable(
+  "nadac_prices",
+  {
+    id: serial("id").primaryKey(),
+    ndc11: text("ndc11").notNull(),
+    description: text("description").notNull(),
+    perUnit: numeric("per_unit").notNull(),
+    unit: text("unit").notNull(),
+    effectiveDate: date("effective_date").notNull(),
+    /** B brand, G generic, or another NADAC class as published. */
+    classification: text("classification").notNull(),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("nadac_prices_ndc_idx").on(t.ndc11), index("nadac_prices_release_idx").on(t.sourceReleaseId)],
+);
+
 /** HCPCS Level II drug codes listed in an MCD article (CPT rows are not stored). */
 export const mcdArticleHcpcs = pgTable(
   "mcd_article_hcpcs",

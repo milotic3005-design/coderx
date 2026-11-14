@@ -5,11 +5,12 @@ import { Callout, PageHeader, TableScroll, td, th } from "@/components/layout-bi
 import { cachedSources } from "@/lib/data/cached";
 import { formatBytes, formatDate, formatDateTime, formatPeriod } from "@/lib/format";
 import { SOURCES, type SourceKey } from "@/ingest/sources";
+import { WA_EXCHANGE_INSURERS, type WaInsurerKey } from "@/ingest/wa-formularies";
 import { SCOPE_STATEMENT } from "@/ingest/scope";
 
 export const metadata: Metadata = {
   title: "Data sources and releases",
-  description: "Every CMS and FDA file CodeRx has imported, with publication dates, effective periods, checksums, and record counts.",
+  description: "Every CMS, FDA, state, hospital, and insurer file CodeRx has imported, with publication dates, effective periods, checksums, and record counts.",
   alternates: { canonical: "/sources" },
 };
 
@@ -19,7 +20,7 @@ export default async function SourcesPage() {
     <>
       <PageHeader
         title="Data sources"
-        subtitle="Every value in CodeRx comes from a government file listed below. Each import is recorded with its URL, SHA-256 checksum, effective dates, and an import report."
+        subtitle="Every value in CodeRx comes from a published file listed below: government files, hospitals' price transparency files, and insurers' formulary files, each marked by its badge. Each import is recorded with its URL, SHA-256 checksum, effective dates, and an import report."
       />
       <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {(Object.keys(SOURCES) as SourceKey[]).map((key) => {
@@ -37,7 +38,15 @@ export default async function SourcesPage() {
               </p>
               <p className="mt-2 text-xs text-ink-muted">{s.licenseNote}</p>
               <p className="mt-3 text-sm">
-                {latest ? (
+                {key === "wa_exchange_formularies" && current.length ? (
+                  <>
+                    Current:{" "}
+                    {[...current]
+                      .sort((a, b) => (a.period ?? "").localeCompare(b.period ?? ""))
+                      .map((r) => `${WA_EXCHANGE_INSURERS[r.period as WaInsurerKey]?.label ?? r.period} (imported ${formatDateTime(r.importedAt)})`)
+                      .join("; ")}
+                  </>
+                ) : latest ? (
                   <>
                     Current: <span className="code-chip font-semibold text-ink">{formatPeriod(latest.period)}</span> · imported {formatDateTime(latest.importedAt)}
                   </>
