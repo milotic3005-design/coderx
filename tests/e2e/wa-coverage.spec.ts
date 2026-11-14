@@ -17,7 +17,7 @@ test.describe("Washington drug coverage", () => {
   test("offers RxNorm's closest names instead of guessing", async ({ page }) => {
     await page.goto("/tools/wa-coverage?q=ozempick", { waitUntil: "networkidle" });
     await expect(page.getByText("No exact match in RxNorm")).toBeVisible();
-    await page.getByRole("list", { name: "RxNorm's closest names" }).getByRole("link", { name: "Ozempic" }).click();
+    await page.getByRole("list", { name: "RxNorm's closest names" }).getByRole("link", { name: "Ozempic", exact: true }).click();
     await expect(page).toHaveURL(/q=Ozempic$/);
     await expect(page.getByRole("heading", { name: "Coverage by plan" })).toBeVisible();
   });
