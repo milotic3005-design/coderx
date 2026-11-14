@@ -1,0 +1,22 @@
+{
+  "name": "wa-coverage-check",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "refresh": "tsx src/refresh.ts",
+    "check": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "fflate": "^0.8.2",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
