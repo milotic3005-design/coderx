@@ -47,7 +47,19 @@ const exchange = (insurerKey: "ambetter" | "cambia", n: number, listsDrug: boole
     lastModified: "Thu, 12 Nov 2026 02:00:32 GMT",
     sha256: sha(n),
     bytes: 1000,
-    plans: [{ planId, name: `${insurerKey} Test Silver`, costs: { SPECIALTY: "30% coinsurance after deductible" } }],
+    plans: [
+      {
+        planId,
+        name: `${insurerKey} Test Silver`,
+        costs: { SPECIALTY: "30% coinsurance after deductible" },
+        costDetails: {
+          SPECIALTY: [
+            { pharmacyType: "1-MONTH-IN-RETAIL", copayAmount: 0, copayOpt: null, coinsuranceRate: 0.3, coinsuranceOpt: "AFTER-DEDUCTIBLE" },
+            { pharmacyType: "3-MONTH-IN-MAIL", copayAmount: 0, copayOpt: null, coinsuranceRate: 0.3, coinsuranceOpt: "AFTER-DEDUCTIBLE" },
+          ],
+        },
+      },
+    ],
     drugs: listsDrug ? [...fillerDrugs, { rxcui: PROLIA_RXCUI, listings: [{ planId, tier: "SPECIALTY", pa: true, st: false, ql: true }] }] : fillerDrugs,
   };
 };
@@ -131,6 +143,21 @@ describe("coverage read model", () => {
     expect(group("exchange_ambetter").provenance[0]).toMatchObject({ organization: "Ambetter (Centene)", status: "insurer-published" });
     expect(group("exchange_cambia").rows[0]).toMatchObject({ covered: "no" });
     expect(d.reference?.prices).toEqual([expect.objectContaining({ product: "TESTBRAND 60 MG/ML SYRINGE", low: 12.5, brandOrGeneric: "brand" })]);
+  });
+  it("compares the stated copays of every plan that lists the drug, flat copays lowest first", async () => {
+    const { copays } = await waCoverage("testbrand", { db: h.db, lookup: matched });
+    expect(copays).toMatchObject({ partdLoaded: true, exchangeMissing: [] });
+    // Part D fixture: $47 copay (deductible applies, $615 deductible), standard-retail-only $100 copay, 25% coinsurance; Ambetter 30% after deductible. Cambia does not list the drug.
+    expect(copays.rows.map((r) => [r.planId, r.cost, r.deductibleFirst])).toEqual([
+      ["H1036-306-000", "$47.00 copay", "yes"],
+      ["S5617-148-000", "$100.00 copay", "no"],
+      ["H1036-319-000", "25% coinsurance", "yes"],
+      ["61836WA0050007", "30% coinsurance", "yes"],
+    ]);
+    expect(copays.rows[0]).toMatchObject({ plan: "Humana Gold Plus - Diabetes and Heart (HMO C-SNP)", tier: "Tier 4", supply: "30-day, preferred retail", deductibleNote: "Plan deductible $615.00", other: ["Standard retail: $52.00 copay"] });
+    expect(copays.rows[1]).toMatchObject({ supply: "30-day, standard retail", restrictions: "quantity limit", deductibleNote: null });
+    expect(copays.rows[3]).toMatchObject({ insurer: "Ambetter", supply: "1-month retail", other: ["3-month mail order: 30% coinsurance after deductible"] });
+    expect(copays.provenance.map((p) => p.sourceKey)).toEqual(["cms_partd_wa", "wa_exchange_formularies", "wa_exchange_formularies"]);
   });
   it("reads nothing when RxNorm has no exact match", async () => {
     const d = await waCoverage("tesbrand", { db: h.db, lookup: async () => ({ kind: "suggestions", suggestions: ["Testbrand"] }) });

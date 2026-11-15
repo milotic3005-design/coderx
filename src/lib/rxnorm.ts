@@ -86,12 +86,14 @@ export async function matchRxNorm(name: string): Promise<RxNormResult> {
 
   // A search for one ingredient also returns combinations (atorvastatin brings in amlodipine/atorvastatin).
   // Keep single-ingredient products when there are any; keep everything when only combinations matched (the reader typed one).
-  const counts = await mapLimit(all, CONCURRENCY, async (p) => {
+  // Each product's RxNorm ingredients (IN), also used to recognize insulin, whose cost sharing follows its own rules.
+  const ingredients = await mapLimit(all, CONCURRENCY, async (p) => {
     const res = await rxnav<{ relatedGroup?: { conceptGroup?: ConceptGroup[] } }>(`/rxcui/${p.rxcui}/related.json?tty=IN`);
-    return (res.relatedGroup?.conceptGroup ?? []).flatMap((g) => g.conceptProperties ?? []).length;
+    return (res.relatedGroup?.conceptGroup ?? []).flatMap((g) => g.conceptProperties ?? []).map((c) => c.name);
   });
-  const single = all.filter((_, i) => counts[i] === 1);
-  const products = single.length ? single : all;
+  const withIngredients = all.map((p, i) => ({ ...p, ingredients: ingredients[i] }));
+  const single = withIngredients.filter((p) => p.ingredients.length === 1);
+  const products = single.length ? single : withIngredients;
   const ndcLists = await mapLimit(products, CONCURRENCY, async (p) => (await rxnav<{ ndcGroup?: { ndcList?: { ndc?: string[] } } }>(`/rxcui/${p.rxcui}/ndcs.json`)).ndcGroup?.ndcList?.ndc ?? []);
   const ndcs = [...new Set(ndcLists.flat().filter((n) => /^\d{11}$/.test(n)))];
   return { kind: "match", match: { matchedName: query, rxcuis: products.map((p) => p.rxcui), products, ndcs } };

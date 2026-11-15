@@ -7,8 +7,9 @@ import { and, eq, inArray } from "drizzle-orm";
 import { WA_EXCHANGE_INSURERS, WA_INSURER_KEYS } from "@/ingest/wa-formularies";
 import { getDb, type Database } from "@/lib/db/client";
 import * as t from "@/lib/db/schema";
+import { exchangeCopayRows, partdCopayRows, sortCopays, type CopayRow } from "@/lib/copay-compare";
 import { matchRxNorm, type RxNormResult } from "@/lib/rxnorm";
-import { appleHealthRow, exchangeRows, partDRow, referencePrice, type CoverageRow, type ReferencePrice } from "@/lib/wa-coverage";
+import { appleHealthRow, exchangeRows, insulinKind, partDRow, referencePrice, type CoverageRow, type ReferencePrice } from "@/lib/wa-coverage";
 import { toProvenance, type Provenance, type ReleaseRow } from "./provenance";
 
 export const UMP_PDL_URL = "https://www.hca.wa.gov/assets/pebb/ump-preferred-drug-list.pdf";
@@ -29,6 +30,8 @@ export interface WaCoverageData {
   groups: CoverageGroup[];
   /** Null when NADAC is not loaded yet. */
   reference: (ReferencePrice & { provenance: Provenance[] }) | null;
+  /** Each listing plan's stated cost sharing for the drug, sorted (flat copays lowest first). */
+  copays: { rows: CopayRow[]; provenance: Provenance[]; partdLoaded: boolean; exchangeMissing: string[]; insulin: "all" | "some" | "none" };
 }
 
 const WA_SOURCES = ["wa_hca_pdl", "wa_exchange_formularies", "cms_partd_wa", "cms_nadac"] as const;
@@ -47,7 +50,7 @@ function umpGroup(): CoverageGroup {
 /** `db` and `lookup` can be given for tests (a seeded database, a fixed RxNorm answer). */
 export async function waCoverage(query: string, options: { db?: Database; lookup?: (q: string) => Promise<RxNormResult> } = {}): Promise<WaCoverageData> {
   const lookup = await (options.lookup ?? matchRxNorm)(query);
-  if (lookup.kind !== "match") return { query, lookup, groups: [], reference: null };
+  if (lookup.kind !== "match") return { query, lookup, groups: [], reference: null, copays: { rows: [], provenance: [], partdLoaded: false, exchangeMissing: [], insulin: "none" } };
   const { match } = lookup;
   const db = options.db ?? (await getDb());
 
@@ -66,13 +69,14 @@ export async function waCoverage(query: string, options: { db?: Database; lookup
   const partdRelease = newest(current("cms_partd_wa"));
   const exchangeReleases = current("wa_exchange_formularies");
 
-  const [pdl, nadac, formularies, partdRows, exchangePlans, exchangeDrugs] = await Promise.all([
+  const [pdl, nadac, formularies, partdRows, exchangePlans, exchangeDrugs, partdPlans] = await Promise.all([
     pdlRelease ? db.select().from(t.waPdlNdcs).where(and(eq(t.waPdlNdcs.sourceReleaseId, pdlRelease.id), inArray(t.waPdlNdcs.ndc11, ndcs))) : [],
     nadacRelease ? db.select().from(t.nadacPrices).where(and(eq(t.nadacPrices.sourceReleaseId, nadacRelease.id), inArray(t.nadacPrices.ndc11, ndcs))) : [],
     partdRelease ? db.select().from(t.partdWaFormularies) : [],
     partdRelease ? db.select().from(t.partdWaFormularyDrugs).where(inArray(t.partdWaFormularyDrugs.rxcui, rxcuis)) : [],
     exchangeReleases.length ? db.select().from(t.waExchangePlans).where(inArray(t.waExchangePlans.sourceReleaseId, ids(exchangeReleases))) : [],
     exchangeReleases.length ? db.select().from(t.waExchangeDrugs).where(and(inArray(t.waExchangeDrugs.sourceReleaseId, ids(exchangeReleases)), inArray(t.waExchangeDrugs.rxcui, rxcuis))) : [],
+    partdRelease ? db.select().from(t.partdWaPlans) : [],
   ]);
 
   const missing = (key: CoverageGroup["key"], title: string): CoverageGroup => ({ key, title, state: "missing", rows: [], note: "This source is not loaded into CodeRx yet.", provenance: [] });
@@ -95,8 +99,38 @@ export async function waCoverage(query: string, options: { db?: Database; lookup
     umpGroup(),
   ];
 
+  const insulin = insulinKind(match);
+  const copayRows = [
+    ...partdCopayRows(
+      match,
+      partdPlans.map((p) => ({ ...p, deductible: p.deductible == null ? null : Number(p.deductible) })),
+      partdRows,
+      insulin,
+    ),
+    ...WA_INSURER_KEYS.flatMap((key) =>
+      exchangeCopayRows(
+        WA_EXCHANGE_INSURERS[key].label,
+        exchangePlans.filter((p) => p.insurerKey === key),
+        exchangeDrugs.filter((d) => d.insurerKey === key).flatMap((d) => d.listings),
+        insulin,
+      ),
+    ),
+  ];
+  const copays = {
+    rows: sortCopays(copayRows),
+    provenance: [...(partdRelease && partdPlans.length ? [toProvenance(partdRelease)] : []), ...exchangeReleases.map((r) => toProvenance(r))],
+    // Part D plan costs arrive with the quarterly Part D import; an import made before them leaves the table empty.
+    partdLoaded: partdPlans.some((p) => p.tierCosts.length > 0),
+    // Insurers whose current upload predates cost details (their plans have none).
+    exchangeMissing: WA_INSURER_KEYS.filter((key) => {
+      const plans = exchangePlans.filter((p) => p.insurerKey === key);
+      return !plans.length || plans.every((p) => !Object.keys(p.costDetails).length);
+    }).map((key) => WA_EXCHANGE_INSURERS[key].label),
+    insulin,
+  };
+
   const reference = nadacRelease
     ? { ...referencePrice(match, nadac.map((n) => ({ ...n, perUnit: Number(n.perUnit) }))), provenance: [toProvenance(nadacRelease)] }
     : null;
-  return { query, lookup, groups, reference };
+  return { query, lookup, groups, reference, copays };
 }

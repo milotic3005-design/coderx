@@ -157,7 +157,17 @@ async function exchange(insurer: (typeof EXCHANGE_INSURERS)[number]) {
   for (const url of index.plan_urls) {
     for (const p of JSON.parse(new TextDecoder().decode((await download(url)).bytes)) as Plan[]) {
       if (p.plan_id.slice(5, 7) !== "WA" || !p.years.includes(year)) continue;
-      plans[p.plan_id] = { name: p.marketing_name, costs: Object.fromEntries(p.formulary.map((f) => [f.drug_tier, f.cost_sharing.map(ambetterCost).join("; ")])) };
+      plans[p.plan_id] = {
+        name: p.marketing_name,
+        costs: Object.fromEntries(p.formulary.map((f) => [f.drug_tier, f.cost_sharing.map(ambetterCost).join("; ")])),
+        // The same entries as published, for comparing amounts (CMS's QHP formulary schema).
+        costDetails: Object.fromEntries(
+          p.formulary.map((f) => [
+            f.drug_tier,
+            f.cost_sharing.map((c) => ({ pharmacyType: c.pharmacy_type, copayAmount: c.copay_amount ?? null, copayOpt: c.copay_opt ?? null, coinsuranceRate: c.coinsurance_rate ?? null, coinsuranceOpt: c.coinsurance_opt ?? null })),
+          ]),
+        ),
+      };
     }
   }
   const drugs: ExchangeIndex["drugs"] = {};

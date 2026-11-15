@@ -17,9 +17,21 @@ export interface DrugMatch {
   /** Product-level RxCUIs (every strength and form). */
   rxcuis: string[];
   /** RxNorm's name for each product, so a reader can see exactly what was matched. */
-  products: { rxcui: string; name: string }[];
+  products: { rxcui: string; name: string; ingredients?: string[] }[];
   /** 11-digit NDCs for those RxCUIs, as RxNorm currently lists them. */
   ndcs: string[];
+}
+
+/**
+ * Whether the match is insulin, from RxNorm's ingredient names: "all" when every product's ingredients are insulins,
+ * "some" when an insulin is mixed with other drugs or products, "none" otherwise. Insulin has its own cost-sharing rules.
+ */
+export function insulinKind(match: DrugMatch): "all" | "some" | "none" {
+  const isInsulin = (name: string) => /^insulin\b/i.test(name);
+  const lists = match.products.map((p) => p.ingredients ?? []);
+  if (!lists.length || lists.some((l) => !l.length)) return lists.flat().some(isInsulin) ? "some" : "none";
+  if (lists.every((l) => l.every(isInsulin))) return "all";
+  return lists.some((l) => l.some(isInsulin)) ? "some" : "none";
 }
 
 export interface CoverageRow {

@@ -73,9 +73,9 @@ export function KeyValueGrid({ items, columns = 2 }: { items: { label: string; v
 }
 
 /** Horizontally scrollable, keyboard-focusable container for wide tables. */
-export function TableScroll({ label, children }: { label: string; children: ReactNode }) {
+export function TableScroll({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div role="region" aria-label={label} tabIndex={0} className="table-scroll overflow-x-auto rounded-lg border hairline bg-surface">
+    <div role="region" aria-label={label} tabIndex={0} className={`table-scroll overflow-x-auto rounded-lg border hairline bg-surface ${className}`}>
       {children}
     </div>
   );

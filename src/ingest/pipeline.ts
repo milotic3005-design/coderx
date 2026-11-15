@@ -12,7 +12,7 @@ import { download, streamDownload, streamFromBytes, type DownloadOptions, type D
 import { CROSSWALK_LABELS, crosswalkTypeFromFileName, parseCrosswalkCsv, type CrosswalkFile } from "./parsers/cms-crosswalk";
 import { parseMdrpStream, type MdrpParse } from "./parsers/cms-mdrp";
 import { mueEffectiveDate, parseMueCsv } from "./parsers/cms-mue";
-import { partdProblems, readPartdWa, type PartdWaParse } from "./parsers/cms-partd";
+import { partdProblems, readPartdWa, tierCostWarnings, type PartdWaParse } from "./parsers/cms-partd";
 import { parseOpenFdaRxcui } from "./parsers/fda-rxcui";
 import { byteSourceFromBytes, byteSourceFromUrl } from "./remote-zip";
 import { DME_POLICIES, LCD_TABLES, parseLcdPolicies, type LcdTables } from "./parsers/cms-lcd";
@@ -711,16 +711,36 @@ function parsePartdRelease(p: PartdWaParse, fileName: string): Parsed {
     effectiveEnd: null,
     recordCount: p.drugs.length,
     rejected: [],
-    warnings: [],
-    details: { plans: p.plans.length, pdpPlans: p.plans.filter((x) => x.type === "PDP").length, mapdPlans: p.plans.filter((x) => x.type === "MA-PD").length, formularies: p.formularies.length, rxcuis, costs: p.costs.length },
+    warnings: tierCostWarnings(p),
+    details: { plans: p.plans.length, pdpPlans: p.plans.filter((x) => x.type === "PDP").length, mapdPlans: p.plans.filter((x) => x.type === "MA-PD").length, formularies: p.formularies.length, rxcuis, costs: p.costs.length, plansWithTierCosts: new Set(p.tierCosts.map((c) => c.planKey)).size, plansWithInsulinCosts: new Set(p.insulinCosts.map((c) => c.planKey)).size },
     load: async (tx, releaseId) => {
+      await tx.delete(t.partdWaPlans);
       await tx.delete(t.partdWaCosts);
       await tx.delete(t.partdWaFormularyDrugs);
       await tx.delete(t.partdWaFormularies);
       await insertBatches(tx, t.partdWaFormularies, p.formularies.map((f) => ({ ...f, sourceReleaseId: releaseId })), 4);
       await insertBatches(tx, t.partdWaFormularyDrugs, p.drugs.map((d) => ({ ...d, sourceReleaseId: releaseId })), 9);
       await insertBatches(tx, t.partdWaCosts, p.costs.map((c) => ({ ...c, unitCostMin: String(c.unitCostMin), unitCostMedian: String(c.unitCostMedian), unitCostMax: String(c.unitCostMax), sourceReleaseId: releaseId })), 7);
-      return { rows: p.drugs.length, costs: p.costs.length };
+      const tiersByPlan = new Map<string, typeof p.tierCosts>();
+      for (const c of p.tierCosts) tiersByPlan.set(c.planKey, [...(tiersByPlan.get(c.planKey) ?? []), c]);
+      const insulinByPlan = new Map<string, typeof p.insulinCosts>();
+      for (const c of p.insulinCosts) insulinByPlan.set(c.planKey, [...(insulinByPlan.get(c.planKey) ?? []), c]);
+      await insertBatches(
+        tx,
+        t.partdWaPlans,
+        p.plans.map((plan) => ({
+          planKey: plan.key,
+          planName: plan.name,
+          planType: plan.type,
+          formularyId: plan.formularyId,
+          deductible: plan.deductible == null ? null : String(plan.deductible),
+          tierCosts: (tiersByPlan.get(plan.key) ?? []).map((c) => ({ tier: c.tier, deductibleApplies: c.deductibleApplies, specialty: c.specialty, preferred: c.preferred, standard: c.standard })),
+          insulinCosts: (insulinByPlan.get(plan.key) ?? []).map((c) => ({ tier: c.tier, preferred: c.preferred, standard: c.standard })),
+          sourceReleaseId: releaseId,
+        })),
+        9,
+      );
+      return { rows: p.drugs.length, costs: p.costs.length, plans: p.plans.length };
     },
   };
 }

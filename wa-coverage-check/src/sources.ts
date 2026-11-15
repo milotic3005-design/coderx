@@ -54,9 +54,19 @@ export interface PartDIndex {
 /** NADAC, one week, keyed by 11-digit NDC. A pharmacy's average purchase price, not a patient's cost. */
 export type NadacIndex = Record<string, { description: string; perUnit: number; unit: string; effectiveDate: string; classification: string }>;
 
+/** One cost_sharing entry of a plan's tier, with CMS's field values as the insurer's file states them. */
+export interface ExchangeCostDetail {
+  pharmacyType: string;
+  copayAmount: number | null;
+  copayOpt: string | null;
+  coinsuranceRate: number | null;
+  coinsuranceOpt: string | null;
+}
+
 /** One exchange insurer's WA plans and drug listings, from its CMS-layout JSON. */
 export interface ExchangeIndex {
-  plans: Record<string, { name: string; costs: Record<string, string> }>;
+  /** costs: each tier's rule in words; costDetails: the same entries as published (older caches lack them). */
+  plans: Record<string, { name: string; costs: Record<string, string>; costDetails?: Record<string, ExchangeCostDetail[]> }>;
   /** rxcui -> one entry per plan */
   drugs: Record<string, { planId: string; tier: string; pa: boolean; st: boolean; ql: boolean }[]>;
 }

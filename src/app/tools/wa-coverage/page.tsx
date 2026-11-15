@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs, Callout, Disclaimer, KeyValueGrid, PageHeader, Section, TableScroll, td, th } from "@/components/layout-bits";
 import { ProvenanceFooter } from "@/components/provenance";
+import { MEDICARE_INSULIN_URL, WA_INSULIN_CAP_URL, type CopayGroup } from "@/lib/copay-compare";
 import { cachedWaCoverage } from "@/lib/data/cached";
 import { UMP_PDL_URL, type CoverageGroup, type WaCoverageData } from "@/lib/data/wa-coverage";
 import { MAX_PRODUCTS } from "@/lib/rxnorm";
@@ -150,7 +151,125 @@ function GroupBlock({ group }: { group: CoverageGroup }) {
   );
 }
 
-function Results({ data }: { data: WaCoverageData }) {
+type CompareFilter = "all" | CopayGroup;
+const COMPARE_FILTERS: { key: CompareFilter; label: string }[] = [
+  { key: "all", label: "All plans" },
+  { key: "partd", label: "Medicare Part D" },
+  { key: "exchange", label: "Exchange plans" },
+];
+const DEDUCTIBLE: Record<YesNoUnknown, string> = { yes: "Yes", no: "No", unknown: "Not stated" };
+
+function CopayCompare({ data, filter }: { data: WaCoverageData; filter: CompareFilter }) {
+  const { copays } = data;
+  const rows = copays.rows.filter((r) => filter === "all" || r.group === filter);
+  const missing = [
+    ...((filter === "all" || filter === "partd") && !copays.partdLoaded ? ["Medicare Part D plan costs are not loaded yet; they arrive with the next Part D import."] : []),
+    ...((filter === "all" || filter === "exchange") && copays.exchangeMissing.length ? [`Cost details for ${copays.exchangeMissing.join(" and ")} exchange plans are not loaded yet; they arrive with the next weekly upload.`] : []),
+  ];
+  return (
+    <>
+      <nav aria-label="Filter the copay comparison" className="mb-3 flex flex-wrap gap-2">
+        {COMPARE_FILTERS.map((f) => (
+          <Link
+            key={f.key}
+            href={`${lookupHref(data.query)}${f.key === "all" ? "" : `&compare=${f.key}`}#copays`}
+            aria-current={f.key === filter ? "page" : undefined}
+            className={`inline-flex min-h-10 items-center rounded-full border px-3 text-sm ${f.key === filter ? "border-brand bg-brand-tint font-semibold text-brand" : "border-rule-strong text-ink hover:border-brand hover:text-brand"}`}
+          >
+            {f.label} ({f.key === "all" ? copays.rows.length : copays.rows.filter((r) => r.group === f.key).length})
+          </Link>
+        ))}
+      </nav>
+      {copays.insulin !== "none" ? (
+        <div className="mb-3">
+          <Callout title="Insulin has its own cost sharing">
+            Medicare caps each Part D-covered insulin at $35 for a one-month supply, with no deductible (
+            <a href={MEDICARE_INSULIN_URL} className="font-semibold text-brand underline" rel="noopener noreferrer">
+              Medicare.gov
+            </a>
+            ); Part D rows show a plan&apos;s lower copay where CMS&apos;s insulin cost file lists one. On exchange plans, Washington law caps a covered insulin at $35 per 30-day supply with no deductible (
+            <a href={WA_INSULIN_CAP_URL} className="font-semibold text-brand underline" rel="noopener noreferrer">
+              RCW 48.43.780
+            </a>
+            ); a plan&apos;s lower tier copay is shown where it has one, and each row also shows the plan&apos;s general rule for the tier. The law&apos;s HSA exception applies only if the IRS removes insulin from HSA preventive care; HSA plans are marked.{copays.insulin === "some" ? " This search includes an insulin combined with other drugs, so those amounts are not shown." : ""}
+          </Callout>
+        </div>
+      ) : null}
+      {missing.map((m) => (
+        <div key={m} className="mb-3">
+          <Callout tone="warning">{m}</Callout>
+        </div>
+      ))}
+      {rows.length ? (
+        <TableScroll label="Copay comparison" className="max-h-[75vh]">
+          <table className="w-full min-w-[60rem] border-collapse">
+            <caption className="sr-only">Stated cost sharing for this drug by plan, flat copays lowest first, then coinsurance</caption>
+            <thead>
+              <tr>
+                <th scope="col" className={th}>
+                  Plan
+                </th>
+                <th scope="col" className={th}>
+                  Tier
+                </th>
+                <th scope="col" className={th}>
+                  Stated cost per fill
+                </th>
+                <th scope="col" className={th}>
+                  Deductible first
+                </th>
+                <th scope="col" className={th}>
+                  Restrictions
+                </th>
+                <th scope="col" className={th}>
+                  Other options
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={`${r.group}|${r.planId}|${r.tier}`}>
+                  <th scope="row" className={`${td} max-w-[18rem] text-left`}>
+                    <span className="font-semibold text-ink">{r.plan}</span>
+                    <span className="block text-xs text-ink-muted">
+                      {r.insurer} · <span className="code-chip">{r.planId}</span>
+                    </span>
+                  </th>
+                  <td className={td}>{r.tier}</td>
+                  <td className={td}>
+                    <span className={r.sort.rank === 2 ? "text-ink-muted" : "font-semibold text-ink"}>{r.cost}</span>
+                    <span className="block text-xs text-ink-muted">{r.supply}</span>
+                  </td>
+                  <td className={td}>
+                    <span className={r.deductibleFirst === "unknown" ? "text-accent" : "text-ink"}>{DEDUCTIBLE[r.deductibleFirst]}</span>
+                    {r.deductibleNote ? <span className="block text-xs text-ink-muted">{r.deductibleNote}</span> : null}
+                  </td>
+                  <td className={`${td} text-xs`}>{r.restrictions}</td>
+                  <td className={`${td} max-w-[16rem] text-xs text-ink-muted`}>{r.other.length ? r.other.join("; ") : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableScroll>
+      ) : (
+        <p className="text-sm text-ink-muted">No plan in these files lists this drug{filter === "all" ? "" : " in this group"}.</p>
+      )}
+      <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-ink-muted">
+        <li>Each amount is what the plan&apos;s file states for one fill at an in-network pharmacy for the drug&apos;s tier. It is not a quote.</li>
+        <li>Coinsurance is a percent of the plan&apos;s price for the drug. Plans do not publish that price, so no dollar amount is shown.</li>
+        <li>
+          Deductible first &ldquo;Yes&rdquo; means the plan&apos;s price is paid until the yearly deductible is met; then the amount shown applies. Part D rows show the plan&apos;s deductible; exchange files do not state theirs.
+        </li>
+        <li>Medicare Part D amounts are for members without Extra Help (the low-income subsidy), in the initial coverage phase, 30-day supply. Insulin rows follow Medicare&apos;s $35 cap and CMS&apos;s insulin cost file.</li>
+        <li>Washington law also caps cost sharing on these exchange plans for at least one covered asthma inhaler and for epinephrine autoinjectors (RCW 48.43.780); the table shows each tier&apos;s general rule for those.</li>
+        <li>Regence/BridgeSpan&apos;s file says &ldquo;retail&rdquo; without a supply length. Plans that do not list the drug are not shown; see Coverage by plan.</li>
+      </ul>
+      <ProvenanceFooter sources={copays.provenance} />
+    </>
+  );
+}
+
+function Results({ data, compare }: { data: WaCoverageData; compare: CompareFilter }) {
   const { lookup } = data;
   if (lookup.kind === "none") {
     return (
@@ -214,7 +333,11 @@ function Results({ data }: { data: WaCoverageData }) {
         ))}
       </Section>
 
-      <Section id="nadac" number="03" title="Reference price (NADAC)" description={NADAC_LABEL}>
+      <Section id="copays" number="03" title="Compare copays" description="Each plan's stated cost for this drug's tier, side by side: flat copays lowest first, then coinsurance, then plans whose file gives no amount.">
+        <CopayCompare data={data} filter={compare} />
+      </Section>
+
+      <Section id="nadac" number="04" title="Reference price (NADAC)" description={NADAC_LABEL}>
         {data.reference ? (
           <>
             {data.reference.prices.length ? (
@@ -266,13 +389,13 @@ function Results({ data }: { data: WaCoverageData }) {
         )}
       </Section>
 
-      <Section id="method" number="04" title="How to read this">
+      <Section id="method" number="05" title="How to read this">
         <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-muted">
           <li>&ldquo;Unknown&rdquo; means the source does not settle the answer; the Notes column says why. CodeRx shows unknown rather than guess.</li>
           <li>PA, step therapy, and quantity limit read &ldquo;Yes&rdquo; only when every listed strength and form has it, and &ldquo;No&rdquo; only when none does.</li>
           <li>A drug not listed under any of its current RxNorm product IDs shows as not on the formulary. It may still be covered by a formulary exception, or under the medical benefit when given in a clinic.</li>
           <li>Exchange plans: Washington runs its own exchange, so insurers do not all publish machine-readable formularies. Only those that publish Washington plans this way are shown, for the plan year in their files.</li>
-          <li>Part D: CMS&apos;s file gives formularies and how many plans use each, not plan names, so the Part D row counts plans.</li>
+          <li>Part D: in Coverage by plan, one row sums up every Washington plan; Compare copays lists each plan by name.</li>
         </ul>
       </Section>
     </>
@@ -282,6 +405,7 @@ function Results({ data }: { data: WaCoverageData }) {
 export default async function WaCoveragePage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : "").trim().replace(/\s+/g, " ").slice(0, 100);
+  const compare: CompareFilter = sp.compare === "partd" || sp.compare === "exchange" ? sp.compare : "all";
   let data: WaCoverageData | null = null;
   let failed = false;
   if (q) {
@@ -331,7 +455,7 @@ export default async function WaCoveragePage({ searchParams }: { searchParams: S
           RxNorm (NLM) or the CodeRx database did not answer. Try again in a minute.
         </Callout>
       ) : null}
-      {data ? <Results data={data} /> : null}
+      {data ? <Results data={data} compare={compare} /> : null}
 
       <div className="mt-10 space-y-3">
         <p className="text-sm font-semibold text-ink">Formulary reference only, not a coverage determination or a patient&apos;s cost. Confirm with the plan.</p>

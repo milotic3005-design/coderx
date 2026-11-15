@@ -267,7 +267,7 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     landingPageUrl: "https://data.cms.gov/provider-summary-by-type-of-service/medicare-part-d-prescribers/quarterly-prescription-drug-plan-formulary-pharmacy-network-and-pricing-information",
     cadence: "quarterly",
     badge: "official-cms",
-    licenseNote: "U.S. Government public use file. CodeRx keeps Washington PDP and MA-PD formulary rows and the spread of plans' 30-day unit costs. Plan names are not stored. UNIT_COST is a plan's average at in-area retail pharmacies, not a home infusion contract rate.",
+    licenseNote: "U.S. Government public use file. CodeRx keeps Washington PDP and MA-PD formulary rows, the spread of plans' 30-day unit costs, and each plan's name, deductible, and 30-day retail cost sharing per tier (initial coverage phase). UNIT_COST is a plan's average at in-area retail pharmacies, not a home infusion contract rate.",
   },
   fda_ndc_rxcui: {
     key: "fda_ndc_rxcui",

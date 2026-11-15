@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { discoverPartdWa } from "@/ingest/discover";
 import { canStartPartd, partdCatalogDue } from "@/ingest/refresh";
-import { formularyCounts, parseFormularyRows, partdProblems, readPartdWa, summarizeCosts, washingtonPlans } from "@/ingest/parsers/cms-partd";
+import { formularyCounts, parseFormularyRows, parseInsulinCosts, parseTierCosts, partdProblems, readPartdWa, summarizeCosts, tierCostWarnings, washingtonPlans } from "@/ingest/parsers/cms-partd";
 import { byteSourceFromBytes } from "@/ingest/remote-zip";
 import { FIXTURE_DIR, partdArchive } from "../helpers/fixtures";
 
@@ -14,6 +14,7 @@ const geo = read("geographic-locator.txt");
 const planInfo = read("plan-information.txt");
 const formulary = read("basic-drugs-formulary.txt");
 const pricing = read("pricing.txt");
+const beneficiaryCost = read("beneficiary-cost.txt");
 
 async function* rows(text: string) {
   for (const line of text.split(/\r?\n/)) if (line) yield line;
@@ -29,6 +30,9 @@ describe("Washington Part D plans", () => {
   it("excludes Washington D.C. and other states", () => {
     expect(plans.map((p) => p.key)).not.toContain("S4802|079|000");
     expect(plans.map((p) => p.key)).not.toContain("H0028|007|000");
+  });
+  it("keeps each plan's name and deductible", () => {
+    expect(plans.find((p) => p.key === "S5617|148|000")).toMatchObject({ name: "HealthSpring Assurance Rx (PDP)", deductible: 615 });
   });
   it("counts a plan that also serves Oregon once", () => {
     expect(plans.filter((p) => p.key === "H1036|306|000")).toHaveLength(1);
@@ -81,10 +85,11 @@ describe("Part D formulary and cost rows", () => {
 });
 
 describe("Checking a Part D import", () => {
-  const plan = { key: "x", formularyId: "1", type: "PDP" as const };
+  const plan = { key: "x", name: "Test PDP", formularyId: "1", type: "PDP" as const, deductible: 0 };
   const drug = (rxcui: string) => ({ formularyId: "1", rxcui, proxyNdc: "1", tier: 1, priorAuth: false, stepTherapy: false, quantityLimit: false, selectedDrug: false });
   const cost = { proxyNdc: "1", rxcui: "1", planCount: 1, unitCostMin: 1, unitCostMedian: 1, unitCostMax: 1 };
-  const full = { plans: Array(60).fill(plan), drugs: Array.from({ length: 1500 }, (_, i) => drug(String(i))), costs: Array(1500).fill(cost) };
+  const tierCost = (planKey: string) => ({ planKey, tier: 1, deductibleApplies: false, specialty: false, preferred: { type: "copay" as const, amount: 1, max: null }, standard: null });
+  const full = { plans: Array(60).fill(plan), drugs: Array.from({ length: 1500 }, (_, i) => drug(String(i))), costs: Array(1500).fill(cost), tierCosts: Array.from({ length: 60 }, (_, i) => tierCost(String(i))) };
   it("passes a full file", () => {
     expect(partdProblems(full)).toEqual([]);
   });
@@ -95,6 +100,12 @@ describe("Checking a Part D import", () => {
   it("catches a layout change that loses the costs", () => {
     expect(partdProblems({ ...full, costs: [] }).join()).toContain("cost");
   });
+  it("only warns, never fails, when plan copays are missing or thin", () => {
+    expect(partdProblems({ ...full })).toEqual([]);
+    expect(tierCostWarnings({ ...full, tierCostsFound: true, costFileWarnings: [] })).toEqual([]);
+    expect(tierCostWarnings({ ...full, tierCosts: [], tierCostsFound: true, costFileWarnings: [] }).join()).toContain("only 0 of 60");
+    expect(tierCostWarnings({ ...full, tierCosts: [], tierCostsFound: false, costFileWarnings: ["The beneficiary cost file was not found"] }).join()).toContain("not found");
+  });
 });
 
 describe("Reading the quarterly archive", () => {
@@ -103,6 +114,7 @@ describe("Reading the quarterly archive", () => {
     expect(p.plans).toHaveLength(3);
     expect(p.drugs).toHaveLength(3);
     expect(p.costs).toHaveLength(1);
+    expect(p.tierCosts).toHaveLength(3);
     expect(p.checksum).toMatch(/^[0-9a-f]{64}$/);
   });
 });
@@ -136,5 +148,58 @@ describe("Fitting Part D into the daily refresh", () => {
     expect(canStartPartd(5_000, 0)).toBe(true);
     expect(canStartPartd(5_000, 1)).toBe(false);
     expect(canStartPartd(120_000, 0)).toBe(false);
+  });
+});
+
+describe("Part D tier cost sharing", () => {
+  const costs = parseTierCosts(beneficiaryCost, new Set(washingtonPlans(geo, planInfo).map((p) => p.key)));
+  it("keeps the initial coverage phase, 30-day supply, Washington plans only", () => {
+    expect(costs.map((c) => c.planKey).sort()).toEqual(["H1036|306|000", "H1036|319|000", "S5617|148|000"]);
+  });
+  it("reads copays in dollars and coinsurance as a fraction, with the deductible flag", () => {
+    const by = (k: string) => costs.find((c) => c.planKey === k)!;
+    expect(by("H1036|306|000")).toMatchObject({ tier: 4, deductibleApplies: true, preferred: { type: "copay", amount: 47, max: null }, standard: { type: "copay", amount: 52, max: null } });
+    expect(by("H1036|319|000").preferred).toEqual({ type: "coinsurance", amount: 0.25, max: null });
+    // Preferred retail not offered (cost type 0): only standard retail.
+    expect(by("S5617|148|000")).toMatchObject({ deductibleApplies: false, preferred: null, standard: { type: "copay", amount: 100 } });
+  });
+  it("stops on a layout change", () => {
+    expect(() => parseTierCosts("CONTRACT_ID|PLAN_ID\nX|1", new Set())).toThrow(/layout/);
+  });
+  it("reads a blank amount as not stated, not $0", () => {
+    const header = beneficiaryCost.split("\n")[0];
+    const [c] = parseTierCosts(`${header}\nS5617|148|000|1|4|1|1||0|0|2|.25|0|0|0|0|0|0|0|0|0|0|N|N`, new Set(["S5617|148|000"]));
+    expect(c).toMatchObject({ preferred: null, standard: { type: "coinsurance", amount: 0.25 } });
+  });
+  it("still reads the formulary when the archive has no beneficiary cost file", async () => {
+    const p = await readPartdWa(byteSourceFromBytes(partdArchive({ withoutBeneficiaryCost: true })));
+    expect(p).toMatchObject({ tierCosts: [], tierCostsFound: false });
+    expect(p.costFileWarnings.join()).toContain("not found");
+    expect(p.drugs).toHaveLength(3);
+  });
+  it("still reads the formulary when the beneficiary cost file's layout changed, with a warning", async () => {
+    const renamed = beneficiaryCost.replace("DED_APPLIES_YN", "DEDUCTIBLE_APPLIES");
+    const p = await readPartdWa(byteSourceFromBytes(partdArchive({ beneficiaryCostText: renamed })));
+    expect(p).toMatchObject({ tierCosts: [], tierCostsFound: false });
+    expect(p.costFileWarnings.join()).toMatch(/could not be read: .*DED_APPLIES_YN/);
+    expect(p.drugs).toHaveLength(3);
+    expect(p.insulinCosts).toHaveLength(3);
+  });
+});
+
+describe("Part D insulin cost sharing", () => {
+  const insulin = read("insulin-beneficiary-cost.txt");
+  const costs = parseInsulinCosts(insulin, new Set(washingtonPlans(geo, planInfo).map((p) => p.key)));
+  it("reads CMS's 2026 lower-case columns, 30-day rows, Washington plans only", () => {
+    expect(costs.map((c) => c.planKey).sort()).toEqual(["H1036|306|000", "H1036|319|000", "S5617|148|000"]);
+  });
+  it("keeps copays in dollars, coinsurance as a fraction, and a blank tier for defined standard plans", () => {
+    const by = (k: string) => costs.find((c) => c.planKey === k)!;
+    expect(by("H1036|306|000")).toMatchObject({ tier: 4, preferred: { copay: 35, coinsurance: null } });
+    expect(by("H1036|319|000")).toMatchObject({ preferred: { copay: null, coinsurance: 0.25 } });
+    expect(by("S5617|148|000")).toMatchObject({ tier: null, preferred: null, standard: { copay: 35, coinsurance: null } });
+  });
+  it("stops on a layout change", () => {
+    expect(() => parseInsulinCosts("CONTRACT_ID|PLAN_ID\nX|1", new Set())).toThrow(/layout/);
   });
 });

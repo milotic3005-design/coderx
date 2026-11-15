@@ -108,14 +108,16 @@ export function fixtureFetcher(overrides: Record<string, Uint8Array> = {}) {
 }
 
 /** The quarterly Part D archive's shape: each file is a ZIP inside the ZIP, and the 2.3 GB of pharmacy networks is left out. */
-export function partdArchive(): Uint8Array {
-  const nested = (name: string, file: string) => [`${name}.zip`, archive({ [`${name}.txt`]: read(`partd-wa/${file}`) })] as const;
+export function partdArchive(options: { withoutBeneficiaryCost?: boolean; beneficiaryCostText?: string } = {}): Uint8Array {
+  const nested = (name: string, file: string, text?: string) => [`${name}.zip`, archive({ [`${name}.txt`]: text != null ? new TextEncoder().encode(text) : read(`partd-wa/${file}`) })] as const;
   return archive(
     Object.fromEntries([
       nested("geographic locator file  PPUF_2026Q3", "geographic-locator.txt"),
       nested("plan information  PPUF_2026Q3", "plan-information.txt"),
       nested("basic drugs formulary file  PPUF_2026Q3", "basic-drugs-formulary.txt"),
       nested("pricing file PPUF_2026Q3", "pricing.txt"),
+      ...(options.withoutBeneficiaryCost ? [] : [nested("beneficiary cost file  PPUF_2026Q3", "beneficiary-cost.txt", options.beneficiaryCostText)]),
+      nested("insulin beneficiary cost file  PPUF_2026Q3", "insulin-beneficiary-cost.txt"),
     ]),
   );
 }

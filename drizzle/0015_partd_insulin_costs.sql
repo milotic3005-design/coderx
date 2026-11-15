@@ -1,0 +1,1 @@
+ALTER TABLE "partd_wa_plans" ADD COLUMN "insulin_costs" jsonb DEFAULT '[]'::jsonb NOT NULL;

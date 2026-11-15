@@ -82,8 +82,10 @@ function buildUploads(only: Set<string> | null, force: boolean): { name: string;
     for (const key of WA_INSURER_KEYS) {
       const info = manifest[key];
       if (!info) throw new Error(`The checker's cache has no ${key} source; run without --skip-refresh.`);
-      const index = read<{ plans: Record<string, { name: string; costs: Record<string, string> }>; drugs: Record<string, { planId: string; tier: string; pa: boolean; st: boolean; ql: boolean }[]> }>(`${key}.json`);
-      const plans = Object.entries(index.plans).map(([planId, p]) => ({ planId, name: p.name, costs: p.costs }));
+      type CostDetail = Extract<WaUpload, { kind: "exchange" }>["plans"][number]["costDetails"][string][number];
+      const index = read<{ plans: Record<string, { name: string; costs: Record<string, string>; costDetails?: Record<string, CostDetail[]> }>; drugs: Record<string, { planId: string; tier: string; pa: boolean; st: boolean; ql: boolean }[]> }>(`${key}.json`);
+      if (Object.values(index.plans).some((p) => !p.costDetails)) throw new Error(`The checker's ${key} cache predates cost details; run without --skip-refresh.`);
+      const plans = Object.entries(index.plans).map(([planId, p]) => ({ planId, name: p.name, costs: p.costs, costDetails: p.costDetails! }));
       // Cambia's two files repeat many listings word for word; exact repeats change no answer, so they are dropped.
       const drugs = Object.entries(index.drugs).map(([rxcui, listings]) => ({ rxcui, listings: [...new Map(listings.map((l) => [JSON.stringify([l.planId, l.tier, l.pa, l.st, l.ql]), { planId: l.planId, tier: l.tier, pa: l.pa, st: l.st, ql: l.ql }])).values()] }));
       const planYear = Number(/plan year (\d{4})/.exec(info.asOf)?.[1]);

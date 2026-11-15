@@ -14,6 +14,16 @@ test.describe("Washington drug coverage", () => {
     await expect(page.getByRole("heading", { name: "Reference price (NADAC)" })).toBeVisible();
   });
 
+  test("compares stated copays across Part D and exchange plans, with a filter", async ({ page }) => {
+    await page.goto("/tools/wa-coverage?q=Enbrel", { waitUntil: "networkidle" });
+    const table = page.getByRole("region", { name: "Copay comparison" });
+    await expect(table.getByText("Medicare Part D plan (PDP)").first()).toBeVisible();
+    await expect(table.getByText("Regence/BridgeSpan").first()).toBeVisible();
+    await page.getByRole("navigation", { name: "Filter the copay comparison" }).getByRole("link", { name: "Exchange plans" }).click();
+    await expect(page).toHaveURL(/compare=exchange/);
+    await expect(page.getByRole("region", { name: "Copay comparison" }).getByText("Medicare Part D plan (PDP)")).toHaveCount(0);
+  });
+
   test("offers RxNorm's closest names instead of guessing", async ({ page }) => {
     await page.goto("/tools/wa-coverage?q=ozempick", { waitUntil: "networkidle" });
     await expect(page.getByText("No exact match in RxNorm")).toBeVisible();

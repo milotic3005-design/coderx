@@ -442,6 +442,32 @@ export const partdWaCosts = pgTable(
   (t) => [index("partd_wa_costs_ndc_idx").on(t.proxyNdc), index("partd_wa_costs_rxcui_idx").on(t.rxcui), index("partd_wa_costs_release_idx").on(t.sourceReleaseId)],
 );
 
+/** Washington Part D plans by name, with each tier's 30-day retail cost sharing (initial coverage phase). */
+export const partdWaPlans = pgTable(
+  "partd_wa_plans",
+  {
+    id: serial("id").primaryKey(),
+    /** CONTRACT_ID|PLAN_ID|SEGMENT_ID */
+    planKey: text("plan_key").notNull(),
+    planName: text("plan_name").notNull(),
+    planType: text("plan_type").notNull(),
+    formularyId: text("formulary_id").notNull(),
+    deductible: numeric("deductible"),
+    tierCosts: jsonb("tier_costs")
+      .$type<{ tier: number; deductibleApplies: boolean; specialty: boolean; preferred: { type: "copay" | "coinsurance"; amount: number; max: number | null } | null; standard: { type: "copay" | "coinsurance"; amount: number; max: number | null } | null }[]>()
+      .notNull(),
+    /** CMS's insulin cost file for this plan: per tier (null for defined standard plans), 30-day supply. */
+    insulinCosts: jsonb("insulin_costs")
+      .$type<{ tier: number | null; preferred: { copay: number | null; coinsurance: number | null } | null; standard: { copay: number | null; coinsurance: number | null } | null }[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("partd_wa_plans_formulary_idx").on(t.formularyId), index("partd_wa_plans_release_idx").on(t.sourceReleaseId)],
+);
+
 /** FDA product NDC to RxNorm concept, from openFDA; links FDA products to CMS's proxy NDCs. */
 export const ndcRxcui = pgTable(
   "ndc_rxcui",
@@ -492,6 +518,11 @@ export const waExchangePlans = pgTable(
     name: text("name").notNull(),
     /** Tier name -> the plan's cost-sharing rule in words, as the file states it. */
     costs: jsonb("costs").$type<Record<string, string>>().notNull(),
+    /** Tier name -> the file's cost_sharing entries (pharmacy type, copay, coinsurance, and their deductible options). */
+    costDetails: jsonb("cost_details")
+      .$type<Record<string, { pharmacyType: string; copayAmount: number | null; copayOpt: string | null; coinsuranceRate: number | null; coinsuranceOpt: string | null }[]>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     sourceReleaseId: integer("source_release_id")
       .notNull()
       .references(() => sourceReleases.id),

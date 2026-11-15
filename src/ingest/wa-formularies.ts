@@ -76,6 +76,14 @@ const appleHealthSchema = z.object({
     .max(200_000),
 });
 
+/** One cost_sharing entry as the insurer's file states it (CMS's QHP formulary schema). */
+const costDetailSchema = z.object({
+  pharmacyType: z.string().max(40),
+  copayAmount: z.number().finite().nonnegative().nullable(),
+  copayOpt: z.string().max(40).nullable(),
+  coinsuranceRate: z.number().finite().min(0).max(1).nullable(),
+  coinsuranceOpt: z.string().max(40).nullable(),
+});
 const listingSchema = z.object({ planId: z.string().max(20), tier: z.string().max(60), pa: z.boolean(), st: z.boolean(), ql: z.boolean() });
 const exchangeSchema = z
   .object({
@@ -85,7 +93,14 @@ const exchangeSchema = z
     planYear: z.number().int().min(2024).max(2100),
     ...common,
     plans: z
-      .array(z.object({ planId: z.string().regex(/^\d{5}WA\d{7}(-\d{2})?$/), name: z.string().min(1).max(300), costs: z.record(z.string().max(60), z.string().max(1000)) }))
+      .array(
+        z.object({
+          planId: z.string().regex(/^\d{5}WA\d{7}(-\d{2})?$/),
+          name: z.string().min(1).max(300),
+          costs: z.record(z.string().max(60), z.string().max(1000)),
+          costDetails: z.record(z.string().max(60), z.array(costDetailSchema).max(20)),
+        }),
+      )
       .min(1)
       .max(300),
     drugs: z
@@ -191,7 +206,7 @@ function planFor(u: Parsed): Plan {
         await tx.delete(t.waExchangeDrugs).where(inArray(t.waExchangeDrugs.sourceReleaseId, ids));
       },
       insert: async (tx, id) => {
-        await insertBatches(tx, t.waExchangePlans, u.plans.map((p) => ({ insurerKey: u.insurerKey, planId: p.planId, name: p.name, costs: p.costs, sourceReleaseId: id })), 6);
+        await insertBatches(tx, t.waExchangePlans, u.plans.map((p) => ({ insurerKey: u.insurerKey, planId: p.planId, name: p.name, costs: p.costs, costDetails: p.costDetails, sourceReleaseId: id })), 7);
         await insertBatches(tx, t.waExchangeDrugs, u.drugs.map((d) => ({ insurerKey: u.insurerKey, rxcui: d.rxcui, listings: d.listings, sourceReleaseId: id })), 5);
       },
       details: { asOf: u.asOf, insurer: insurer.label, planYear: u.planYear, plans: u.plans.length, rxcuis: u.drugs.length, listings: u.drugs.reduce((n, d) => n + d.listings.length, 0), fileLastModified: u.lastModified },

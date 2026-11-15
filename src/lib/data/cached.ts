@@ -74,5 +74,7 @@ export const cachedBenefit = cached((code: string, slug: string) => benefitData(
 export const cachedSitemapEntries = cached(() => getSitemapEntries(), "sitemap");
 export const cachedCoverageArticle = cached((displayId: string) => getCoverageArticle(displayId), "coverage-article");
 /** RxNorm answers, cached for a day on their own (NLM's guidance) so that outage fallbacks for earlier days do not call RxNav again. */
-const cachedRxNorm = !process.env.NEXT_RUNTIME || process.env.CODERX_DISABLE_DATA_CACHE === "1" ? matchRxNorm : unstable_cache(matchRxNorm, ["coderx:rxnorm:v1"], { revalidate: RXNAV_CACHE_SECONDS });
-export const cachedWaCoverage = cached((query: string) => waCoverage(query, { lookup: cachedRxNorm }), "wa-coverage");
+const cachedRxNorm = !process.env.NEXT_RUNTIME || process.env.CODERX_DISABLE_DATA_CACHE === "1" ? matchRxNorm : unstable_cache(matchRxNorm, ["coderx:rxnorm:v2"], { revalidate: RXNAV_CACHE_SECONDS });
+// The key names the result's shape: bump it whenever WaCoverageData changes, so older cached copies are never reused
+// (Next's data cache outlives deploys). v3: copays with exchangeMissing and insulin.
+export const cachedWaCoverage = cached((query: string) => waCoverage(query, { lookup: cachedRxNorm }), "wa-coverage:v3");
