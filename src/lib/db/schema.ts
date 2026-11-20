@@ -564,6 +564,53 @@ export const nadacPrices = pgTable(
   (t) => [index("nadac_prices_ndc_idx").on(t.ndc11), index("nadac_prices_release_idx").on(t.sourceReleaseId)],
 );
 
+/* ------------------------------------------------------------------ */
+/* Payer site-of-care policies (uploaded from the operator's Mac)       */
+/* ------------------------------------------------------------------ */
+
+/** One payer's site-of-care policy document (or separate drug list), with its criteria text and fingerprint. */
+export const socDocuments = pgTable(
+  "soc_documents",
+  {
+    id: serial("id").primaryKey(),
+    payerKey: text("payer_key").notNull(),
+    /** policy: in force when fetched; future: posted ahead of its effective date; list: a separate drug list. */
+    role: text("role").notNull(),
+    url: text("url").notNull(),
+    title: text("title").notNull(),
+    policyNumber: text("policy_number"),
+    effectiveDate: date("effective_date"),
+    sha256: text("sha256").notNull(),
+    criteriaText: text("criteria_text"),
+    criteriaHash: text("criteria_hash"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("soc_documents_payer_idx").on(t.payerKey), index("soc_documents_release_idx").on(t.sourceReleaseId)],
+);
+
+/** A drug on a payer's site-of-care list, in the payer's own wording. */
+export const socListEntries = pgTable(
+  "soc_list_entries",
+  {
+    id: serial("id").primaryKey(),
+    documentId: integer("document_id")
+      .notNull()
+      .references(() => socDocuments.id),
+    payerKey: text("payer_key").notNull(),
+    code: text("code"),
+    label: text("label").notNull(),
+    addedDate: date("added_date"),
+    oncologyStar: boolean("oncology_star").notNull().default(false),
+    homeInfusionEligible: text("home_infusion_eligible"),
+    sourceReleaseId: integer("source_release_id")
+      .notNull()
+      .references(() => sourceReleases.id),
+  },
+  (t) => [index("soc_list_entries_payer_idx").on(t.payerKey), index("soc_list_entries_code_idx").on(t.code), index("soc_list_entries_release_idx").on(t.sourceReleaseId)],
+);
+
 /** HCPCS Level II drug codes listed in an MCD article (CPT rows are not stored). */
 export const mcdArticleHcpcs = pgTable(
   "mcd_article_hcpcs",

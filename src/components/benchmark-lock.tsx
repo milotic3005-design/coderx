@@ -1,13 +1,30 @@
 import { LockKeyhole, Unlock } from "lucide-react";
 
-/** Password form for the MultiCare price benchmark; posts to /api/benchmark-access and returns to `next`. */
-export function BenchmarkUnlockForm({ next, denied = false, compact = false }: { next: string; denied?: boolean; compact?: boolean }) {
+/**
+ * Password form for CodeRx's protected tools (the MultiCare price benchmark and the site-of-care check share one
+ * password); posts to /api/benchmark-access and returns to `next`. The wording defaults to the benchmark's.
+ */
+export function BenchmarkUnlockForm({
+  next,
+  denied = false,
+  compact = false,
+  label = "Unlock the MultiCare price benchmark",
+  title = "MultiCare negotiated rates are password protected",
+  description = "Enter the benchmark password to see rates from MultiCare’s hospital price transparency files.",
+}: {
+  next: string;
+  denied?: boolean;
+  compact?: boolean;
+  label?: string;
+  title?: string;
+  description?: string;
+}) {
   return (
-    <form action="/api/benchmark-access" method="post" className={`rounded-xl border hairline bg-surface ${compact ? "p-4" : "p-5 sm:p-6"}`} aria-label="Unlock the MultiCare price benchmark">
+    <form action="/api/benchmark-access" method="post" className={`rounded-xl border hairline bg-surface ${compact ? "p-4" : "p-5 sm:p-6"}`} aria-label={label}>
       <p className="flex items-center gap-2 font-semibold text-ink">
-        <LockKeyhole aria-hidden="true" className="h-4 w-4 text-brand" /> MultiCare negotiated rates are password protected
+        <LockKeyhole aria-hidden="true" className="h-4 w-4 text-brand" /> {title}
       </p>
-      {compact ? null : <p className="mt-1 text-sm text-ink-muted">Enter the benchmark password to see rates from MultiCare&apos;s hospital price transparency files.</p>}
+      {compact ? null : <p className="mt-1 text-sm text-ink-muted">{description}</p>}
       <input type="hidden" name="next" value={next} />
       <div className="mt-3 flex flex-wrap items-end gap-2">
         <label className="text-sm font-semibold text-ink">

@@ -1,4 +1,4 @@
-import { Calculator, ChartColumn, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, ListChecks, Scale, ScanLine, Waypoints } from "lucide-react";
+import { Calculator, CalendarClock, ChartColumn, ClipboardCheck, ClipboardList, GitCompareArrows, History, Hospital, ListChecks, Scale, ScanLine, Waypoints } from "lucide-react";
 
 /** The Tools section, in the order shown on /tools and in the footer. */
 export const TOOLS = [
@@ -43,6 +43,13 @@ export const TOOLS = [
     title: "Part B vs Part D",
     who: "Pharmacists, billers, and intake",
     body: "Which Medicare benefit pays for a drug in each setting, with the CMS source for every answer: Noridian's self-administered drug list, DME policies, Washington Part D plan coverage, and the dollars for each lawful pathway.",
+  },
+  {
+    href: "/tools/soc-check",
+    icon: CalendarClock,
+    title: "Site-of-care denial check",
+    who: "Infusion pharmacists, intake, and prior-authorization staff (password)",
+    body: "Which payers (UnitedHealthcare, Premera, Regence, Aetna, Cigna, Anthem) require infusions outside the hospital, how long a new start may stay in the HOPD, and the date to move a patient to home infusion or request an exception, with each payer's criteria in its own words. Refreshed monthly; changes are flagged.",
   },
   {
     href: "/tools/wa-coverage",

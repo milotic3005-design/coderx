@@ -32,6 +32,7 @@ files that were current on that date.
 | 17 | `wa_hca_pdl` | Washington State HCA | Apple Health (Medicaid) Preferred Drug List (XLSX, by NDC) | Weekly (operator's Mac) | **Ingested** (coverage, preferred status, PA flags, PA policy per NDC) |
 | 18 | `wa_exchange_formularies` | Exchange insurers (Ambetter; Regence/BridgeSpan) | Exchange plan formularies in CMS's machine-readable format, Washington plans | As published (operator's Mac) | **Ingested** (plan names, tier cost-sharing rules, tier and PA/step/QL flags per RxCUI) |
 | 19 | `cms_nadac` | CMS | NADAC (National Average Drug Acquisition Cost), data.medicaid.gov | Weekly (operator's Mac) | **Ingested** (newest week; shown as a reference price, never as patient cost) |
+| 20 | `payer_soc_policies` | UnitedHealthcare, Premera, Regence, Aetna, Cigna, Anthem | Site-of-care policies for infused and injected drugs, and their drug lists | Monthly (operator's Mac) | **Ingested** (criteria text and fingerprint, effective dates, drug lists by HCPCS code or payer's name; password-protected page) |
 | — | — | NLM | RxNav (RxNorm API) | At request time | Used by `/tools/wa-coverage` to turn a drug name into RxCUIs and NDCs; no name is guessed |
 | — | — | HCA | UMP (PEBB/SEBB) Preferred Drug List PDF | Monthly | Link-out only: the PDF lists names without drug codes |
 | — | — | FDA | openFDA NDC API | Weekly | Evaluated, not used at runtime; the bulk file supplies source 16 |

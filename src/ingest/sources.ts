@@ -28,7 +28,8 @@ export type SourceKey =
   | "fda_ndc_rxcui"
   | "wa_hca_pdl"
   | "wa_exchange_formularies"
-  | "cms_nadac";
+  | "cms_nadac"
+  | "payer_soc_policies";
 
 export const SOURCE_KEYS: SourceKey[] = [
   "cms_hcpcs",
@@ -53,13 +54,14 @@ export const SOURCE_KEYS: SourceKey[] = [
   "wa_hca_pdl",
   "wa_exchange_formularies",
   "cms_nadac",
+  "payer_soc_policies",
 ];
 
 /**
  * Sources built on the operator's computer and posted to their own endpoints (/api/admin/hospital-rates,
  * /api/admin/wa-coverage). The general import and refresh endpoints refuse them.
  */
-export const UPLOADED_SOURCES: ReadonlySet<SourceKey> = new Set(["hpt_multicare", "wa_hca_pdl", "wa_exchange_formularies", "cms_nadac"]);
+export const UPLOADED_SOURCES: ReadonlySet<SourceKey> = new Set(["hpt_multicare", "wa_hca_pdl", "wa_exchange_formularies", "cms_nadac", "payer_soc_policies"]);
 
 /** The three MUE tables CMS publishes each quarter, keyed by the service type stored with each value. */
 export const MUE_SOURCES = {
@@ -100,7 +102,7 @@ export type StateFeeSourceKey = keyof typeof STATE_FEE_SOURCES;
 
 export interface SourceDefinition {
   key: SourceKey;
-  organization: "CMS" | "FDA" | "Washington State HCA" | "MultiCare Health System" | "Washington exchange insurers";
+  organization: "CMS" | "FDA" | "Washington State HCA" | "MultiCare Health System" | "Washington exchange insurers" | "Health insurers";
   dataset: string;
   shortName: string;
   landingPageUrl: string;
@@ -330,6 +332,17 @@ export const SOURCES: Record<SourceKey, SourceDefinition> = {
     cadence: "weekly",
     badge: "official-cms",
     licenseNote: "U.S. Government data. The average price retail community pharmacies pay to buy a drug, per pricing unit. It is not what a patient or a plan pays, and drugs bought mainly by clinics, hospitals, or specialty pharmacies are often not surveyed.",
+  },
+  payer_soc_policies: {
+    key: "payer_soc_policies",
+    organization: "Health insurers",
+    dataset: "Payer site-of-care policies for infused and injected drugs (criteria and drug lists)",
+    shortName: "Payer site-of-care policies",
+    landingPageUrl: "https://www.uhcprovider.com/en/policies-protocols/commercial-policies/commercial-medical-drug-policies.html",
+    cadence: "monthly",
+    badge: "insurer-published",
+    licenseNote:
+      "Each payer's own public policy document and drug list (UnitedHealthcare, Premera, Regence, Aetna, Cigna, Anthem), fetched monthly on the operator's computer where the payer's robots.txt allows. The criteria text and drug lists are shown only behind the CodeRx password; this page lists the files and dates. Drug codes and dates update automatically; changes in criteria wording are flagged until a pharmacist reviews them.",
   },
   fda_purple_book: {
     key: "fda_purple_book",

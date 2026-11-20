@@ -137,6 +137,21 @@ Same token handling, Node selection, network wait, and failure notification as t
 
 Medicare Part D on the page comes from `cms_partd_wa`, which the daily cron already imports. The UMP (PEBB/SEBB) list is a PDF without drug codes, so the page links to it rather than reading it. Drug names are looked up in NLM's RxNav at request time (cached a week); scripts that walk `?q=` URLs are refused like `?code=` lookups.
 
+## Payer site-of-care policies (operator's Mac, monthly)
+
+`/tools/soc-check` (behind the same password as the MultiCare benchmark) reads each payer's public site-of-care policy and drug list: UnitedHealthcare (policy 2026D0121X and its Applicable Medications code list), Premera (11.01.523, plus any version linked ahead of its effective date from Premera's monthly "policy updates" pages), Regence (dru408 and its Appendix 1), Aetna (policy page and its drug-therapy XML), Cigna (1605; its drug list is under a path Cigna's robots.txt disallows, so it is not fetched) and Anthem (CG-MED-83; no public Washington list). `scripts/refresh-soc-policies.ts` (`npm run refresh:soc-policies`) downloads only those files, one request a second, checks each list against a minimum size, and uploads to `POST /api/admin/soc-policies`. Each upload replaces the payer's current release and records what changed (drugs added or removed, criteria wording, future versions). Safety stops: redirects are not followed (a moved file is reported, to check against robots.txt before updating the URL); a list or future version below its minimum size is not uploaded; an upload that would remove more than 10% of the list in force is held (the run prints `REVIEW NEEDED … upload held`; if the removals are real, rerun with `--only <payer> --force`); and a rule whose quoted words no longer appear in the policy prints `REVIEW NEEDED`.
+
+Drug codes and dates update on their own. The windows and quotes in `src/lib/soc/rules.ts` are written by hand from a specific version of each policy (`writtenFrom.criteriaHash`). When a payer's criteria wording changes, the refresh prints `REVIEW NEEDED`, the job notifies, and the page marks that payer "changed since this rule was written" and shows the new wording, until the rule is reviewed and its fingerprint updated.
+
+```bash
+scripts/soc-policies-launchd.sh install     # monthly: the 2nd at 07:00 local time
+scripts/soc-policies-launchd.sh status
+scripts/soc-policies-launchd.sh run         # run now (add --dry-run, --force, or --only uhc,premera)
+scripts/soc-policies-launchd.sh uninstall
+```
+
+Log: `~/Library/Logs/coderx-soc-policies-refresh.log`.
+
 ## Publisher files blocked from cloud egress (Purple Book)
 
 FDA's bot defense blocks the Purple Book CSV for cloud networks: Vercel gets a 404, and GitHub-hosted Actions runners get a 302 to `/apology_objects/abuse-detection-apology.html` for both the downloads page and the file (checked 2026-10-15 from two Azure regions). Ordinary networks are not blocked. The Vercel cron records its failure; the import is done from an operator's Mac by `scripts/refresh-purple-book.ts` (`npm run refresh:purple-book`):
